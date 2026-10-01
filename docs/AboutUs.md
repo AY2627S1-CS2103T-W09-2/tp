@@ -21,6 +21,9 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/spencercdz)]
 
+* Role: Team Lead, Scheduling and Tracking
+* Responsibilities: Coordinate the SoCdex project, maintain and track tasks and milestones, and ensure planned work supports the tutor workflow and iteration goals.
+
 ### Johnny Doe
 
 <img src="images/johndoe.png" width="200px">
