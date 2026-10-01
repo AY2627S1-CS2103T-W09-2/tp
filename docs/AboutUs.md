@@ -47,4 +47,4 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 [[github](https://github.com/YujieJWang)]
 
 * Role: Testing
-* Responsibilities: UI
+* Responsibilities: Tutor UI
