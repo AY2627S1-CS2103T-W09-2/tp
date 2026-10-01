@@ -31,8 +31,7 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 <img src="images/xiekaiwen.png" width="200px">
 
-[[github](http://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](https://github.com/XieKaiwen)]
 
 * Role: Developer
 * Responsibilities: In charge of Local Storage and Persistence. Git expert and focused on integration
