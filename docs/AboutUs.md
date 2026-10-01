@@ -15,6 +15,9 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/jingchunnnnn)]
 
+* Role: Documentation
+* Responsibilities: Deliverables and deadlines
+
 ### Spencer Chu
 
 <img src="images/spencercdz.png" width="200px">
@@ -24,14 +27,11 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Team Lead, Scheduling and Tracking
 * Responsibilities: Coordinate the SoCdex project, maintain and track tasks and milestones, and ensure planned work supports the tutor workflow and iteration goals.
 
-### Johnny Doe
+### Minh Hoang
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/minhhoanglenus.png" width="200px">
 
-[[github](http://github.com/johndoe)] [[portfolio](team/johndoe.md)]
-
-* Role: Developer
-* Responsibilities: Data
+[[github](https://github.com/MinhHoangLeNUS)]
 
 ### Jean Doe
 
