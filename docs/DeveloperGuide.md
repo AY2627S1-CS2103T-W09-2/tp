@@ -324,8 +324,17 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Glossary
 
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Contact route**: A recorded way to identify or contact a student, such as an NUS email address, Telegram username, or GitHub username.
+* **Enrolment**: The association between a student profile and a module-semester. It can include the student's tutorial section and project team for that module-semester.
+* **Fictional sample**: Invented data used in examples, mockups, documentation, or tests. It does not represent a real student.
+* **Module-semester**: One offering of an NUS module, identified by its module code, academic year, and semester.
+* **NUS email**: The official NUS email address recorded for a student. It is both an institutional identifier and a contact route.
+* **Project team**: A group of students who work together on a project within a module-semester.
+* **Roster**: A collection of student profiles and their enrolments that a tutor manages in SoCdex.
+* **Student profile**: A local record that connects one student's name, identifiers, and contact routes. Enrolments link the profile to its teaching context.
+* **Technical platform**: An external service used for module work or communication, such as GitHub or Telegram.
+* **Tutorial section**: A scheduled teaching group within a module-semester. This term also covers equivalent laboratory and recitation groups.
+* **Tutor**: An NUS School of Computing tutor who uses SoCdex to identify and contact students across the groups they teach.
 
 --------------------------------------------------------------------------------------------------------------------
 
