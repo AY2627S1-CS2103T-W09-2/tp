@@ -30,6 +30,9 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 [[github](https://github.com/MinhHoangLeNUS)]
 
+* Role: SoCdex Domain Model
+* Responsibilities: Code Quality
+
 ### Xie Kaiwen
 
 <img src="images/xiekaiwen.png" width="200px">
