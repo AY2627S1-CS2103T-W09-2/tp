@@ -17,18 +17,17 @@ SoCdex will provide a keyboard-first workflow for tutors who prefer typed comman
 
 SoCdex is planned to support the following capabilities:
 
-* Add and update student profiles with official and preferred names.
+* Add and update student profiles with names.
 * Record NUS email addresses and optional contact details such as Telegram usernames and GitHub usernames.
 * Associate students with module-semester enrolments, tutorial sections, and project teams.
 * Find students using known identifiers and group information.
 * Show enough context to distinguish students with similar details.
-* Retain current and archived semester rosters on the user's computer.
 
 SoCdex is not intended to manage grades, attendance, submissions, schedules, disciplinary records, or teaching materials. It will not replace Canvas or other learning management systems.
 
 ## Documentation
 
-* [User Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/)
+* [User Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/UserGuide.html)
 * [Developer Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/DeveloperGuide.html)
 * [About Us](https://ay2627s1-cs2103t-w09-2.github.io/tp/AboutUs.html)
 * [Project repository](https://github.com/AY2627S1-CS2103T-W09-2/tp)
