@@ -276,21 +276,21 @@ These stories describe planned tutor outcomes, not currently implemented feature
 
 Priorities:
 
-* High (`* * *`): must-have outcomes for the core roster-management workflow.
+* High (`* * *`): required outcomes in the agreed M1–M8 product backlog.
 * Medium (`* *`): supporting or post-MVP capabilities to consider after the core workflow is reliable.
 * Low (`*`): future extensions outside the current-semester scope.
 
-Story IDs are retained from the project notes for traceability. The `M` prefix identifies the original candidate MVP stories, not their final priority: M3–M6 and M8 form the core MVP, while M1, M2, and M7 are supporting or post-MVP capabilities, following the feature specification's MVP assessment.
+Story IDs are retained from the project notes for traceability. Priorities follow the agreed mapping in issue #39: M1–M8 are high, S1–S12 are medium, and C1–C10 are low.
 
 | Priority | ID | As a … | I can … | So that … |
 | --- | --- | --- | --- | --- |
-| `* *` | M1 | tutor | load fictional sample records | I can explore SoCdex safely before entering my own roster |
-| `* *` | M2 | tutor | clear the fictional sample records | I can start with an empty roster before entering real class information |
+| `* * *` | M1 | tutor | load fictional sample records | I can explore SoCdex safely before entering my own roster |
+| `* * *` | M2 | tutor | clear the fictional sample records | I can start with an empty roster before entering real class information |
 | `* * *` | M3 | tutor | add a student’s identity and contact details | I can identify and contact the correct person |
 | `* * *` | M4 | tutor | record a student’s module-semester, tutorial section, and project-team affiliations | I can find the student in the correct teaching context |
 | `* * *` | M5 | tutor | search using a name, NUS email, Telegram handle, or GitHub username | I can identify a student from the identifier available to me |
 | `* * *` | M6 | tutor | view a student profile and all its enrolments | I can verify contact details and affiliations together |
-| `* *` | M7 | tutor | update a student’s editable contact details or affiliations | the roster stays useful after assignments change |
+| `* * *` | M7 | tutor | update a student’s editable contact details or affiliations | the roster stays useful after assignments change |
 | `* * *` | M8 | tutor | remove a profile only after confirming the exact student | I do not accidentally lose their contact details and enrolments |
 | `* *` | S1 | tutor | list students in one tutorial section | I can prepare for a section-specific activity |
 | `* *` | S2 | tutor | list students in one project team | I can quickly identify the members of that team |
