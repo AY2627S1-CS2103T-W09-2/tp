@@ -261,13 +261,16 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
-* prefers desktop apps over other types of applications
-* can type fast
-* prefers typing to mouse interactions
-* is reasonably comfortable using CLI apps
+* is an NUS School of Computing tutor who supports students in project-based modules
+* manages several tutorial sections and project teams across one or more module-semester cohorts
+* needs to identify and contact the correct student without interrupting a tutorial, consultation, or project discussion
+* may know a student only by a name, NUS email, Telegram handle, or GitHub username
+* prefers a keyboard-first desktop application for fast, focused retrieval of local roster information
+* currently cross-references Canvas, spreadsheets, technical platforms, and personal notes to verify a student's identity and affiliations
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: SoCdex gives NUS School of Computing tutors fast access to student contact details, identities, and tutorial or project-team affiliations, organised by module and semester. It helps tutors identify and reach the correct student without repeatedly cross-referencing Canvas, spreadsheets, technical platforms, and personal notes.
+
+**Scope boundary**: SoCdex stores only the information needed for this focused workflow: student name, NUS email, optional Telegram or GitHub identifiers, and module-semester enrolments with optional tutorial-section and project-team affiliations. It does not manage grades, attendance, submissions, timetables, LMS content, project collaboration, bulk institutional imports, free-form tutor notes, or disciplinary and assessment records.
 
 
 ### User stories
