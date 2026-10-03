@@ -287,32 +287,151 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+The following use cases describe **planned SoCdex behaviour**, not features already implemented in the inherited AB3 application.
+For all use cases, the **System** is **SoCdex** and the **Actor** is a **tutor**.
+A student profile contains identity and contact details; each enrolment records one module-semester and its optional tutorial section and project team.
 
-**Use case: Delete a person**
+#### UC1: Identify a student in the correct teaching context
 
-**MSS**
+**Preconditions:** The tutor has an identifier from a student interaction and knows the module and semester to check.
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+**Main success scenario (MSS)**
+
+1. Tutor requests a search using a name, NUS email, Telegram handle, or GitHub username.
+1. SoCdex searches the complete roster and displays matching profiles with distinguishing identifiers and enrolment details.
+1. Tutor requests the intended student's full profile using its unique NUS email.
+1. SoCdex displays the student's identity, recorded contact details, and all module-semester enrolments.
+1. Tutor checks the intended module and semester, tutorial section, and project team to confirm the teaching context.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. The search input is invalid.
 
-  Use case ends.
-
-* 3a. The given index is invalid.
-
-    * 3a1. AddressBook shows an error message.
+    * 1a1. SoCdex explains the input problem without changing stored records.
+    * 1a2. Tutor corrects the search input.
 
       Use case resumes at step 2.
 
-*{More to be added}*
+* 2a. No profiles match.
+
+    * 2a1. SoCdex reports no matches and suggests checking the spelling or using another identifier.
+    * 2a2. Tutor supplies another identifier.
+
+      Use case resumes at step 2. If no other identifier is available, the use case ends without identifying a student.
+
+* 2b. Multiple profiles match.
+
+    * 2b1. SoCdex displays all matches without selecting one automatically.
+    * 2b2. Tutor compares the NUS emails and available identifiers and affiliations.
+
+      Use case resumes at step 3. If the tutor cannot distinguish the intended student, the use case ends without assuming an identity.
+
+* 3a. The supplied NUS email is invalid or does not identify an existing profile.
+
+    * 3a1. SoCdex explains the problem without changing stored records.
+    * 3a2. Tutor checks the email against the search results.
+
+      Use case resumes at step 3.
+
+* 5a. The profile has no enrolment for the intended module and semester.
+
+    * 5a1. Tutor checks the intended context against the displayed enrolments, including an explicit absence of enrolments where applicable.
+
+      Use case ends without confirming the teaching context.
+
+* 5b. The relevant enrolment has no tutorial section or project team assigned.
+
+    * 5b1. SoCdex displays the missing affiliation as not assigned.
+    * 5b2. Tutor can confirm the module-semester but cannot confirm the missing affiliation from this record.
+
+      Use case ends.
+
+#### UC2: Obtain a student's recorded contact details
+
+**Preconditions:** The tutor has identified the intended student and verified the relevant module-semester, as in UC1.
+
+**Main success scenario (MSS)**
+
+1. Tutor requests the student's profile using its unique NUS email.
+1. SoCdex displays the name, NUS email, optional Telegram and GitHub identifiers, and all enrolments.
+1. Tutor checks the displayed identity and teaching context against the intended recipient.
+1. Tutor obtains the recorded NUS email or an available Telegram handle for contacting that student outside SoCdex.
+
+    Use case ends. SoCdex does not send a message or verify that a recorded contact is reachable.
+
+**Extensions**
+
+* 1a. The NUS email is invalid or the profile cannot be found.
+
+    * 1a1. SoCdex explains the problem without changing stored records.
+    * 1a2. Tutor returns to UC1 to identify the student again.
+
+      Use case ends.
+
+* 3a. The identity or module-semester does not match the intended recipient.
+
+    * 3a1. Tutor returns to UC1 without using this profile's contact details.
+
+      Use case ends.
+
+* 4a. The preferred optional contact detail is absent.
+
+    * 4a1. SoCdex explicitly indicates that the optional detail is not provided.
+    * 4a2. Tutor obtains the required NUS email instead.
+
+      Use case ends.
+
+#### UC3: Update a student's tutorial section or project team
+
+**Preconditions:** The tutor has identified the student and knows the intended module-semester and revised affiliation.
+
+**Main success scenario (MSS)**
+
+1. Tutor requests the student's full profile using its unique NUS email.
+1. SoCdex displays the profile and all enrolments.
+1. Tutor requests a tutorial-section or project-team update for the specified module and semester.
+1. SoCdex validates and saves the update, preserving omitted affiliations, the student's identity, and all other enrolments.
+1. SoCdex displays the updated enrolment for the tutor to check.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. The NUS email is invalid or the profile cannot be found.
+
+    * 1a1. SoCdex explains the problem without changing stored records.
+    * 1a2. Tutor returns to UC1 to identify the student again.
+
+      Use case ends.
+
+* 3a. The specified module-semester enrolment does not exist.
+
+    * 3a1. SoCdex reports the missing enrolment and preserves the roster.
+    * 3a2. Tutor checks the module and semester, or separately records the missing enrolment before retrying.
+
+      Use case ends.
+
+* 3b. The update contains invalid input or supplies neither a tutorial-section nor a project-team field.
+
+    * 3b1. SoCdex explains the validation problem and leaves the enrolment unchanged.
+    * 3b2. Tutor corrects the request.
+
+      Use case resumes at step 3.
+
+* 3c. Tutor explicitly requests clearing a tutorial section or project team.
+
+    * 3c1. SoCdex validates the request and removes only the specified affiliation.
+    * 3c2. SoCdex displays that affiliation as not assigned and preserves all other details.
+
+      Use case ends.
+
+* 3d. The supplied affiliations already match the stored values after normalisation, or a field to clear is already absent.
+
+    * 3d1. SoCdex reports that no values changed and treats the valid request as successful.
+
+      Use case ends.
 
 ### Non-Functional Requirements
 
