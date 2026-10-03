@@ -298,45 +298,51 @@ A student profile contains identity and contact details; each enrolment records 
 **Main success scenario (MSS)**
 
 1. Tutor requests a search using a name, NUS email, Telegram handle, or GitHub username.
-2. SoCdex searches the complete roster and displays matching profiles with distinguishing identifiers and enrolment details.
-3. Tutor requests the intended student's full profile using its unique NUS email.
-4. SoCdex displays the student's identity, recorded contact details, and all module-semester enrolments.
-5. Tutor checks the intended module and semester, tutorial section, and project team to confirm the teaching context.
+1. SoCdex searches the complete roster and displays matching profiles with distinguishing identifiers and enrolment details.
+1. Tutor requests the intended student's full profile using its unique NUS email.
+1. SoCdex displays the student's identity, recorded contact details, and all module-semester enrolments.
+1. Tutor checks the intended module and semester, tutorial section, and project team to confirm the teaching context.
 
     Use case ends.
 
 **Extensions**
 
 * 1a. The search input is invalid.
+
     * 1a1. SoCdex explains the input problem without changing stored records.
     * 1a2. Tutor corrects the search input.
 
       Use case resumes at step 2.
 
 * 2a. No profiles match.
+
     * 2a1. SoCdex reports no matches and suggests checking the spelling or using another identifier.
     * 2a2. Tutor supplies another identifier.
 
       Use case resumes at step 2. If no other identifier is available, the use case ends without identifying a student.
 
 * 2b. Multiple profiles match.
+
     * 2b1. SoCdex displays all matches without selecting one automatically.
     * 2b2. Tutor compares the NUS emails and available identifiers and affiliations.
 
       Use case resumes at step 3. If the tutor cannot distinguish the intended student, the use case ends without assuming an identity.
 
 * 3a. The supplied NUS email is invalid or does not identify an existing profile.
+
     * 3a1. SoCdex explains the problem without changing stored records.
     * 3a2. Tutor checks the email against the search results.
 
       Use case resumes at step 3.
 
 * 5a. The profile has no enrolment for the intended module and semester.
+
     * 5a1. Tutor checks the intended context against the displayed enrolments, including an explicit absence of enrolments where applicable.
 
       Use case ends without confirming the teaching context.
 
 * 5b. The relevant enrolment has no tutorial section or project team assigned.
+
     * 5b1. SoCdex displays the missing affiliation as not assigned.
     * 5b2. Tutor can confirm the module-semester but cannot confirm the missing affiliation from this record.
 
@@ -349,26 +355,29 @@ A student profile contains identity and contact details; each enrolment records 
 **Main success scenario (MSS)**
 
 1. Tutor requests the student's profile using its unique NUS email.
-2. SoCdex displays the name, NUS email, optional Telegram and GitHub identifiers, and all enrolments.
-3. Tutor checks the displayed identity and teaching context against the intended recipient.
-4. Tutor obtains the recorded NUS email or an available Telegram handle for contacting that student outside SoCdex.
+1. SoCdex displays the name, NUS email, optional Telegram and GitHub identifiers, and all enrolments.
+1. Tutor checks the displayed identity and teaching context against the intended recipient.
+1. Tutor obtains the recorded NUS email or an available Telegram handle for contacting that student outside SoCdex.
 
     Use case ends. SoCdex does not send a message or verify that a recorded contact is reachable.
 
 **Extensions**
 
 * 1a. The NUS email is invalid or the profile cannot be found.
+
     * 1a1. SoCdex explains the problem without changing stored records.
     * 1a2. Tutor returns to UC1 to identify the student again.
 
       Use case ends.
 
 * 3a. The identity or module-semester does not match the intended recipient.
+
     * 3a1. Tutor returns to UC1 without using this profile's contact details.
 
       Use case ends.
 
 * 4a. The preferred optional contact detail is absent.
+
     * 4a1. SoCdex explicitly indicates that the optional detail is not provided.
     * 4a2. Tutor obtains the required NUS email instead.
 
@@ -381,34 +390,38 @@ A student profile contains identity and contact details; each enrolment records 
 **Main success scenario (MSS)**
 
 1. Tutor requests the student's full profile using its unique NUS email.
-2. SoCdex displays the profile and all enrolments.
-3. Tutor requests a tutorial-section or project-team update for the specified module and semester.
-4. SoCdex validates and saves the update, preserving omitted affiliations, the student's identity, and all other enrolments.
-5. SoCdex displays the updated enrolment for the tutor to check.
+1. SoCdex displays the profile and all enrolments.
+1. Tutor requests a tutorial-section or project-team update for the specified module and semester.
+1. SoCdex validates and saves the update, preserving omitted affiliations, the student's identity, and all other enrolments.
+1. SoCdex displays the updated enrolment for the tutor to check.
 
     Use case ends.
 
 **Extensions**
 
 * 1a. The NUS email is invalid or the profile cannot be found.
+
     * 1a1. SoCdex explains the problem without changing stored records.
     * 1a2. Tutor returns to UC1 to identify the student again.
 
       Use case ends.
 
 * 3a. The specified module-semester enrolment does not exist.
+
     * 3a1. SoCdex reports the missing enrolment and preserves the roster.
     * 3a2. Tutor checks the module and semester, or separately records the missing enrolment before retrying.
 
       Use case ends.
 
 * 3b. The update contains invalid input or specifies no affiliation change.
+
     * 3b1. SoCdex explains the validation problem and leaves the enrolment unchanged.
     * 3b2. Tutor corrects the request.
 
       Use case resumes at step 3.
 
 * 3c. Tutor explicitly requests clearing a tutorial section or project team.
+
     * 3c1. SoCdex validates the request and removes only the specified affiliation.
     * 3c2. SoCdex displays that affiliation as not assigned and preserves all other details.
 
