@@ -270,7 +270,7 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Value proposition**: SoCdex gives NUS School of Computing tutors fast access to student contact details, identities, and tutorial or project-team affiliations, organised by module and semester. It helps tutors identify and reach the correct student without repeatedly cross-referencing Canvas, spreadsheets, technical platforms, and personal notes.
 
-**Scope boundary**: SoCdex stores only the information needed for this focused workflow: student name, NUS email, optional Telegram or GitHub identifiers, and module-semester enrolments with optional tutorial-section and project-team affiliations. It does not manage grades, attendance, submissions, timetables, LMS content, project collaboration, free-form tutor notes, or disciplinary and assessment records.
+**Scope boundary**: SoCdex stores only the information needed for this focused workflow: student name, NUS email, optional Telegram or GitHub identifiers, and module-semester enrolments with optional tutorial-section and project-team affiliations. It does not manage grades, attendance, submissions, timetables, LMS content, project collaboration, bulk institutional imports, free-form tutor notes, or disciplinary and assessment records.
 
 
 ### User stories
