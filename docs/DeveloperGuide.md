@@ -413,7 +413,7 @@ A student profile contains identity and contact details; each enrolment records 
 
       Use case ends.
 
-* 3b. The update contains invalid input or specifies no affiliation change.
+* 3b. The update contains invalid input or supplies neither a tutorial-section nor a project-team field.
 
     * 3b1. SoCdex explains the validation problem and leaves the enrolment unchanged.
     * 3b2. Tutor corrects the request.
@@ -424,6 +424,12 @@ A student profile contains identity and contact details; each enrolment records 
 
     * 3c1. SoCdex validates the request and removes only the specified affiliation.
     * 3c2. SoCdex displays that affiliation as not assigned and preserves all other details.
+
+      Use case ends.
+
+* 3d. The supplied affiliations already match the stored values after normalisation, or a field to clear is already absent.
+
+    * 3d1. SoCdex reports that no values changed and treats the valid request as successful.
 
       Use case ends.
 
