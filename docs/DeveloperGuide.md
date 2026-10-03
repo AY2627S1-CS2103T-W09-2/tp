@@ -316,11 +316,23 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
+These requirements are acceptance targets for the planned SoCdex product. They do not describe verified properties of the current application, which is still being evolved from AddressBook-Level3.
 
-*{More to be added}*
+1. **Local operation**: SoCdex should provide all of its features without a network connection, and should not send roster data (student profiles, contact routes, and enrolments) over a network. This requirement covers SoCdex's own handling of roster data, not how a tutor copies or shares the data file.
+2. **Single-user operation**: SoCdex is planned for one tutor managing their own roster. Its operating model excludes several people using one SoCdex installation on a shared computer and the routine sharing of the data file between users, for example through shared storage. This is an operating assumption, not an access-control feature: SoCdex does not authenticate users or prevent the data file from being copied or shared.
+3. **Local data file**: SoCdex should store the roster on the tutor's computer in a human-editable text file, without using a database management system.
+4. **Search response time**: With a roster of up to 500 student profiles, a search by name or contact route should display its result message and result list within one second of the tutor submitting the command, once SoCdex has finished loading the roster. The proposed reference configuration for checking this is a laptop with an Intel Core i5-1035G1 processor (4 cores), 8 GB of RAM, and SSD storage, running Windows 11 and Java 25, using a benchmark roster of 500 profiles with 1,000 enrolments in total (one to three per profile). These are benchmark conditions, not limits on roster size, enrolments per student, or supported hardware.
+5. **Distinguishable results**: Each student profile in a list of search results should show the student's name, NUS email, and enrolments (module-semester, with tutorial section and project team where recorded), so that a tutor can tell apart students with the same or similar names without checking another source.
+6. **Readable values**: Long valid values, such as a name at the maximum allowed length, and long lists of enrolments should remain fully readable through the layout, wrapping, or scrolling. SoCdex should not silently truncate a value or make it inaccessible; in particular, each student's complete NUS email should remain readable. Results and error messages should be understandable from their text, without relying on colour alone.
+7. **Screen resolution**: The GUI should work well at screen resolutions of 1920x1080 and higher with screen scales of 100% and 125%, and should remain usable (all functions available, even if less convenient) at resolutions of 1280x720 and higher with a screen scale of 150%.
+8. **Keyboard-first use**: Every roster task should be possible by typing commands, without using a mouse. After each command result, keyboard focus should be in the command box, and a rejected command should remain there for correction.
+9. **Platform compatibility**: SoCdex should work on Windows, Linux, and macOS computers that have Java 25 installed (and no other Java version), without relying on operating-system-specific features.
+10. **Portable distribution**: SoCdex is planned to be distributed as a single JAR file of at most 100 MB that includes JavaFX and its other required libraries, and should run without an installer.
+11. **Invalid input**: When a command is invalid, SoCdex should reject the whole command, leave the roster unchanged, and show a message that states the problem and how to correct it.
+12. **Saving changes**: A command that changes roster data should report success only after the change has been saved. A command that succeeds without changing roster data, such as a search or an edit that supplies the current values, should not rewrite the data file. If SoCdex detects that saving failed, it should say that the change was not saved, keep the roster as it was before the command, and leave the previously saved data file intact.
+13. **Unreadable data file**: If the existing data file cannot be read or contains invalid data, for example after a manual edit, SoCdex should tell the tutor that the stored data could not be loaded, and should preserve that file rather than overwrite or delete it.
+
+Requirements 11 to 13 cover failures that SoCdex can detect. They do not guarantee protection against hardware faults, power loss, or deliberate changes that leave the data file valid but wrong.
 
 ### Glossary
 
