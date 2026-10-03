@@ -3,13 +3,35 @@
 
 ![Ui](docs/images/Ui.png)
 
-* This is **a sample project for Software Engineering (SE) students**.<br>
-  Example usages:
-  * as a starting point of a course project (as opposed to writing everything from scratch)
-  * as a case study
-* The project simulates an ongoing software project for a desktop application (called _AddressBook_) used for managing contact details.
-  * It is **written in an object-oriented programming (OOP) style** and provides a **reasonably well-written** codebase of about 6 KLoC. It is **larger** than what students typically write in beginner-level software-engineering modules, without being overwhelming.
-  * It comes with a **reasonable level of user and developer documentation**.
-* It is named `AddressBook Level 3` (`AB3` for short) because it was initially created as a part of a series of `AddressBook` projects (`Level 1`, `Level 2`, `Level 3` ...).
-* For the detailed documentation of this project, see the **[Address Book Product Website](https://se-education.org/addressbook-level3)**.
-* This project is a **part of the se-education.org** initiative. If you would like to contribute code to this project, see [se-education.org](https://se-education.org/#contributing-to-se-edu) for more info.
+# SoCdex
+
+SoCdex is a planned desktop roster manager for NUS School of Computing tutors. It is designed for tutors who manage students across multiple tutorial sections and project teams in project-based modules.
+
+Tutors often need to compare information from Canvas, spreadsheets, technical platforms, and personal records before they can identify or contact a student. SoCdex will connect each student's identity, contact routes, module-semester enrolments, tutorial sections, and project teams in one local application.
+
+## Why SoCdex?
+
+SoCdex will provide a keyboard-first workflow for tutors who prefer typed commands. A tutor will be able to identify the correct student, verify the relevant module and group context, and obtain a reliable contact route without switching between several sources. The application will store only the information needed for this workflow and will operate without a remote server.
+
+## Planned core capabilities
+
+SoCdex is planned to support the following capabilities:
+
+* Add and update student profiles with names.
+* Record NUS email addresses and optional contact details such as Telegram usernames and GitHub usernames.
+* Associate students with module-semester enrolments, tutorial sections, and project teams.
+* Find students using known identifiers and group information.
+* Show enough context to distinguish students with similar details.
+
+SoCdex is not intended to manage grades, attendance, submissions, schedules, disciplinary records, or teaching materials. It will not replace Canvas or other learning management systems.
+
+## Documentation
+
+* [User Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/UserGuide.html)
+* [Developer Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/DeveloperGuide.html)
+* [About Us](https://ay2627s1-cs2103t-w09-2.github.io/tp/AboutUs.html)
+* [Project repository](https://github.com/AY2627S1-CS2103T-W09-2/tp)
+
+## Acknowledgements
+
+SoCdex is based on the [AddressBook-Level3 project](https://se-education.org/addressbook-level3/) created by the [SE-EDU initiative](https://se-education.org/).
