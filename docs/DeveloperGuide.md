@@ -291,7 +291,86 @@ The following use cases describe **planned SoCdex behaviour**, not features alre
 For all use cases, the **System** is **SoCdex** and the **Actor** is a **tutor**.
 A student profile contains identity and contact details; each enrolment records one module-semester and its optional tutorial section and project team.
 
-#### UC1: Identify a student in the correct teaching context
+#### UC1: Add a student profile
+
+**Preconditions:** Stored data has loaded successfully and storage is writable. The tutor has the student's name and NUS email.
+
+**Main success scenario (MSS)**
+
+1. Tutor requests a new profile with the student's name and NUS email, optionally supplying Telegram and GitHub identifiers.
+1. SoCdex validates the supplied fields and checks that the normalised NUS email is not already used.
+1. SoCdex saves the new profile without creating any enrolments or changing existing profiles.
+1. SoCdex confirms creation and displays the saved profile, showing absent optional contact details as not provided.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. Required details are missing or a supplied field is invalid.
+
+    * 2a1. SoCdex explains the validation problem and creates nothing.
+    * 2a2. Tutor corrects the request.
+
+      Use case resumes at step 2.
+
+* 2b. Another profile already uses the normalised NUS email.
+
+    * 2b1. SoCdex reports the duplicate and leaves the existing profile unchanged.
+    * 2b2. Tutor checks the existing profile rather than creating another record for the same email.
+
+      Use case ends.
+
+* 3a. Saving fails.
+
+    * 3a1. SoCdex reports failure and preserves the prior in-memory roster and saved file; no partial profile remains.
+    * 3a2. Tutor corrects the storage problem before retrying.
+
+      Use case resumes at step 1.
+
+#### UC2: Add a module-semester enrolment
+
+**Preconditions:** The student profile exists, stored data has loaded successfully, and storage is writable.
+
+**Main success scenario (MSS)**
+
+1. Tutor requests an enrolment using the student's NUS email, module, and semester, optionally supplying a tutorial section and project team.
+1. SoCdex validates the fields, locates the profile, and checks that it has no enrolment for the same module-semester.
+1. SoCdex saves one enrolment linked to that profile, preserving the student's contact details and all existing enrolments.
+1. SoCdex displays the saved module-semester and affiliations, showing an omitted section or team as not assigned.
+
+    Use case ends.
+
+**Extensions**
+
+* 2a. Required fields are missing or any supplied value is invalid.
+
+    * 2a1. SoCdex explains the input problem and adds nothing.
+    * 2a2. Tutor corrects the request.
+
+      Use case resumes at step 2.
+
+* 2b. The NUS email does not identify an existing profile.
+
+    * 2b1. SoCdex reports the missing student and creates neither a profile nor an enrolment.
+    * 2b2. Tutor checks the email or completes UC1 before trying again.
+
+      Use case resumes at step 1.
+
+* 2c. The student already has an enrolment for the same module and semester.
+
+    * 2c1. SoCdex reports the duplicate and preserves the existing affiliations.
+    * 2c2. Tutor uses UC4 if the existing section or team needs updating.
+
+      Use case ends.
+
+* 3a. Saving fails.
+
+    * 3a1. SoCdex reports failure and preserves the prior roster and saved file without leaving a partial enrolment.
+    * 3a2. Tutor corrects the storage problem before retrying.
+
+      Use case resumes at step 1.
+
+#### UC3: Identify a student in the correct teaching context
 
 **Preconditions:** The tutor has an identifier from a student interaction and knows the module and semester to check.
 
@@ -302,8 +381,9 @@ A student profile contains identity and contact details; each enrolment records 
 1. Tutor requests the intended student's full profile using its unique NUS email.
 1. SoCdex displays the student's identity, recorded contact details, and all module-semester enrolments.
 1. Tutor checks the intended module and semester, tutorial section, and project team to confirm the teaching context.
+1. Tutor obtains the recorded NUS email or an available Telegram handle for contacting the student outside SoCdex.
 
-    Use case ends.
+    Use case ends. SoCdex does not send a message or verify contact reachability.
 
 **Extensions**
 
@@ -348,44 +428,16 @@ A student profile contains identity and contact details; each enrolment records 
 
       Use case ends.
 
-#### UC2: Obtain a student's recorded contact details
+* 6a. The preferred optional contact detail is absent.
 
-**Preconditions:** The tutor has identified the intended student and verified the relevant module-semester, as in UC1.
-
-**Main success scenario (MSS)**
-
-1. Tutor requests the student's profile using its unique NUS email.
-1. SoCdex displays the name, NUS email, optional Telegram and GitHub identifiers, and all enrolments.
-1. Tutor checks the displayed identity and teaching context against the intended recipient.
-1. Tutor obtains the recorded NUS email or an available Telegram handle for contacting that student outside SoCdex.
-
-    Use case ends. SoCdex does not send a message or verify that a recorded contact is reachable.
-
-**Extensions**
-
-* 1a. The NUS email is invalid or the profile cannot be found.
-
-    * 1a1. SoCdex explains the problem without changing stored records.
-    * 1a2. Tutor returns to UC1 to identify the student again.
+    * 6a1. SoCdex indicates that the optional detail is not provided.
+    * 6a2. Tutor obtains the required NUS email instead.
 
       Use case ends.
 
-* 3a. The identity or module-semester does not match the intended recipient.
+#### UC4: Update a student's tutorial section or project team
 
-    * 3a1. Tutor returns to UC1 without using this profile's contact details.
-
-      Use case ends.
-
-* 4a. The preferred optional contact detail is absent.
-
-    * 4a1. SoCdex explicitly indicates that the optional detail is not provided.
-    * 4a2. Tutor obtains the required NUS email instead.
-
-      Use case ends.
-
-#### UC3: Update a student's tutorial section or project team
-
-**Preconditions:** The tutor has identified the student and knows the intended module-semester and revised affiliation.
+**Preconditions:** The tutor has identified the student and knows the intended module-semester and revised affiliation. Stored data has loaded successfully and storage is writable.
 
 **Main success scenario (MSS)**
 
@@ -402,7 +454,7 @@ A student profile contains identity and contact details; each enrolment records 
 * 1a. The NUS email is invalid or the profile cannot be found.
 
     * 1a1. SoCdex explains the problem without changing stored records.
-    * 1a2. Tutor returns to UC1 to identify the student again.
+    * 1a2. Tutor returns to UC3 to identify the student again.
 
       Use case ends.
 
@@ -432,6 +484,63 @@ A student profile contains identity and contact details; each enrolment records 
     * 3d1. SoCdex reports that no values changed and treats the valid request as successful.
 
       Use case ends.
+
+* 4a. Saving the update fails.
+
+    * 4a1. SoCdex reports that the change was not saved and preserves the prior roster and data file.
+    * 4a2. Tutor corrects the storage problem before retrying.
+
+      Use case resumes at step 3.
+
+#### UC5: Delete a student profile with confirmation
+
+**Preconditions:** The target profile exists, stored data has loaded successfully, and storage is writable.
+
+**Main success scenario (MSS)**
+
+1. Tutor requests deletion using the intended student's NUS email.
+1. SoCdex displays the exact profile and total number of enrolments to remove, and records one pending deletion without changing stored data.
+1. Tutor checks the displayed identity and enrolments, then submits explicit confirmation for the same NUS email as the next command.
+1. SoCdex validates the matching pending target and saves removal of that profile and all its enrolments together, preserving every other student.
+1. SoCdex reports successful deletion and clears the pending action and selected profile.
+
+    Use case ends. This deletion has no built-in undo.
+
+**Extensions**
+
+* 1a. The request contains invalid input or identifies no existing student.
+
+    * 1a1. SoCdex explains the problem and deletes nothing.
+    * 1a2. Tutor checks the target and corrects the request.
+
+      Use case resumes at step 1.
+
+* 3a. Tutor submits another command, including a blank or invalid command, or selects a different profile.
+
+    * 3a1. SoCdex cancels the pending deletion and states that it was cancelled before processing the new action.
+    * 3a2. No deletion occurs from the cancelled request; a fresh preview is needed before confirmation.
+
+      Use case ends.
+
+* 3b. The application closes or restarts before confirmation.
+
+    * 3b1. SoCdex discards the pending action without deleting the student or enrolments.
+
+      Use case ends.
+
+* 4a. Confirmation is malformed, names a different student, has no pending target, or the target no longer exists.
+
+    * 4a1. SoCdex explains the problem, clears any pending deletion, and changes no roster data.
+    * 4a2. Tutor must request a fresh deletion preview before trying again.
+
+      Use case resumes at step 1.
+
+* 4b. Saving the deletion fails.
+
+    * 4b1. SoCdex reports failure, preserves the complete prior profile, enrolments, and saved file, and clears the pending deletion.
+    * 4b2. Tutor corrects the storage problem and starts with a fresh preview.
+
+      Use case resumes at step 1.
 
 ### Non-Functional Requirements
 
