@@ -155,6 +155,22 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Name and email search (v1.2)
+
+`FindCommandParser` treats the complete argument as one literal query. It rejects controls and line breaks before trimming spaces and tabs, changes internal tabs to spaces, and checks the 100-code-point limit. `AddressBookParser` also validates the original command before trimming so that trailing line breaks cannot disappear before validation.
+
+`NameOrEmailContainsQueryPredicate` compares the query with names and emails using `Locale.ROOT` lowercase and contiguous substring matching. It does not split words, remove accents, or interpret prefixes, regular expressions, or wildcards. Contact-handle search remains planned for v1.3.
+
+`ModelManager` exposes a `SortedList` over its `FilteredList`. The comparator overload of `updateFilteredPersonList` filters the complete roster and sorts only the display by lowercase name, then lowercase email. Stored order and records remain unchanged. Existing commands using the single-argument overload retain their previous unsorted display behavior. Index-based commands operate on the displayed list.
+
+`CommandResult.forSearch` requests a UI selection update. `MainWindow` calls `PersonListPanel.selectOnlyResult` only after successful execution: one result is selected and scrolled into view; otherwise selection is cleared. Parse failures do not update the list or selection. Existing result cards expose all currently supported fields. Issue #65 extends profile display with contacts and enrolments.
+
+`FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other commands retain their current save behavior. Issue #58 owns the wider storage recovery and atomic-save work and must preserve this read-only path during integration.
+
+Search does not change identity or field validation. Until #59 and #63 are integrated, inherited profile creation still rejects exactly identical names and non-ASCII names. Predicate tests cover two independent same-name records, and command tests exercise case-insensitive name ties with different emails; the complete identical-name roster scenario must also be verified after email identity is integrated.
+
+Verification covers literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation

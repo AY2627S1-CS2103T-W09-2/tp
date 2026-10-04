@@ -30,6 +30,17 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
+     * Selects and reveals the sole search result, or clears selection for an ambiguous or empty result.
+     */
+    public void selectOnlyResult() {
+        personListView.getSelectionModel().clearSelection();
+        if (personListView.getItems().size() == 1) {
+            personListView.getSelectionModel().selectFirst();
+            personListView.scrollTo(0);
+        }
+    }
+
+    /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */
     class PersonListViewCell extends ListCell<Person> {
