@@ -275,18 +275,48 @@ _{Explain here how the data archiving feature will be implemented}_
 
 ### User stories
 
-Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
+These stories describe planned tutor outcomes, not currently implemented features. The backlog includes core requirements, supporting features, and future ideas; inclusion does not commit the team to implementing every story this semester.
 
-| Priority | As a …​                                    | I want to …​                     | So that I can…​                                                        |
-| -------- | ------------------------------------------ | ------------------------------ | ---------------------------------------------------------------------- |
-| `* * *`  | new user                                   | see usage instructions         | refer to instructions when I forget how to use the App                 |
-| `* * *`  | user                                       | add a new person               |                                                                        |
-| `* * *`  | user                                       | delete a person                | remove entries that I no longer need                                   |
-| `* * *`  | user                                       | find a person by name          | locate details of persons without having to go through the entire list |
-| `* *`    | user                                       | hide private contact details   | minimize chance of someone else seeing them by accident                |
-| `*`      | user with many persons in the address book | sort persons by name           | locate a person easily                                                 |
+Priorities:
 
-*{More to be added}*
+* High (`* * *`): required outcomes in the agreed M1–M8 product backlog.
+* Medium (`* *`): supporting or post-MVP capabilities to consider after the core workflow is reliable.
+* Low (`*`): future extensions outside the current-semester scope.
+
+Story IDs are retained from the project notes for traceability. Priorities follow the agreed mapping in issue #39: M1–M8 are high, S1–S12 are medium, and C1–C10 are low.
+
+| Priority | ID | As a … | I can … | So that … |
+| --- | --- | --- | --- | --- |
+| `* * *` | M1 | tutor | load fictional sample records | I can explore SoCdex safely before entering my own roster |
+| `* * *` | M2 | tutor | clear the fictional sample records | I can start with an empty roster before entering real class information |
+| `* * *` | M3 | tutor | add a student’s identity and contact details | I can identify and contact the correct person |
+| `* * *` | M4 | tutor | record a student’s module-semester, tutorial section, and project-team affiliations | I can find the student in the correct teaching context |
+| `* * *` | M5 | tutor | search using a name, NUS email, Telegram handle, or GitHub username | I can identify a student from the identifier available to me |
+| `* * *` | M6 | tutor | view a student profile and all its enrolments | I can verify contact details and affiliations together |
+| `* * *` | M7 | tutor | update a student’s editable contact details or affiliations | the roster stays useful after assignments change |
+| `* * *` | M8 | tutor | remove a profile only after confirming the exact student | I do not accidentally lose their contact details and enrolments |
+| `* *` | S1 | tutor | list students in one tutorial section | I can prepare for a section-specific activity |
+| `* *` | S2 | tutor | list students in one project team | I can quickly identify the members of that team |
+| `* *` | S3 | tutor | list students in a module-semester cohort | I can review the roster for the class I teach |
+| `* *` | S4 | tutor | list the module-semester rosters I manage | I can choose the correct cohort before working with students |
+| `* *` | S5 | tutor | see how many students are in a module-semester roster | I can notice when a roster may be incomplete |
+| `* *` | S6 | tutor | see a cohort ordered by student name | I can scan it predictably during preparation |
+| `* *` | S7 | tutor | identify enrolments missing a tutorial section or project team | I can correct incomplete affiliation records |
+| `* *` | S8 | tutor | remove a student from one module-semester while keeping their profile | a past cohort does not clutter the current roster |
+| `* *` | S9 | tutor | use in-app help | I can discover the next valid command without leaving SoCdex |
+| `* *` | S10 | tutor | receive an actionable explanation when an entry is rejected | I can correct it without guessing |
+| `* *` | S11 | tutor | create a local roster backup | I can protect contact and affiliation data before a device change or recovery event |
+| `* *` | S12 | tutor | restore a local roster backup after confirming its contents | I can recover from data loss |
+| `*` | C1 | tutor | combine section and team filters | I can narrow a large cohort to the exact group I need |
+| `*` | C2 | tutor | copy an available contact identifier from a profile | I can contact the correct student with fewer transcription errors |
+| `*` | C3 | tutor | view profiles with incomplete optional details | I can decide which contact information to request later |
+| `*` | C4 | tutor | import a structured roster file | I can avoid manually re-entering an existing class list |
+| `*` | C5 | tutor | preview import problems before any records are added | invalid data does not partly corrupt the roster |
+| `*` | C6 | tutor | export a module-semester contact list | I can use it in an approved offline preparation workflow |
+| `*` | C7 | tutor | archive a completed module-semester roster | active workspaces are uncluttered without deleting useful history |
+| `*` | C8 | tutor | restore an archived cohort to active view | I can answer follow-up questions about a past class |
+| `*` | C9 | tutor | choose whether cohort results are grouped by section or team | I can prepare the relevant group activity |
+| `*` | C10 | tutor | see which contact identifier is missing from a cohort | I can follow up on incomplete records |
 
 ### Use cases
 
