@@ -31,7 +31,7 @@ public class FindCommand extends Command {
     private final String query;
 
     /**
-     * Creates a search for a validated, whitespace-normalised query.
+     * Creates a search for a validated, whitespace-normalized query.
      */
     public FindCommand(String query) {
         this.query = requireNonNull(query);

@@ -123,6 +123,7 @@ Format: `find QUERY`
 * A single match is selected automatically. Zero or multiple matches clear the selection.
 * A blank query, more than 100 characters, a line break, or an unsupported control character is rejected. The previous results and selection remain available; correct the command and retry.
 * Searching does not change or save roster data.
+* If results cannot be displayed, the app shows `Search results could not be displayed. Try the search again.` and retains the previous results and selected profile. Retry the search.
 
 Examples using fictional records:
 
@@ -161,14 +162,14 @@ Format: `exit`
 
 ### Saving the data
 
-AddressBook automatically saves data after every command. You do not need to save manually.
+Searches (`find`) do not save or change roster data. Other successful commands currently save data automatically; you do not need to save manually.
 
 ### Editing the data file
 
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until you run a command (AddressBook saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command other than `find` saves the current roster. Still, we recommend backing up the file before editing it.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 

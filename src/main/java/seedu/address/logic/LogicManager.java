@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -42,11 +43,27 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
+        return execute(commandText, result -> { });
+    }
+
+    @Override
+    public CommandResult execute(String commandText, Consumer<CommandResult> presentSearch)
+            throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         CommandResult commandResult;
         Command command = addressBookParser.parseCommand(commandText);
+        Runnable restoreDisplay = model.createDisplayRestorePoint();
         commandResult = command.execute(model);
+
+        if (commandResult.isUpdateSelection()) {
+            try {
+                presentSearch.accept(commandResult);
+            } catch (RuntimeException | AssertionError e) {
+                restoreDisplay.run();
+                throw new CommandException(Messages.MESSAGE_SEARCH_DISPLAY_FAILURE, e);
+            }
+        }
 
         if (command.isReadOnly()) {
             return commandResult;

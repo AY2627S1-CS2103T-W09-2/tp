@@ -121,6 +121,16 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public Runnable createDisplayRestorePoint() {
+        Predicate<? super Person> previousFilter = filteredPersons.getPredicate();
+        Comparator<? super Person> previousOrder = displayedPersons.getComparator();
+        return () -> {
+            filteredPersons.setPredicate(previousFilter);
+            displayedPersons.setComparator(previousOrder);
+        };
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;

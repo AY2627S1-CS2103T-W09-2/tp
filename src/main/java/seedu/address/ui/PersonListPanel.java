@@ -1,32 +1,60 @@
 package seedu.address.ui;
 
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
-import seedu.address.commons.core.LogsCenter;
 import seedu.address.model.person.Person;
 
 /**
- * Panel containing the list of persons.
+ * Displays a prepared snapshot of the person list, independent of pending model changes.
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
-    private final Logger logger = LogsCenter.getLogger(PersonListPanel.class);
+    private final List<Region> cards = new ArrayList<>();
 
     @FXML
     private ListView<Person> personListView;
 
     /**
-     * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
+     * Creates every result card before the panel can replace the previous complete display.
      */
     public PersonListPanel(ObservableList<Person> personList) {
+        this(personList, (person, index) -> new PersonCard(person, index).getRoot());
+    }
+
+    PersonListPanel(ObservableList<Person> personList, BiFunction<Person, Integer, Region> createCard) {
         super(FXML);
-        personListView.setItems(personList);
+        ObservableList<Person> snapshot = FXCollections.observableArrayList(personList);
+        for (int i = 0; i < snapshot.size(); i++) {
+            cards.add(createCard.apply(snapshot.get(i), i + 1));
+        }
+        personListView.setItems(FXCollections.unmodifiableObservableList(snapshot));
         personListView.setCellFactory(listView -> new PersonListViewCell());
+    }
+
+    /** Returns whether this panel already represents the supplied results in the same order. */
+    public boolean hasSameResults(ObservableList<Person> persons) {
+        return personListView.getItems().equals(persons);
+    }
+
+    /** Returns the currently selected profile, or null if no row is selected. */
+    public Person getSelectedPerson() {
+        return personListView.getSelectionModel().getSelectedItem();
+    }
+
+    /** Restores a surviving selection when another command refreshes the displayed results. */
+    public void restoreSelection(Person person) {
+        personListView.getSelectionModel().clearSelection();
+        if (person != null && personListView.getItems().contains(person)) {
+            personListView.getSelectionModel().select(person);
+        }
     }
 
     /**
@@ -41,20 +69,14 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
-     * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
+     * Reuses prepared cards so scrolling cannot defer FXML loading or profile formatting until after success.
      */
     class PersonListViewCell extends ListCell<Person> {
         @Override
         protected void updateItem(Person person, boolean empty) {
             super.updateItem(person, empty);
-
-            if (empty || person == null) {
-                setGraphic(null);
-                setText(null);
-            } else {
-                setGraphic(new PersonCard(person, getIndex() + 1).getRoot());
-            }
+            setText(null);
+            setGraphic(empty || person == null ? null : cards.get(getIndex()));
         }
     }
-
 }

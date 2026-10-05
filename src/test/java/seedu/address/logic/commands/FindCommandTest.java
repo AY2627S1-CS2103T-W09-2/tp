@@ -22,9 +22,9 @@ public class FindCommandTest {
     @Test
     public void execute_phrase_matchesContiguousNameOnly() {
         Model model = new ModelManager();
-        Person alex = person("Alex Tan", "e9000001@u.nus.edu");
-        model.addPerson(person("Alex Lim", "e9000002@u.nus.edu"));
-        model.addPerson(person("Mei Tan", "e9000003@u.nus.edu"));
+        Person alex = createPerson("Alex Tan", "e9000001@u.nus.edu");
+        model.addPerson(createPerson("Alex Lim", "e9000002@u.nus.edu"));
+        model.addPerson(createPerson("Mei Tan", "e9000003@u.nus.edu"));
         model.addPerson(alex);
         CommandResult result = new FindCommand("Alex Tan").execute(model);
         assertEquals(List.of(alex), model.getFilteredPersonList());
@@ -35,9 +35,9 @@ public class FindCommandTest {
     @Test
     public void execute_repeatedSearches_searchesWholeRosterAndPreservesStoredOrder() {
         Model model = new ModelManager();
-        Person mei = person("Mei Tan", "e9000003@u.nus.edu");
-        Person alexUpper = person("Alex Tan", "e9000002@u.nus.edu");
-        Person alexLower = person("alex tan", "e9000001@u.nus.edu");
+        Person mei = createPerson("Mei Tan", "e9000003@u.nus.edu");
+        Person alexUpper = createPerson("Alex Tan", "e9000002@u.nus.edu");
+        Person alexLower = createPerson("alex tan", "e9000001@u.nus.edu");
         model.addPerson(mei);
         model.addPerson(alexUpper);
         model.addPerson(alexLower);
@@ -61,7 +61,7 @@ public class FindCommandTest {
     @Test
     public void execute_bothFieldsMatch_returnsProfileOnce() {
         Model model = new ModelManager();
-        Person alex = person("Alex Tan", "alex@u.nus.edu");
+        Person alex = createPerson("Alex Tan", "alex@u.nus.edu");
         model.addPerson(alex);
         new FindCommand("alex").execute(model);
         assertEquals(List.of(alex), model.getFilteredPersonList());
@@ -70,8 +70,8 @@ public class FindCommandTest {
     @Test
     public void execute_sortedResults_deleteUsesDisplayedIndex() throws Exception {
         Model model = new ModelManager();
-        Person mei = person("Mei Tan", "e9000003@u.nus.edu");
-        Person alex = person("Alex Tan", "e9000001@u.nus.edu");
+        Person mei = createPerson("Mei Tan", "e9000003@u.nus.edu");
+        Person alex = createPerson("Alex Tan", "e9000001@u.nus.edu");
         model.addPerson(mei);
         model.addPerson(alex);
         new FindCommand("Tan").execute(model);
@@ -91,7 +91,7 @@ public class FindCommandTest {
         assertEquals(FindCommand.class.getCanonicalName() + "{query=Alex Tan}", command.toString());
     }
 
-    private Person person(String name, String email) {
+    private Person createPerson(String name, String email) {
         return new PersonBuilder().withName(name).withEmail(email).build();
     }
 }

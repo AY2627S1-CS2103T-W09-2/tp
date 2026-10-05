@@ -74,4 +74,9 @@ public interface Model {
      * Filters the complete roster and orders only the displayed results.
      */
     void updateFilteredPersonList(Predicate<Person> predicate, Comparator<Person> comparator);
+
+    /**
+     * Captures the current filter and display order for a failed search to restore.
+     */
+    Runnable createDisplayRestorePoint();
 }
