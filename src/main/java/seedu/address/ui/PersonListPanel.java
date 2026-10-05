@@ -29,6 +29,19 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.setCellFactory(listView -> new PersonListViewCell());
     }
 
+    /** Returns the currently selected profile, or null if no row is selected. */
+    public Person getSelectedPerson() {
+        return personListView.getSelectionModel().getSelectedItem();
+    }
+
+    /** Restores selection after the model has restored a failed command's results. */
+    public void restoreSelection(Person person) {
+        personListView.getSelectionModel().clearSelection();
+        if (person != null && personListView.getItems().contains(person)) {
+            personListView.getSelectionModel().select(person);
+        }
+    }
+
     /**
      * Custom {@code ListCell} that displays the graphics of a {@code Person} using a {@code PersonCard}.
      */

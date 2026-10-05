@@ -68,4 +68,10 @@ public interface Model {
      * @throws NullPointerException if {@code predicate} is null.
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
+
+    /** Returns whether this session must preserve an unreadable saved roster. */
+    boolean isReadOnly();
+
+    /** Returns an action that restores the current roster and result filter after a failed command. */
+    Runnable createRestorePoint();
 }

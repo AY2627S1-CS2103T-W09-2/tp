@@ -88,6 +88,16 @@ public class AddCommandTest {
      */
     private class ModelStub implements Model {
         @Override
+        public boolean isReadOnly() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public Runnable createRestorePoint() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");
         }
