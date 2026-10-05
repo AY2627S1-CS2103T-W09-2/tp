@@ -1,5 +1,6 @@
 package seedu.address.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static seedu.address.testutil.Assert.assertThrows;
@@ -9,6 +10,7 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -58,6 +60,16 @@ public class JsonAddressBookStorageTest {
     @Test
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_legacyNonNusEmails_throwDataLoadingExceptionAndPreserveFile() throws Exception {
+        Path legacyFile = testFolder.resolve("legacyAddressBook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve("legacyAb3EmailAddressBook.json"), legacyFile);
+        byte[] originalBytes = Files.readAllBytes(legacyFile);
+
+        assertThrows(DataLoadingException.class, () -> new JsonAddressBookStorage(legacyFile).readAddressBook());
+        assertArrayEquals(originalBytes, Files.readAllBytes(legacyFile));
     }
 
     @Test
