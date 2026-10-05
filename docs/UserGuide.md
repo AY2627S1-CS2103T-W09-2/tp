@@ -28,7 +28,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `add n/John Doe p/98765432 e/johnd@u.nus.edu a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -79,13 +79,22 @@ Adds a person to the address book.
 
 Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
 
+* `EMAIL` must be an NUS email address: a local part followed by `@u.nus.edu`, such as `e1234567@u.nus.edu`.
+  * The local part has 1 to 64 ASCII letters, ASCII digits, dots (`.`), underscores (`_`), plus signs (`+`), or hyphens (`-`). It must start and end with an ASCII letter or digit, and it must not contain spaces or consecutive dots. Non-ASCII letters, such as accented letters, are not accepted.
+  * Letter case does not matter, and surrounding spaces and tabs are ignored. The email is saved in lowercase, so `E1234567@U.NUS.EDU` is saved as `e1234567@u.nus.edu`.
+  * Dots and plus signs are kept as entered. `alex.tan@u.nus.edu`, `alextan@u.nus.edu`, and `alex.tan+cs2103@u.nus.edu` are three different emails.
+  * The app checks only the format of the email. It does not check that the NUS account exists.
+* Each person is identified by their email. Two persons can have the same name if their emails differ. If another person already has the same email (after it is converted to lowercase), the app shows `A student with this NUS email already exists.` and does not change any data.
+
 <div markdown="span" class="alert alert-primary">:bulb: **Tip:**
 A person can have any number of tags, including zero.
 </div>
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/John Doe p/98765432 e/johnd@u.nus.edu a/John street, block 123, #01-01`
+* `add n/Betsy Crowe t/friend e/betsycrowe@u.nus.edu a/Newgate Prison p/1234567 t/criminal`
+* `add n/John Doe p/91234567 e/johndoe@u.nus.edu a/Clementi Ave 1` adds a second person named `John Doe`, because the email is different.
+* `add n/Alex Tan p/91234567 e/alex@nus.edu.sg a/Clementi Ave 1` is rejected, because the email does not end with `@u.nus.edu`.
 
 ### Listing all persons: `list`
 
@@ -104,9 +113,10 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
 * Existing values will be updated to the input values.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
+* A new `EMAIL` must follow the same rules as in `add`. You cannot change a person's email to an email that another person already has; the app then shows `A student with the new NUS email already exists.` and does not change any data. Entering a person's current email in different letter case leaves the email unchanged.
 
 Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
+*  `edit 1 p/91234567 e/johndoe@u.nus.edu` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@u.nus.edu` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
 
 ### Locating persons by name: `find`
@@ -176,6 +186,9 @@ _Details coming soon ..._
 **Q**: How do I transfer my data to another computer?<br>
 **A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
 
+**Q**: Why does my data file from an earlier version no longer load?<br>
+**A**: Every email must now be a valid NUS email (see the `add` command), and no two persons can share an email. A data file that contains another kind of email address, such as one ending in `@example.com`, or two persons with the same email, is treated as an invalid data file; see [Editing the data file](#editing-the-data-file) for what happens next. Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## Known issues
@@ -189,10 +202,10 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@u.nus.edu a/123, Clementi Rd, 1234665 t/friend t/colleague`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@u.nus.edu`
 **Find** | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List** | `list`
 **Help** | `help`
