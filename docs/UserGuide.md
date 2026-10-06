@@ -81,7 +81,7 @@ Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
 
 * `EMAIL` must be an NUS email address: a local part followed by `@u.nus.edu`, such as `e1234567@u.nus.edu`.
   * The local part has 1 to 64 ASCII letters, ASCII digits, dots (`.`), underscores (`_`), plus signs (`+`), or hyphens (`-`). It must start and end with an ASCII letter or digit, and it must not contain spaces or consecutive dots. Non-ASCII letters, such as accented letters, are not accepted.
-  * Letter case does not matter, and surrounding spaces and tabs are ignored. The email is saved in lowercase, so `E1234567@U.NUS.EDU` is saved as `e1234567@u.nus.edu`.
+  * Letter case does not matter, and surrounding spaces and tabs are ignored. The email is saved in lowercase, so `E1234567@U.NUS.EDU` is saved as `e1234567@u.nus.edu`. If you edit the data file directly, write each email in this saved form; the app does not convert emails in the data file.
   * Dots and plus signs are kept as entered. `alex.tan@u.nus.edu`, `alextan@u.nus.edu`, and `alex.tan+cs2103@u.nus.edu` are three different emails.
   * The app checks only the format of the email. It does not check that the NUS account exists.
 * Each person is identified by their email. Two persons can have the same name if their emails differ. If another person already has the same email (after it is converted to lowercase), the app shows `A student with this NUS email already exists.` and does not change any data.
@@ -187,7 +187,7 @@ _Details coming soon ..._
 **A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
 
 **Q**: Why does my data file from an earlier version no longer load?<br>
-**A**: Every email must now be a valid NUS email (see the `add` command), and no two persons can share an email. A data file that contains another kind of email address, such as one ending in `@example.com`, or two persons with the same email, is treated as an invalid data file; see [Editing the data file](#editing-the-data-file) for what happens next. Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed.
+**A**: Every email must now be a valid NUS email (see the `add` command), and no two persons can share an email. In the data file, each email must also already be in its saved form: all lowercase, with no spaces or tabs before or after it. Commands such as `add` convert uppercase letters and remove surrounding spaces and tabs, but the app does not convert emails in the data file. A data file that contains another kind of email address (such as one ending in `@example.com`), an email that is not in its saved form (such as `E1234567@u.nus.edu`), or two persons with the same email is treated as an invalid data file; see [Editing the data file](#editing-the-data-file) for what happens next. Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed.
 
 --------------------------------------------------------------------------------------------------------------------
 
