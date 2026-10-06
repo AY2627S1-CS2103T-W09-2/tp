@@ -3,12 +3,15 @@ package seedu.address.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import seedu.address.commons.core.GuiSettings;
@@ -17,6 +20,7 @@ import seedu.address.logic.Logic;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.person.Person;
 
 /**
  * The Main Window. Provides the basic application layout containing
@@ -30,6 +34,7 @@ public class MainWindow extends UiPart<Stage> {
 
     private Stage primaryStage;
     private Logic logic;
+    private final DisplayedCommandExecutor commandExecutor;
     private Path dataFilePath;
 
     // Independent Ui parts residing in this Ui container
@@ -63,6 +68,8 @@ public class MainWindow extends UiPart<Stage> {
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        commandExecutor = new DisplayedCommandExecutor(logic, this::isPersonListCurrent,
+                this::presentSearch, this::refreshPersonList);
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -114,7 +121,7 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = createPersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         resultDisplay = new ResultDisplay();
@@ -171,6 +178,49 @@ public class MainWindow extends UiPart<Stage> {
         return personListPanel;
     }
 
+    /** Creates a detached panel so a failed card never replaces the current results. */
+    PersonListPanel createPersonListPanel(ObservableList<Person> persons) {
+        return new PersonListPanel(persons);
+    }
+
+    private void presentSearch(CommandResult result) {
+        PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
+        replacement.selectOnlyResult();
+        prepareAndReplacePersonListPanel(replacement);
+    }
+
+    private boolean isPersonListCurrent() {
+        return personListPanel.hasSameResults(logic.getFilteredPersonList());
+    }
+
+    private void refreshPersonList() {
+        PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
+        replacement.restoreSelection(personListPanel.getSelectedPerson());
+        prepareAndReplacePersonListPanel(replacement);
+    }
+
+    private void prepareAndReplacePersonListPanel(PersonListPanel replacement) {
+        Region root = replacement.getRoot();
+        Scene preparationScene = new Scene(root);
+        preparationScene.getStylesheets().setAll(primaryStage.getScene().getStylesheets());
+        root.resize(personListPanelPlaceholder.getWidth(), personListPanelPlaceholder.getHeight());
+        root.applyCss();
+        root.layout();
+        preparationScene.setRoot(new StackPane());
+        replacePersonListPanel(replacement);
+    }
+
+    private void replacePersonListPanel(PersonListPanel replacement) {
+        PersonListPanel previous = personListPanel;
+        try {
+            personListPanelPlaceholder.getChildren().setAll(replacement.getRoot());
+            personListPanel = replacement;
+        } catch (RuntimeException | AssertionError e) {
+            personListPanelPlaceholder.getChildren().setAll(previous.getRoot());
+            throw e;
+        }
+    }
+
     /**
      * Executes the command and returns the result.
      *
@@ -178,7 +228,7 @@ public class MainWindow extends UiPart<Stage> {
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
-            CommandResult commandResult = logic.execute(commandText);
+            CommandResult commandResult = commandExecutor.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 

@@ -36,6 +36,16 @@ public class CommandResultTest {
     }
 
     @Test
+    public void searchResult_requestsSelectionOnlyForSearch() {
+        CommandResult search = CommandResult.forSearch("feedback");
+        assertTrue(search.isUpdateSelection());
+        assertFalse(new CommandResult("feedback").isUpdateSelection());
+        assertNotEquals(search, new CommandResult("feedback"));
+        assertEquals(search, CommandResult.forSearch("feedback"));
+        assertEquals(search.hashCode(), CommandResult.forSearch("feedback").hashCode());
+    }
+
+    @Test
     public void hashcode() {
         CommandResult commandResult = new CommandResult("feedback");
 
@@ -57,7 +67,7 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + "}";
+                + ", exit=" + commandResult.isExit() + ", updateSelection=" + commandResult.isUpdateSelection() + "}";
         assertEquals(expected, commandResult.toString());
     }
 }

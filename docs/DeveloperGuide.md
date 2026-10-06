@@ -155,6 +155,22 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Name and email search (v1.2)
+
+`FindCommandParser` treats the complete argument as one literal query. It rejects controls and line breaks before trimming spaces and tabs, changes internal tabs to spaces, and checks the 100-code-point limit. `AddressBookParser` also validates the original command before trimming so that trailing line breaks cannot disappear before validation.
+
+`NameOrEmailContainsQueryPredicate` compares the query with names and emails using `Locale.ROOT` lowercase and contiguous substring matching. It does not split words, remove accents, or interpret prefixes, regular expressions, or wildcards. Contact-handle search remains planned for v1.3.
+
+`ModelManager` exposes a `SortedList` over its `FilteredList`. The comparator overload of `updateFilteredPersonList` filters the complete roster and sorts only the display by lowercase name, then lowercase email. Stored order and records remain unchanged. Existing commands using the single-argument overload retain their previous unsorted display behavior. Index-based commands operate on the displayed list.
+
+`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. Issue #65 extends profile display with contacts and enrolments.
+
+`FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other commands retain their current save behavior. Issue #58 owns the wider storage recovery and atomic-save work and must preserve this read-only path during integration.
+
+Search does not change identity or field validation. Until #59 and #63 are integrated, inherited profile creation still rejects exactly identical names and non-ASCII names. Predicate tests cover two independent same-name records, and command tests exercise case-insensitive name ties with different emails; the complete identical-name roster scenario must also be verified after email identity is integrated.
+
+Verification covers literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
