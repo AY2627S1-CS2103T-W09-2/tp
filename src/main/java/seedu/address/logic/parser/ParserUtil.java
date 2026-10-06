@@ -1,6 +1,7 @@
 package seedu.address.logic.parser;
 
 import static java.util.Objects.requireNonNull;
+import static seedu.address.logic.Messages.MESSAGE_SINGLE_LINE;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,6 +22,16 @@ import seedu.address.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+
+    /**
+     * Rejects line breaks and control characters other than horizontal tabs.
+     */
+    public static void requireSingleLine(String text) throws ParseException {
+        if (text.codePoints().anyMatch(codePoint -> (Character.isISOControl(codePoint) && codePoint != '\t')
+                || codePoint == 0x2028 || codePoint == 0x2029)) {
+            throw new ParseException(MESSAGE_SINGLE_LINE);
+        }
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
