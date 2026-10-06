@@ -34,6 +34,7 @@ public class MainWindow extends UiPart<Stage> {
 
     private Stage primaryStage;
     private Logic logic;
+    private final DisplayedCommandExecutor commandExecutor;
     private Path dataFilePath;
 
     // Independent Ui parts residing in this Ui container
@@ -67,6 +68,8 @@ public class MainWindow extends UiPart<Stage> {
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        commandExecutor = new DisplayedCommandExecutor(logic, this::isPersonListCurrent,
+                this::presentSearch, this::refreshPersonList);
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -183,6 +186,20 @@ public class MainWindow extends UiPart<Stage> {
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
         replacement.selectOnlyResult();
+        prepareAndReplacePersonListPanel(replacement);
+    }
+
+    private boolean isPersonListCurrent() {
+        return personListPanel.hasSameResults(logic.getFilteredPersonList());
+    }
+
+    private void refreshPersonList() {
+        PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
+        replacement.restoreSelection(personListPanel.getSelectedPerson());
+        prepareAndReplacePersonListPanel(replacement);
+    }
+
+    private void prepareAndReplacePersonListPanel(PersonListPanel replacement) {
         Region root = replacement.getRoot();
         Scene preparationScene = new Scene(root);
         preparationScene.getStylesheets().setAll(primaryStage.getScene().getStylesheets());
@@ -211,12 +228,7 @@ public class MainWindow extends UiPart<Stage> {
      */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         try {
-            CommandResult commandResult = logic.execute(commandText, this::presentSearch);
-            if (!commandResult.isUpdateSelection() && !personListPanel.hasSameResults(logic.getFilteredPersonList())) {
-                PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
-                replacement.restoreSelection(personListPanel.getSelectedPerson());
-                replacePersonListPanel(replacement);
-            }
+            CommandResult commandResult = commandExecutor.execute(commandText);
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 

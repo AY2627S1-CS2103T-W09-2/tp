@@ -134,6 +134,8 @@ Examples using fictional records:
 
 Telegram and GitHub searches are not available in v1.2. Complete enrolment details and the `view EMAIL` command are delivered separately; this increment displays the fields currently available on each result card.
 
+If the student list cannot be refreshed after a command, the app blocks further command execution until it can show the current list. Submit again to refresh it, then check the displayed indexes before re-entering your intended command. The earlier command may already have changed data; refreshing the list does not repeat it.
+
 ### Deleting a person: `delete`
 
 Deletes the specified person from the address book.
