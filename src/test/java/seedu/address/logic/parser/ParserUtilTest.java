@@ -19,7 +19,7 @@ import seedu.address.model.person.Phone;
 import seedu.address.model.tag.Tag;
 
 public class ParserUtilTest {
-    private static final String INVALID_NAME = "R@chel";
+    private static final String INVALID_NAME = "R/chel";
     private static final String INVALID_PHONE = "+651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
@@ -71,8 +71,21 @@ public class ParserUtilTest {
     }
 
     @Test
+    public void parseName_internalSpacesAndTabs_returnsNormalisedName() throws Exception {
+        assertEquals(new Name("Rachel Walker"), ParserUtil.parseName("Rachel \t  Walker"));
+    }
+
+    @Test
+    public void parseName_controlAtBoundary_throwsParseException() {
+        for (String name : new String[] {"\u0000" + VALID_NAME, VALID_NAME + "\u0001",
+            "\n" + VALID_NAME, VALID_NAME + "\r"}) {
+            assertThrows(ParseException.class, Name.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseName(name));
+        }
+    }
+
+    @Test
     public void parseName_validValueWithWhitespace_returnsTrimmedName() throws Exception {
-        String nameWithWhitespace = WHITESPACE + VALID_NAME + WHITESPACE;
+        String nameWithWhitespace = " \t" + VALID_NAME + "\t ";
         Name expectedName = new Name(VALID_NAME);
         assertEquals(expectedName, ParserUtil.parseName(nameWithWhitespace));
     }

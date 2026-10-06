@@ -45,9 +45,12 @@ public class PersonTest {
         Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
         assertFalse(BOB.isSamePerson(editedBob));
 
-        // name has trailing spaces, all other attributes same -> returns false
-        String nameWithTrailingSpaces = VALID_NAME_BOB + " ";
-        editedBob = new PersonBuilder(BOB).withName(nameWithTrailingSpaces).build();
+        // name differs only in surrounding or repeated spaces -> same normalised name -> returns true
+        editedBob = new PersonBuilder(BOB).withName(" " + VALID_NAME_BOB.replace(" ", "  ") + " ").build();
+        assertTrue(BOB.isSamePerson(editedBob));
+
+        // a no-break space is not normalised -> returns false
+        editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.replace(" ", "\u00A0")).build();
         assertFalse(BOB.isSamePerson(editedBob));
     }
 

@@ -138,6 +138,19 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_unicodeNameWithRepeatedSpacesAndTabs_success() {
+        Person expectedPerson = new PersonBuilder(AMY).withName("Jos\u00E9 Tan").withTags().build();
+        assertParseSuccess(parser, " " + PREFIX_NAME + " Jos\u00E9 \t  Tan" + PHONE_DESC_AMY + EMAIL_DESC_AMY
+                + ADDRESS_DESC_AMY, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_nameTooLong_failure() {
+        assertParseFailure(parser, " " + PREFIX_NAME + "a".repeat(101) + PHONE_DESC_AMY + EMAIL_DESC_AMY
+                + ADDRESS_DESC_AMY, Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_compulsoryFieldMissing_failure() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
 

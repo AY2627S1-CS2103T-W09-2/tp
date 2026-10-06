@@ -18,7 +18,7 @@ import seedu.address.model.person.Name;
 import seedu.address.model.person.Phone;
 
 public class JsonAdaptedPersonTest {
-    private static final String INVALID_NAME = "R@chel";
+    private static final String INVALID_NAME = "R/chel";
     private static final String INVALID_PHONE = "+651234";
     private static final String INVALID_ADDRESS = " ";
     private static final String INVALID_EMAIL = "example.com";
@@ -51,6 +51,24 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(null, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
         String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, Name.class.getSimpleName());
         assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_unicodeName_returnsPersonWithName() throws Exception {
+        String unicodeName = "\u738B\u5C0F\u660E";
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(unicodeName, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertEquals(new Name(unicodeName), person.toModelType().getName());
+    }
+
+    @Test
+    public void toModelType_overlongOrMalformedName_throwsIllegalValueException() {
+        // 101 code points, and an isolated high surrogate inside an otherwise valid name
+        for (String invalidName : new String[] {"a".repeat(101), "Alex\uD840Tan"}) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(invalidName, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+            assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, person::toModelType);
+        }
     }
 
     @Test
