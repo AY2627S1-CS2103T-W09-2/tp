@@ -1,6 +1,7 @@
 package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static seedu.address.storage.JsonAdaptedPerson.MESSAGE_NON_NORMALISED_NAME;
 import static seedu.address.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.BENSON;
@@ -69,6 +70,37 @@ public class JsonAdaptedPersonTest {
                     new JsonAdaptedPerson(invalidName, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
             assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, person::toModelType);
         }
+    }
+
+    @Test
+    public void toModelType_normalisedName_returnsSameStoredName() throws Exception {
+        String[] storedNames = {"Alex Tan", "aLEX tAN", "Jos\u00E9 Tan", "\uD840\uDC00 Tan", // supplementary
+            "Alex\u00A0Tan", "Alex\u00A0 Tan"}; // a no-break space is significant
+        for (String storedName : storedNames) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(storedName, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+            assertEquals(storedName, person.toModelType().getName().fullName);
+        }
+    }
+
+    @Test
+    public void toModelType_nonNormalisedName_throwsIllegalValueException() {
+        String[] storedNames = {" Alex Tan", "Alex Tan ", "\tAlex Tan", "Alex Tan\t", // surrounding
+            "Alex" + " ".repeat(2) + "Tan", // repeated spaces
+            "Alex\tTan", "Alex \tTan", // tabs within the name
+            " Jos\u00E9" + " ".repeat(2) + "Tan "};
+        for (String storedName : storedNames) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(storedName, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+            assertThrows(IllegalValueException.class, MESSAGE_NON_NORMALISED_NAME, person::toModelType);
+        }
+    }
+
+    @Test
+    public void toModelType_invalidAndNonNormalisedName_reportsNameRuleFirst() {
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(" Alex/Tan ", VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+        assertThrows(IllegalValueException.class, Name.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
     @Test

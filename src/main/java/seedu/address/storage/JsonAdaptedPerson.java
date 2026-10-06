@@ -24,6 +24,8 @@ import seedu.address.model.tag.Tag;
 class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
+    public static final String MESSAGE_NON_NORMALISED_NAME =
+            "Stored name must already have normalised spaces and tabs.";
 
     private final String name;
     private final String phone;
@@ -85,6 +87,10 @@ class JsonAdaptedPerson {
             throw new IllegalValueException(Name.MESSAGE_CONSTRAINTS);
         }
         final Name modelName = new Name(name);
+        // Stored names are never corrected: the decoded stored value must already be normalised.
+        if (!modelName.fullName.equals(name)) {
+            throw new IllegalValueException(MESSAGE_NON_NORMALISED_NAME);
+        }
 
         if (phone == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Phone.class.getSimpleName()));
