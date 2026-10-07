@@ -163,10 +163,10 @@ The shared command contract is:
 
 * `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `exit` commands do so. Future `sample load` and profile mutations retain the default, so the recovery gate applies before execution.
 * Commands validate and change the model through `execute(Model)`; they must not save directly. `LogicManager` owns persistence and returns the successful `CommandResult` only after storage succeeds.
-* `Model.createRestorePoint()` captures the immutable roster records and current filter and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
+* `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
 * `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
 
-The search increment in #61 adds a display comparator. When integrating it, extend `createRestorePoint()` to capture and restore that comparator alongside the filter, retaining the `Command.isReadOnly()` contract. The profile-view increment in #65 must preserve the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
+`createRestorePoint()` reuses the search display restore point so failed saves preserve both the result filter and comparator. The profile-view increment in #65 must preserve the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
 
 `JsonAddressBookStorage` writes the complete candidate into a temporary file in the destination directory and closes it before an atomic replacement. Unsupported or failed atomic replacement is an error; there is no non-atomic fallback and the previous destination is not truncated first. Failed first saves leave no roster destination. Temporary-file cleanup is attempted on success and failure, and a cleanup error after a committed replacement is logged rather than reported as a failed save. Save attempts reject symbolic-link destinations and existing read-only files.
 
@@ -175,6 +175,22 @@ The search increment in #61 adds a display comparator. When integrating it, exte
 Protection covers detected failures, not power loss or hardware faults. The app does not implement backups, cross-process locking, or concurrent external file-edit detection. Recovery and no-op tests use temporary files and injected failures. The UI acceptance check additionally verifies the persistent warning and selected-row restoration.
 
 The startup guidance temporarily names the existing `add` command and says sample loading is unavailable. Update that text when #62/#63 deliver their commands; do not direct users to commands that have not merged.
+
+### Name and email search (v1.2)
+
+`FindCommandParser` treats the complete argument as one literal query. It rejects controls and line breaks before trimming spaces and tabs, changes internal tabs to spaces, and checks the 100-code-point limit. `AddressBookParser` also validates the original command before trimming so that trailing line breaks cannot disappear before validation.
+
+`NameOrEmailContainsQueryPredicate` compares the query with names and emails using `Locale.ROOT` lowercase and contiguous substring matching. It does not split words, remove accents, or interpret prefixes, regular expressions, or wildcards. Contact-handle search remains planned for v1.3.
+
+`ModelManager` exposes a `SortedList` over its `FilteredList`. The comparator overload of `updateFilteredPersonList` filters the complete roster and sorts only the display by lowercase name, then lowercase email. Stored order and records remain unchanged. Existing commands using the single-argument overload retain their previous unsorted display behavior. Index-based commands operate on the displayed list.
+
+`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. Issue #65 extends profile display with contacts and enrolments.
+
+`FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other read-only commands and unchanged rosters also skip persistence. Data-changing commands use the storage recovery and atomic-save contract above.
+
+Search does not change identity or field validation. Until #59 and #63 are integrated, inherited profile creation still rejects exactly identical names and non-ASCII names. Predicate tests cover two independent same-name records, and command tests exercise case-insensitive name ties with different emails; the complete identical-name roster scenario must also be verified after email identity is integrated.
+
+Verification covers literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
 
 ### \[Proposed\] Undo/redo feature
 

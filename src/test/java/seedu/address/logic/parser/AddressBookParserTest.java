@@ -3,12 +3,10 @@ package seedu.address.logic.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_SINGLE_LINE;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +21,6 @@ import seedu.address.logic.commands.HelpCommand;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.RemarkCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
-import seedu.address.model.person.NameContainsKeywordsPredicate;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Remark;
 import seedu.address.testutil.EditPersonDescriptorBuilder;
@@ -71,10 +68,11 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_find() throws Exception {
-        List<String> keywords = List.of("foo", "bar", "baz");
-        FindCommand command = (FindCommand) parser.parseCommand(
-                FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(keywords)), command);
+        assertEquals(new FindCommand("foo bar baz"), parser.parseCommand("find foo bar baz"));
+        assertEquals(new FindCommand("Alex  Tan"), parser.parseCommand(" \tfind\tAlex  Tan\t"));
+        for (String command : new String[] {"find Alex\n", "\0find Alex", "find Alex\u2028Tan"}) {
+            assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () -> parser.parseCommand(command));
+        }
     }
 
     @Test

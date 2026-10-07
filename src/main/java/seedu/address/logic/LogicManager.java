@@ -2,6 +2,7 @@ package seedu.address.logic;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -29,7 +30,6 @@ public class LogicManager implements Logic {
     public static final String MESSAGE_READ_ONLY = "Data changes are disabled because stored data could not be loaded. "
             + "Restore a valid data file and restart SoCdex.";
 
-
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
@@ -47,6 +47,12 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
+        return execute(commandText, result -> { });
+    }
+
+    @Override
+    public CommandResult execute(String commandText, Consumer<CommandResult> presentSearch)
+            throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = addressBookParser.parseCommand(commandText);
@@ -64,12 +70,22 @@ public class LogicManager implements Logic {
             throw e;
         }
 
-        if (previousData.equals(model.getAddressBook())) {
-            return commandResult;
-        }
-        if (command.isReadOnly()) {
+        if (command.isReadOnly() && !previousData.equals(model.getAddressBook())) {
             restore.run();
             throw new CommandException("A read-only command attempted to change roster data. No data was changed.");
+        }
+
+        if (commandResult.isUpdateSelection()) {
+            try {
+                presentSearch.accept(commandResult);
+            } catch (RuntimeException | AssertionError e) {
+                restore.run();
+                throw new CommandException(Messages.MESSAGE_SEARCH_DISPLAY_FAILURE, e);
+            }
+        }
+
+        if (previousData.equals(model.getAddressBook())) {
+            return commandResult;
         }
 
         try {

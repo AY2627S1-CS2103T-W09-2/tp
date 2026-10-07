@@ -19,13 +19,20 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean exit;
 
+    private final boolean updateSelection;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+        this(feedbackToUser, showHelp, exit, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean updateSelection) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
+        this.updateSelection = updateSelection;
     }
 
     /**
@@ -34,6 +41,20 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    /**
+     * Returns a search result that selects the sole displayed match, or clears selection otherwise.
+     */
+    public static CommandResult forSearch(String feedbackToUser) {
+        return new CommandResult(feedbackToUser, false, false, true);
+    }
+
+    /**
+     * Returns whether the UI should select the sole result or clear selection after a search.
+     */
+    public boolean isUpdateSelection() {
+        return updateSelection;
     }
 
     public String getFeedbackToUser() {
@@ -61,12 +82,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && exit == otherCommandResult.exit
+                && updateSelection == otherCommandResult.updateSelection;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, showHelp, exit, updateSelection);
     }
 
     @Override
@@ -75,6 +97,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", showHelp)
                 .add("exit", exit)
+                .add("updateSelection", updateSelection)
                 .toString();
     }
 

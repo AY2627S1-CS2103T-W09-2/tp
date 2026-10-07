@@ -8,10 +8,12 @@ import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
+import static seedu.address.testutil.TypicalPersons.AMY;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +84,34 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void execute_search_doesNotSaveEvenWhenStorageFails() throws Exception {
+        JsonAddressBookStorage failingStorage = new JsonAddressBookStorage(temporaryFolder.resolve("roster.json")) {
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                throw new AssertionError("A search must never attempt a save.");
+            }
+        };
+        logic = new LogicManager(model, new StorageManager(failingStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
+        model.addPerson(AMY);
+        assertEquals("1 student found for \"Amy\".", logic.execute("find Amy").getFeedbackToUser());
+        assertEquals("No students found for \"missing\". Check the spelling or search with another identifier.",
+                logic.execute("find missing").getFeedbackToUser());
+        assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_invalidSearch_preservesPreviousResults() throws Exception {
+        model.addPerson(AMY);
+        logic.execute("find Amy");
+        for (String input : new String[] {"find", "find " + "x".repeat(101), "find Amy\n"}) {
+            assertThrows(ParseException.class, () -> logic.execute(input));
+            assertEquals(List.of(AMY), model.getFilteredPersonList());
+            assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+        }
     }
 
     /**

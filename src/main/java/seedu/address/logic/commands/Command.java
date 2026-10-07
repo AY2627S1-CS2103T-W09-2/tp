@@ -8,7 +8,9 @@ import seedu.address.model.Model;
  */
 public abstract class Command {
 
-    /** Returns whether execution leaves the stored roster unchanged. */
+    /**
+     * Returns whether execution leaves the stored roster unchanged.
+     */
     public boolean isReadOnly() {
         return false;
     }

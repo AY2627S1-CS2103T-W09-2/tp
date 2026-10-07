@@ -1,5 +1,6 @@
 package seedu.address.model;
 
+import java.util.Comparator;
 import java.util.function.Predicate;
 
 import javafx.collections.ObservableList;
@@ -69,9 +70,19 @@ public interface Model {
      */
     void updateFilteredPersonList(Predicate<Person> predicate);
 
+    /**
+     * Filters the complete roster and orders only the displayed results.
+     */
+    void updateFilteredPersonList(Predicate<Person> predicate, Comparator<Person> comparator);
+
     /** Returns whether this session must preserve an unreadable saved roster. */
     boolean isReadOnly();
 
-    /** Returns an action that restores the current roster and result filter after a failed command. */
+    /** Returns an action that restores the current roster, result filter, and display order after a failed command. */
     Runnable createRestorePoint();
+
+    /**
+     * Captures the current filter and display order for a failed search to restore.
+     */
+    Runnable createDisplayRestorePoint();
 }

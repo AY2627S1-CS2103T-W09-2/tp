@@ -18,12 +18,26 @@ public class Messages {
     public static final String MESSAGE_EMPTY_ROSTER = "No students in the roster. Add a student using add. "
             + "Fictional sample loading is not available in this increment.";
 
+
+    public static final String MESSAGE_SEARCH_DISPLAY_FAILURE =
+            "Search results could not be displayed. Try the search again.";
+    public static final String MESSAGE_SINGLE_LINE = "Enter one command on a single line.";
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX = "The person index provided is invalid.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d person(s) listed!";
     public static final String MESSAGE_DUPLICATE_FIELDS =
                 "Multiple values specified for the following single-valued field(s): ";
+
+    /**
+     * Formats the number of matching students and the normalized, case-preserved query.
+     */
+    public static String formatSearchResult(String query, int count) {
+        if (count == 0) {
+            return "No students found for \"" + query + "\". Check the spelling or search with another identifier.";
+        }
+        return count + (count == 1 ? " student" : " students") + " found for \"" + query + "\".";
+    }
 
     /**
      * Returns an error message indicating the duplicate prefixes.

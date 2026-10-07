@@ -8,6 +8,7 @@ import static seedu.address.testutil.TypicalPersons.BENSON;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
@@ -46,6 +48,29 @@ public class StorageSafetyTest {
                 assertEquals(original, model.getAddressBook());
                 assertEquals(List.of(ALICE), model.getFilteredPersonList());
             }
+        }
+    }
+
+    @Test
+    public void execute_failedMutation_restoresSearchOrderAndLiveFilter() throws Exception {
+        for (String command : new String[] {"delete 1", "clear", "edit 1 n/Changed Name", "remark 1 r/Changed",
+            "add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test"}) {
+            ModelManager model = createModel();
+            model.updateFilteredPersonList(person -> person.equals(ALICE) || person.equals(BENSON),
+                    Comparator.comparing((Person person) -> person.getName().fullName)
+                            .reversed());
+            AddressBook original = new AddressBook(model.getAddressBook());
+            Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")) {
+                @Override
+                public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                    throw new IOException("replacement failed");
+                }
+            });
+            assertThrows(CommandException.class, () -> logic.execute(command));
+            assertEquals(original, model.getAddressBook());
+            assertEquals(List.of(BENSON, ALICE), model.getFilteredPersonList());
+            model.deletePerson(BENSON);
+            assertEquals(List.of(ALICE), model.getFilteredPersonList());
         }
     }
 
