@@ -155,6 +155,27 @@ Classes used by multiple components are in the `seedu.address.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Enrolment storage (v1.2)
+
+Each `Person` owns an immutable list of `Enrolment` values. `getEnrolments()` returns that list in stored order. `withEnrolments(Collection<Enrolment>)` returns a new profile, preserving all existing identity, contact, remark, and tag fields. The extended `Person` constructor and `PersonBuilder.withEnrolments(...)` support fixtures and dependent features. Existing constructors create an empty list; reconstruction of an existing profile must carry its enrolments forward. The current edit and remark commands do so.
+
+An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Optional<Team>`. Missing affiliations are `Optional.empty()`, never the UI label `Not assigned`. Module codes accept 2 to 4 ASCII letters, four ASCII digits, and up to 3 final ASCII letters, and are stored uppercase. Semesters accept `AYyy/yy S1` or `AYyy/yy S2` with consecutive years interpreted within 2000–2099; they are stored uppercase with a single separator space. Section and team labels allow 1 to 30 ASCII letters, digits, spaces, or hyphens, including at least one letter or digit. They preserve case. Input normalisation trims spaces/tabs and collapses their internal runs for semesters and affiliation labels; line breaks and other unsupported characters remain invalid.
+
+`Enrolment.hasSameKey` compares module and semester only. `Person` rejects repeated keys even if their affiliations differ. Different students may own identical enrolments. Full enrolment and profile equality/hash codes include every enrolment field, so affiliation changes remain detectable by persistence. `Enrolment.DISPLAY_ORDER` sorts by academic start year, semester number, and module code for the profile-view feature; storage retains list order.
+
+`JsonAdaptedEnrolment` stores a human-editable object inside each profile:
+
+```json
+"enrolments": [
+  {"module": "CS2103T", "semester": "AY26/27 S1", "section": "T12", "team": "SEED"},
+  {"module": "CS2113T", "semester": "AY26/27 S2", "section": null, "team": null}
+]
+```
+
+Otherwise valid older profiles with no `enrolments` property load with an empty list. An explicit empty array also means no enrolments; an explicit null array, null item, malformed item, missing module/semester, invalid value, or repeated key rejects the entire load. Omitted or null `section` and `team` mean absence; empty strings are invalid. Stored strings must already equal the validated value's canonical form. Loading does not silently correct lowercase modules, semester spacing, or affiliation whitespace. Equivalent JSON escapes decode to the same valid string.
+
+This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. Integration with #58 must verify protected recovery and rollback; integration with #59 must retain canonical email identity and allow same-name students. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+
 ### Name and email search (v1.2)
 
 `FindCommandParser` treats the complete argument as one literal query. It rejects controls and line breaks before trimming spaces and tabs, changes internal tabs to spaces, and checks the 100-code-point limit. `AddressBookParser` also validates the original command before trimming so that trailing line breaks cannot disappear before validation.

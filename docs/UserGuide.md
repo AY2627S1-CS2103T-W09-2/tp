@@ -166,6 +166,12 @@ Format: `exit`
 
 Searches (`find`) do not save or change roster data. Other successful commands currently save data automatically; you do not need to save manually.
 
+### Stored enrolments
+
+Student records can store several module-semester enrolments, with optional tutorial sections and project teams. This increment supplies storage support; the `enrol` command and complete profile display are separate increments and are not available yet. Existing commands that edit a profile or its remark preserve its stored enrolments.
+
+An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
+
 ### Editing the data file
 
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
