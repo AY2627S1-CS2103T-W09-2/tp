@@ -40,7 +40,7 @@ public class FileUtil {
      * Assumes file exists
      */
     public static String readFromFile(Path file) throws IOException {
-        return new String(Files.readAllBytes(file), CHARSET);
+        return Files.readString(file);
     }
 
     /**

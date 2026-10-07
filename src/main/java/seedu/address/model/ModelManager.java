@@ -23,12 +23,18 @@ public class ModelManager implements Model {
     private final AddressBook addressBook;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final boolean isReadOnly;
     private final SortedList<Person> displayedPersons;
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
      */
     public ModelManager(ReadOnlyAddressBook addressBook, ReadOnlyUserPrefs userPrefs) {
+        this(addressBook, userPrefs, false);
+    }
+
+    /** Creates a model with a fixed recovery status for this session. */
+    public ModelManager(ReadOnlyAddressBook addressBook, ReadOnlyUserPrefs userPrefs, boolean isReadOnly) {
         requireAllNonNull(addressBook, userPrefs);
 
         logger.fine("Initializing with address book: " + addressBook + " and user prefs " + userPrefs);
@@ -36,6 +42,7 @@ public class ModelManager implements Model {
         this.addressBook = new AddressBook(addressBook);
         this.userPrefs = new UserPrefs(userPrefs);
         filteredPersons = new FilteredList<>(this.addressBook.getPersonList());
+        this.isReadOnly = isReadOnly;
         displayedPersons = new SortedList<>(filteredPersons);
     }
 
@@ -118,6 +125,23 @@ public class ModelManager implements Model {
         requireNonNull(predicate);
         displayedPersons.setComparator(comparator);
         filteredPersons.setPredicate(predicate);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return isReadOnly;
+    }
+
+    @Override
+    public Runnable createRestorePoint() {
+        AddressBook previousData = new AddressBook(addressBook);
+        Runnable restoreDisplay = createDisplayRestorePoint();
+        return () -> {
+            if (!addressBook.equals(previousData)) {
+                addressBook.resetData(previousData);
+            }
+            restoreDisplay.run();
+        };
     }
 
     @Override
