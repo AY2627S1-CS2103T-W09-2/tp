@@ -13,6 +13,7 @@ import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
 import seedu.address.storage.Storage;
@@ -21,10 +22,13 @@ import seedu.address.storage.Storage;
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_FORMAT = "Could not save data due to the following error: %s";
+    public static final String FILE_OPS_ERROR_FORMAT = "Could not save data. No data was changed. Error: %s";
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
+            "Could not save data to file %s due to insufficient permissions. No data was changed.";
+
+    public static final String MESSAGE_READ_ONLY = "Data changes are disabled because stored data could not be loaded. "
+            + "Restore a valid data file and restart SoCdex.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
@@ -51,33 +55,55 @@ public class LogicManager implements Logic {
             throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = addressBookParser.parseCommand(commandText);
-        Runnable restoreDisplay = model.createDisplayRestorePoint();
-        commandResult = command.execute(model);
+        if (model.isReadOnly() && !command.isReadOnly()) {
+            throw new CommandException(MESSAGE_READ_ONLY);
+        }
+
+        AddressBook previousData = new AddressBook(model.getAddressBook());
+        Runnable restore = model.createRestorePoint();
+        CommandResult commandResult;
+        try {
+            commandResult = command.execute(model);
+        } catch (CommandException | RuntimeException e) {
+            restore.run();
+            throw e;
+        }
+
+        if (command.isReadOnly() && !previousData.equals(model.getAddressBook())) {
+            restore.run();
+            throw new CommandException("A read-only command attempted to change roster data. No data was changed.");
+        }
 
         if (commandResult.isUpdateSelection()) {
             try {
                 presentSearch.accept(commandResult);
             } catch (RuntimeException | AssertionError e) {
-                restoreDisplay.run();
+                restore.run();
                 throw new CommandException(Messages.MESSAGE_SEARCH_DISPLAY_FAILURE, e);
             }
         }
 
-        if (command.isReadOnly()) {
+        if (previousData.equals(model.getAddressBook())) {
             return commandResult;
         }
 
         try {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
+            restore.run();
             throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
+        } catch (IOException | RuntimeException ioe) {
+            restore.run();
             throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
         }
 
         return commandResult;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return model.isReadOnly();
     }
 
     @Override

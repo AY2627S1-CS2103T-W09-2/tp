@@ -64,59 +64,53 @@ public class DisplayedCommandExecutorTest {
         CommandException failure = assertThrows(CommandException.class, () -> executor.execute("delete 1"));
         assertTrue(failure.getMessage().contains("Injected save failure"));
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
-        // Until storage rollback is integrated, the model has changed despite the failed save.
-        assertEquals(List.of(bob, carl), displayed);
+        assertEquals(List.of(alice, bob, carl), displayed);
         assertEquals(model.getFilteredPersonList(), displayed);
         Person visibleTarget = displayed.get(1);
 
         storage.isFailing = false;
         executor.execute("delete 2");
         assertFalse(model.hasPerson(visibleTarget));
-        assertEquals(List.of(bob), displayed);
-        assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
-    }
-
-    @Test
-    public void execute_failedFilteredEditThenDelete_usesRefreshedOrder() throws Exception {
-        executor.execute("find Bob");
-        assertEquals(List.of(bob), displayed);
-        storage.isFailing = true;
-        assertThrows(CommandException.class, () -> executor.execute("edit 1 n/Zoe"));
-        Person zoe = new PersonBuilder(bob).withName("Zoe").build();
-        assertEquals(List.of(alice, zoe, carl), displayed);
-        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
-
-        storage.isFailing = false;
-        executor.execute("delete 2");
-        assertFalse(model.hasPerson(zoe));
         assertEquals(List.of(alice, carl), displayed);
         assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
     @Test
-    public void execute_failedSaveAndDisplay_blocksCommandsUntilRefreshedAndResubmitted() throws Exception {
+    public void execute_failedFilteredEditThenDelete_preservesDisplayedTarget() throws Exception {
+        executor.execute("find Bob");
+        assertEquals(List.of(bob), displayed);
+        storage.isFailing = true;
+        assertThrows(CommandException.class, () -> executor.execute("edit 1 n/Zoe"));
+        assertEquals(List.of(bob), displayed);
+        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+
+        storage.isFailing = false;
+        executor.execute("delete 1");
+        assertFalse(model.hasPerson(bob));
+        assertTrue(displayed.isEmpty());
+        assertEquals(List.of(alice, carl), storage.readAddressBook().orElseThrow().getPersonList());
+    }
+
+    @Test
+    public void execute_failedSaveWithUnavailableDisplay_retainsOriginalSnapshot() throws Exception {
+        List<Person> previous = displayed;
         storage.isFailing = true;
         isDisplayFailing = true;
         CommandException failure = assertThrows(CommandException.class, () -> executor.execute("delete 1"));
         assertTrue(failure.getMessage().contains("Injected save failure"));
-        assertTrue(failure.getMessage().contains(DisplayedCommandExecutor.MESSAGE_DISPLAY_FAILURE));
-        assertEquals(List.of(alice, bob, carl), displayed);
-        assertEquals(List.of(bob, carl), model.getFilteredPersonList());
-
-        storage.isFailing = false;
-        assertThrows(CommandException.class, () -> executor.execute("delete 2"));
-        assertEquals(List.of(bob, carl), model.getFilteredPersonList());
-        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
-
-        isDisplayFailing = false;
-        CommandException refreshed = assertThrows(CommandException.class, () -> executor.execute("delete 2"));
-        assertEquals(DisplayedCommandExecutor.MESSAGE_DISPLAY_CHANGED, refreshed.getMessage());
-        assertEquals(List.of(bob, carl), displayed);
+        assertSame(previous, displayed);
         assertEquals(displayed, model.getFilteredPersonList());
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
 
-        executor.execute("delete 1");
-        assertEquals(List.of(carl), displayed);
+        assertThrows(CommandException.class, () -> executor.execute("delete 2"));
+        assertSame(previous, displayed);
+        assertEquals(displayed, model.getFilteredPersonList());
+        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+
+        storage.isFailing = false;
+        isDisplayFailing = false;
+        executor.execute("delete 2");
+        assertEquals(List.of(alice, carl), displayed);
         assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
