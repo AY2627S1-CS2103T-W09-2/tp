@@ -174,7 +174,28 @@ An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Option
 
 Otherwise valid older profiles with no `enrolments` property load with an empty list. An explicit empty array also means no enrolments; an explicit null array, null item, malformed item, missing module/semester, invalid value, or repeated key rejects the entire load. Omitted or null `section` and `team` mean absence; empty strings are invalid. Stored strings must already equal the validated value's canonical form. Loading does not silently correct lowercase modules, semester spacing, or affiliation whitespace. Equivalent JSON escapes decode to the same valid string.
 
-This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. Integration with #58 must verify protected recovery and rollback; integration with #59 must retain canonical email identity and allow same-name students. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. Integration with #59 must retain canonical email identity and allow same-name students. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+
+### Storage safety (v1.2)
+
+`MainApp.initModelManager` loads the whole roster before creating a writable model. A missing file produces an empty writable roster without creating sample records. A failed load produces an empty `ModelManager` with `isReadOnly()` fixed to `true` for that session. The initial recovery explanation and persistent status-bar warning distinguish this view from a genuinely empty saved roster. Recovery requires a valid file and a restart; no in-session switch enables writes.
+
+The shared command contract is:
+
+* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `exit` commands do so. Future `sample load` and profile mutations retain the default, so the recovery gate applies before execution.
+* Commands validate and change the model through `execute(Model)`; they must not save directly. `LogicManager` owns persistence and returns the successful `CommandResult` only after storage succeeds.
+* `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
+* `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
+
+`createRestorePoint()` reuses the search display restore point so failed saves preserve both the result filter and comparator. The profile-view increment in #65 must preserve the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
+
+`JsonAddressBookStorage` writes the complete candidate into a temporary file in the destination directory and closes it before an atomic replacement. Unsupported or failed atomic replacement is an error; there is no non-atomic fallback and the previous destination is not truncated first. Failed first saves leave no roster destination. Temporary-file cleanup is attempted on success and failure, and a cleanup error after a committed replacement is logged rather than reported as a failed save. Save attempts reject symbolic-link destinations and existing read-only files.
+
+`JsonUtil` distinguishes a definitely missing path from a path whose existence cannot be established, and requires exactly one complete non-null JSON document. `FileUtil` reads strict UTF-8; malformed bytes are rejected instead of replaced with replacement characters. Trailing garbage or additional JSON roots are rejected rather than silently ignored. Malformed JSON, invalid records, duplicate identities, and invalid adapter values reject the complete load. No records are silently dropped. This increment retains the existing identity and schema rules; NUS email identity, sample classification, and enrolments are separate changes.
+
+Protection covers detected failures, not power loss or hardware faults. The app does not implement backups, cross-process locking, or concurrent external file-edit detection. Recovery and no-op tests use temporary files and injected failures. The UI acceptance check additionally verifies the persistent warning and selected-row restoration.
+
+The startup guidance temporarily names the existing `add` command and says sample loading is unavailable. Update that text when #62/#63 deliver their commands; do not direct users to commands that have not merged.
 
 ### Name and email search (v1.2)
 
@@ -186,7 +207,7 @@ This increment adds model and persistence support. The user-facing `enrol` comma
 
 `MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. Issue #65 extends profile display with contacts and enrolments.
 
-`FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other commands retain their current save behavior. Issue #58 owns the wider storage recovery and atomic-save work and must preserve this read-only path during integration.
+`FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other read-only commands and unchanged rosters also skip persistence. Data-changing commands use the storage recovery and atomic-save contract above.
 
 Search does not change identity or field validation. Until #59 and #63 are integrated, inherited profile creation still rejects exactly identical names and non-ASCII names. Predicate tests cover two independent same-name records, and command tests exercise case-insensitive name ties with different emails; the complete identical-name roster scenario must also be verified after email identity is integrated.
 
@@ -664,7 +685,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+      Expected: The GUI opens with an empty roster and guidance to add a student. No sample records load automatically. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -696,6 +717,8 @@ testers are expected to do more *exploratory* testing.
 
 1. Dealing with missing/corrupted data files
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+   1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using the current `add` syntax and restart; the saved contact returns.
+   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `add`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
+   1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
 
 1. _{ more test cases …​ }_

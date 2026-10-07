@@ -3,14 +3,16 @@ package seedu.address.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.commons.exceptions.IllegalValueException;
-import seedu.address.commons.util.FileUtil;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyAddressBook;
 
@@ -58,7 +60,7 @@ public class JsonAddressBookStorage {
 
         try {
             return Optional.of(jsonAddressBook.get().toModelType());
-        } catch (IllegalValueException ive) {
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);
         }
@@ -82,8 +84,33 @@ public class JsonAddressBookStorage {
         requireNonNull(addressBook);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), filePath);
+        Path target = filePath.toAbsolutePath();
+        if (Files.isSymbolicLink(target) || Files.exists(target) && !Files.isWritable(target)) {
+            throw new AccessDeniedException(target.toString());
+        }
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), ".socdex-", ".tmp");
+        try {
+            writeRoster(addressBook, temporary);
+            replaceFile(temporary, target);
+        } finally {
+            try {
+                Files.deleteIfExists(temporary);
+            } catch (IOException e) {
+                // A cleanup failure must not turn a committed save into a reported failure.
+                logger.warning("Could not remove temporary roster file " + temporary);
+            }
+        }
+    }
+
+    /** Writes the complete candidate roster without touching the destination. */
+    protected void writeRoster(ReadOnlyAddressBook addressBook, Path temporary) throws IOException {
+        JsonUtil.saveJsonFile(new JsonSerializableAddressBook(addressBook), temporary);
+    }
+
+    /** Atomically replaces the destination, failing if the filesystem cannot provide this operation. */
+    protected void replaceFile(Path temporary, Path target) throws IOException {
+        Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
 }

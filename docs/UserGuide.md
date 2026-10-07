@@ -20,7 +20,7 @@ AddressBook Level 3 (AB3) is a **desktop application for managing contacts, opti
 1. Copy the file to the folder you want to use as the _home folder_ for your AddressBook.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   A GUI should appear in a few seconds. A new installation starts with an empty roster; it does not create sample records automatically. The image below illustrates the planned interface.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -164,7 +164,27 @@ Format: `exit`
 
 ### Saving the data
 
-Searches (`find`) do not save or change roster data. Other successful commands currently save data automatically; you do not need to save manually.
+SoCdex saves roster changes before reporting success. You do not need to save manually. Read-only commands (`find`, `list`, `help`, and `exit`), rejected commands, and changes that leave all stored values unchanged do not rewrite the roster file.
+
+If saving fails, the app reports that no data was changed and restores the previous roster, result list, and selected profile. Correct the file or folder permissions, or free disk space, then retry. A failed first save does not create a partial roster file. If the filesystem cannot safely replace the file, saving fails instead of overwriting it in place; use a local filesystem that supports atomic file replacement.
+
+This protects against detected loading and saving failures. It does not provide backups, undo, or guarantees against hardware failure or power loss. Use only one running instance for a roster and do not edit its file while the app is running.
+
+### Starting empty or recovering from a load failure
+
+When no saved roster exists, the app starts empty and explains how to add a student. This increment still uses the `add` syntax above. `student add` and explicit fictional sample loading are separate feature increments and are not available yet.
+
+If an existing roster is unreadable or invalid, the app preserves it and opens an empty **read-only recovery session**. The initial message is:
+
+> Stored data could not be loaded. The existing file was preserved. This session is read-only. Restore a valid data file and restart SoCdex.
+
+**Storage unavailable — read-only recovery** remains visible in the status bar, including after searches. An empty recovery view does not mean that the saved roster is empty. Data-changing commands are disabled for the entire session. Searching, listing, help, and exiting remain available. Closing the app does not overwrite the preserved roster.
+
+To recover:
+
+1. Close the app and keep a separate copy of the preserved file before making repairs.
+1. Restore a known-valid roster to the displayed data-file location, or correct invalid records and file permissions while the app is closed.
+1. Restart SoCdex. Confirm that the expected records load and the status says **Storage available** before making changes.
 
 ### Stored enrolments
 
@@ -177,7 +197,7 @@ An otherwise valid older profile without an `enrolments` property loads with no 
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
-If your changes make the data file invalid, AddressBook starts with an empty address book at the next run. The invalid file remains on disk until a successful command other than `find` saves the current roster. Still, we recommend backing up the file before editing it.<br>
+Edit the file only while the app is closed, and keep a separate copy before editing it. If your changes make it invalid, SoCdex preserves it and opens a read-only recovery session at the next run. Restore a valid file and restart; commands and normal exit do not replace the invalid roster.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
 

@@ -12,6 +12,13 @@ import seedu.address.model.person.Person;
  */
 public class Messages {
 
+    public static final String MESSAGE_LOAD_FAILURE = "Stored data could not be loaded. "
+            + "The existing file was preserved. "
+            + "This session is read-only. Restore a valid data file and restart SoCdex.";
+    public static final String MESSAGE_EMPTY_ROSTER = "No students in the roster. Add a student using add. "
+            + "Fictional sample loading is not available in this increment.";
+
+
     public static final String MESSAGE_SEARCH_DISPLAY_FAILURE =
             "Search results could not be displayed. Try the search again.";
     public static final String MESSAGE_SINGLE_LINE = "Enter one command on a single line.";
