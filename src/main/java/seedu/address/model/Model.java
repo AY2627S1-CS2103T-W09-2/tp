@@ -75,6 +75,12 @@ public interface Model {
      */
     void updateFilteredPersonList(Predicate<Person> predicate, Comparator<Person> comparator);
 
+    /** Returns whether this session must preserve an unreadable saved roster. */
+    boolean isReadOnly();
+
+    /** Returns an action that restores the current roster, result filter, and display order after a failed command. */
+    Runnable createRestorePoint();
+
     /**
      * Captures the current filter and display order for a failed search to restore.
      */

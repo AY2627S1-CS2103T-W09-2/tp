@@ -38,15 +38,15 @@ public class FindCommand extends Command {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
         model.updateFilteredPersonList(new NameOrEmailContainsQueryPredicate(query), RESULT_ORDER);
         return CommandResult.forSearch(Messages.formatSearchResult(query, model.getFilteredPersonList().size()));
-    }
-
-    @Override
-    public boolean isReadOnly() {
-        return true;
     }
 
     @Override

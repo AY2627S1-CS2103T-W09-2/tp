@@ -21,8 +21,14 @@ public class StatusBarFooter extends UiPart<Region> {
      * Creates a {@code StatusBarFooter} with the given {@code Path}.
      */
     public StatusBarFooter(Path saveLocation) {
+        this(saveLocation, false);
+    }
+
+    /** Creates a persistent storage status and file-location display. */
+    public StatusBarFooter(Path saveLocation, boolean isReadOnly) {
         super(FXML);
-        saveLocationStatus.setText(Paths.get(".").resolve(saveLocation).toString());
+        saveLocationStatus.setText((isReadOnly ? "Storage unavailable — read-only recovery | " : "Storage available | ")
+                + Paths.get(".").resolve(saveLocation));
     }
 
 }
