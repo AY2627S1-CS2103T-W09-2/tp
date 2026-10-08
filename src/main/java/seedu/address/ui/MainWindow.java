@@ -20,6 +20,7 @@ import seedu.address.logic.Logic;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.commands.exceptions.DuplicateStudentException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Person;
 
@@ -192,7 +193,11 @@ public class MainWindow extends UiPart<Stage> {
 
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
-        replacement.selectOnlyResult();
+        if (result.getSelectionTarget() == null) {
+            replacement.selectOnlyResult();
+        } else {
+            replacement.selectTarget(result.getSelectionTarget());
+        }
         prepareAndReplacePersonListPanel(replacement);
     }
 
@@ -250,7 +255,9 @@ public class MainWindow extends UiPart<Stage> {
 
             return commandResult;
         } catch (CommandException | ParseException e) {
-            personListPanel.restoreSelection(previousSelection);
+            if (!(e instanceof DuplicateStudentException)) {
+                personListPanel.restoreSelection(previousSelection);
+            }
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;

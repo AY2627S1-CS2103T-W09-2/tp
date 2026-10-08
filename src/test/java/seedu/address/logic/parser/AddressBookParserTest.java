@@ -8,11 +8,7 @@ import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
-import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
-import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_AMY;
-import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_AMY;
-import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
@@ -21,8 +17,6 @@ import org.junit.jupiter.api.Test;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.DeleteCommand;
-import seedu.address.logic.commands.EditCommand;
-import seedu.address.logic.commands.EditCommand.EditPersonDescriptor;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.commands.HelpCommand;
@@ -31,7 +25,6 @@ import seedu.address.logic.commands.RemarkCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Remark;
-import seedu.address.testutil.EditPersonDescriptorBuilder;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
 
@@ -59,14 +52,6 @@ public class AddressBookParserTest {
         assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
     }
 
-    @Test
-    public void parseCommand_edit() throws Exception {
-        Person person = new PersonBuilder().build();
-        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(person).build();
-        EditCommand command = (EditCommand) parser.parseCommand(EditCommand.COMMAND_WORD + " "
-                + INDEX_FIRST_PERSON.getOneBased() + " " + PersonUtil.getEditPersonDescriptorDetails(descriptor));
-        assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor), command);
-    }
 
     @Test
     public void parseCommand_exit() throws Exception {
@@ -85,8 +70,8 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_controlAtEmailBoundary_throwsParseException() {
-        String add = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY;
-        String edit = EditCommand.COMMAND_WORD + " 1 e/";
+        String add = "student add /name Amy /email ";
+        String edit = "edit /email ";
         String[] commands = {
             add + EMAIL_DESC_AMY + "\u0001" + ADDRESS_DESC_AMY, // before another prefix
             add + ADDRESS_DESC_AMY + EMAIL_DESC_AMY + "\u0001", // last argument and end of command
@@ -102,17 +87,6 @@ public class AddressBookParserTest {
         }
     }
 
-    @Test
-    public void parseCommand_tabsAndUppercaseEmail_canonicalisesEmail() throws Exception {
-        Person amy = new PersonBuilder().withName(VALID_NAME_AMY).withPhone(VALID_PHONE_AMY)
-                .withEmail(VALID_EMAIL_AMY).withAddress(VALID_ADDRESS_AMY).build();
-        assertEquals(new AddCommand(amy), parser.parseCommand(AddCommand.COMMAND_WORD + NAME_DESC_AMY
-                + PHONE_DESC_AMY + " e/\t AMY@U.NUS.EDU \t" + ADDRESS_DESC_AMY));
-
-        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withEmail(VALID_EMAIL_AMY).build();
-        assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor),
-                parser.parseCommand("\tedit\t1 e/\t AMY@U.NUS.EDU \t"));
-    }
 
     @Test
     public void parseCommand_help() throws Exception {

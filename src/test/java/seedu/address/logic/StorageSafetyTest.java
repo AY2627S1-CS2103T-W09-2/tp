@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
-import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
@@ -38,8 +37,9 @@ public class StorageSafetyTest {
     public void execute_failedMutations_restoreRosterAndFilter() throws Exception {
         for (IOException failure : new IOException[] {new IOException("replacement failed"),
             new AccessDeniedException("read-only file")}) {
-            for (String command : new String[] {"delete 1", "clear", "edit 1 n/Changed Name", "remark 1 r/Changed",
-                "add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test"}) {
+            for (String command : new String[] {"delete 1", "clear", "edit /email alice@u.nus.edu /github Changed",
+                "remark 1 r/Changed",
+                "student add /name Fictional Student /email demo@u.nus.edu"}) {
                 ModelManager model = createModel();
                 model.updateFilteredPersonList(ALICE::equals);
                 AddressBook original = new AddressBook(model.getAddressBook());
@@ -58,8 +58,9 @@ public class StorageSafetyTest {
 
     @Test
     public void execute_failedMutation_restoresSearchOrderAndLiveFilter() throws Exception {
-        for (String command : new String[] {"delete 1", "clear", "edit 1 n/Changed Name", "remark 1 r/Changed",
-            "add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test"}) {
+        for (String command : new String[] {"delete 1", "clear", "edit /email alice@u.nus.edu /github Changed",
+            "remark 1 r/Changed",
+            "student add /name Fictional Student /email demo@u.nus.edu"}) {
             ModelManager model = createModel();
             model.updateFilteredPersonList(person -> person.equals(ALICE) || person.equals(BENSON),
                     Comparator.comparing((Person person) -> person.getName().fullName)
@@ -89,7 +90,8 @@ public class StorageSafetyTest {
             }
         });
         AddressBook original = new AddressBook(model.getAddressBook());
-        for (String command : new String[] {"list", "find Alice", "help", "exit", "edit 1 n/Alice Pauline"}) {
+        for (String command : new String[] {"list", "find Alice", "help", "exit",
+            "edit /email alice@u.nus.edu /github clear"}) {
             logic.execute(command);
         }
         assertThrows(ParseException.class, () -> logic.execute("invalid"));
@@ -111,7 +113,8 @@ public class StorageSafetyTest {
     public void execute_recoveryRejectsAllMutationCommands() {
         ModelManager model = new ModelManager(new AddressBook(), new UserPrefs(), true);
         Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")));
-        for (String command : new String[] {"clear", "delete 1", "edit 1 n/Fictional", "remark 1 r/Test"}) {
+        for (String command : new String[] {"clear", "delete 1", "edit /email alice@u.nus.edu /github Fictional",
+            "remark 1 r/Test"}) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> logic.execute(command));
         }
     }
@@ -129,17 +132,11 @@ public class StorageSafetyTest {
 
         // duplicate creation with the existing email in another case
         assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () ->
-                logic.execute("add n/Mei Lim p/12345 e/ALICE@U.NUS.EDU a/Test"));
-        assertNothingSaved(storage, model, original, rosterFile, originalBytes);
-
-        // another profile edited to the existing email in another case
-        String editBenson = "edit " + displayedIndexOf(model, BENSON) + " e/ Alice@U.Nus.Edu";
-        assertThrows(CommandException.class, EditCommand.MESSAGE_DUPLICATE_PERSON, () ->
-                logic.execute(editBenson));
+                logic.execute("student add /name Mei Lim /email ALICE@U.NUS.EDU"));
         assertNothingSaved(storage, model, original, rosterFile, originalBytes);
 
         // a profile edited to its own email in another case changes no stored value
-        logic.execute("edit " + displayedIndexOf(model, ALICE) + " e/ALICE@U.NUS.EDU");
+        logic.execute("edit /email ALICE@U.NUS.EDU /github clear");
         assertNothingSaved(storage, model, original, rosterFile, originalBytes);
     }
 
@@ -150,14 +147,14 @@ public class StorageSafetyTest {
         CountingStorage storage = new CountingStorage(rosterFile);
         Logic logic = createLogic(model, storage);
 
-        logic.execute("add n/Mei Lim p/12345 e/ \tMEI@U.NUS.EDU\t a/Test");
+        logic.execute("student add /name Mei Lim /email \tMEI@U.NUS.EDU\t");
         assertEquals(1, storage.saves);
         assertEquals("mei@u.nus.edu", findReloadedByName(model, rosterFile, "Mei Lim").getEmail().value);
 
         Person mei = findByName(model.getAddressBook(), "Mei Lim");
-        logic.execute("edit " + displayedIndexOf(model, mei) + " e/Mei.Lim@U.Nus.EDU");
+        logic.execute("edit /email MEI@U.NUS.EDU /github Mei-Lim");
         assertEquals(2, storage.saves);
-        assertEquals("mei.lim@u.nus.edu", findReloadedByName(model, rosterFile, "Mei Lim").getEmail().value);
+        assertEquals("Mei-Lim", findReloadedByName(model, rosterFile, "Mei Lim").getGitHub().orElseThrow().value);
         assertEquals(storage.saves, storage.attempts);
     }
 
@@ -173,10 +170,10 @@ public class StorageSafetyTest {
         CountingStorage storage = new CountingStorage(rosterFile);
         storage.failNextAttempt = true;
         Logic logic = createLogic(model, storage);
-        String add = "add n/Mei Lim p/12345 e/MEI@U.NUS.EDU a/Test";
+        String add = "student add /name Mei Lim /email MEI@U.NUS.EDU";
 
         assertThrows(CommandException.class,
-                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, CountingStorage.FAILURE_MESSAGE), () ->
+                "The student could not be saved. No data was changed.", () ->
                 logic.execute(add));
         assertEquals(1, storage.attempts);
         assertEquals(0, storage.saves);

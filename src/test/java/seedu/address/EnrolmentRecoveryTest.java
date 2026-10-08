@@ -72,7 +72,8 @@ class EnrolmentRecoveryTest {
         Model model = new MainApp().initModelManager(storage, new UserPrefs());
         LogicManager logic = new LogicManager(model, storage);
         logic.execute("find Amy");
-        for (String command : new String[] {"edit 1 n/Changed Student", "remark 1 r/Changed", "delete 1", "clear"}) {
+        for (String command : new String[] {"edit /email e9000001@u.nus.edu /github Changed",
+            "remark 1 r/Changed", "delete 1", "clear"}) {
             assertThrows(CommandException.class, () -> logic.execute(command));
             assertEquals(original, model.getAddressBook());
             assertEquals(original.getPersonList(), model.getFilteredPersonList());

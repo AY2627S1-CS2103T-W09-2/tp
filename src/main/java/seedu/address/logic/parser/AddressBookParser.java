@@ -54,7 +54,7 @@ public class AddressBookParser {
         logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
 
         return switch (commandWord) {
-            case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
+            case AddCommand.COMMAND_WORD -> parseStudent(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> new ClearCommand();
@@ -70,4 +70,11 @@ public class AddressBookParser {
         };
     }
 
+    private Command parseStudent(String args) throws ParseException {
+        String stripped = args.trim();
+        if (!stripped.matches("add(?:[ \\t].*)?")) {
+            throw new ParseException("Usage: " + AddCommand.MESSAGE_USAGE);
+        }
+        return new AddCommandParser().parse(stripped.substring(3));
+    }
 }

@@ -35,7 +35,6 @@ import seedu.address.model.person.Email;
 import seedu.address.model.person.GitHub;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.Phone;
 import seedu.address.model.person.Telegram;
 import seedu.address.testutil.PersonBuilder;
 
@@ -86,14 +85,14 @@ public class JsonAddressBookStorageTest {
     public void readAddressBook_negativeFixtures_failOnlyForIntendedField() throws Exception {
         Path invalidName = TEST_DATA_FOLDER.resolve("invalidPersonAddressBook.json");
         assertLoadRejectedAndFilePreserved(invalidName, Name.MESSAGE_CONSTRAINTS);
-        Path invalidPhone = TEST_DATA_FOLDER.resolve("invalidAndValidPersonAddressBook.json");
-        assertLoadRejectedAndFilePreserved(invalidPhone, Phone.MESSAGE_CONSTRAINTS);
+        Path invalidEmail = TEST_DATA_FOLDER.resolve("invalidAndValidPersonAddressBook.json");
+        assertLoadRejectedAndFilePreserved(invalidEmail, Email.MESSAGE_CONSTRAINTS);
 
         // positive controls: correcting only the intended field makes each fixture load
         Path correctedName = copyWithReplacement(invalidName, "Hans/Muster", "Hans Muster");
         assertEquals(1, new JsonAddressBookStorage(correctedName).readAddressBook().get().getPersonList().size());
-        Path correctedPhone = copyWithReplacement(invalidPhone, "948asdf2424", "9482425");
-        assertEquals(2, new JsonAddressBookStorage(correctedPhone).readAddressBook().get().getPersonList().size());
+        Path correctedEmail = copyWithReplacement(invalidEmail, "invalid-email", "other@u.nus.edu");
+        assertEquals(2, new JsonAddressBookStorage(correctedEmail).readAddressBook().get().getPersonList().size());
     }
 
     @Test
@@ -286,8 +285,8 @@ public class JsonAddressBookStorageTest {
      * contacts and the sample classification. With no members, the record has neither contacts nor a classification.
      */
     private static String personJsonWith(String name, String jsonEscapedEmail, String... members) {
-        StringBuilder record = new StringBuilder("{ \"name\": \"" + name + "\", \"phone\": \"91234567\", \"email\": \""
-                + jsonEscapedEmail + "\", \"address\": \"Clementi Ave 1\", ");
+        StringBuilder record = new StringBuilder("{ \"name\": \"" + name + "\", \"email\": \""
+                + jsonEscapedEmail + "\", ");
         for (String member : members) {
             record.append(member).append(", ");
         }

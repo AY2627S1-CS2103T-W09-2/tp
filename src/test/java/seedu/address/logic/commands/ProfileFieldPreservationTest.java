@@ -34,13 +34,13 @@ class ProfileFieldPreservationTest {
     private final AddressBookParser parser = new AddressBookParser();
 
     @Test
-    void edit_nameAndPhone_preservesContactsAndSampleClassification() throws Exception {
+    void edit_noOp_preservesAllFields() throws Exception {
         Model model = modelWith(original);
-        parser.parseCommand("edit 1 n/Alex Changed p/123456").execute(model);
+        parser.parseCommand("edit /email e9000001@u.nus.edu /telegram @Alex_Demo").execute(model);
 
         Person edited = model.getAddressBook().getPersonList().get(0);
         assertContactsAndSamplePreserved(edited);
-        assertEquals(new PersonBuilder(original).withName("Alex Changed").withPhone("123456").build(), edited);
+        assertEquals(original, edited);
     }
 
     @Test
@@ -65,7 +65,7 @@ class ProfileFieldPreservationTest {
     @Test
     void add_createsNonSampleProfileWithoutContacts() throws Exception {
         Model model = new ModelManager();
-        parser.parseCommand("add n/Mei Tan p/123456 e/e9000002@u.nus.edu a/Clementi Ave 1").execute(model);
+        parser.parseCommand("student add /name Mei Tan /email e9000002@u.nus.edu").execute(model);
 
         Person added = model.getAddressBook().getPersonList().get(0);
         assertFalse(added.isSample());

@@ -18,12 +18,10 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.enrolment.Enrolment;
-import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.GitHub;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
-import seedu.address.model.person.Phone;
 import seedu.address.model.person.Remark;
 import seedu.address.model.person.Telegram;
 import seedu.address.model.tag.Tag;
@@ -45,9 +43,7 @@ class JsonAdaptedPerson {
     public static final String MESSAGE_INVALID_SAMPLE = "Person's sample classification must be true or false.";
 
     private final String name;
-    private final String phone;
     private final String email;
-    private final String address;
     private final String remark;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
     private final List<JsonAdaptedEnrolment> enrolments = new ArrayList<>();
@@ -60,13 +56,10 @@ class JsonAdaptedPerson {
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
      */
     @JsonCreator
-    public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
-            @JsonProperty("email") String email, @JsonProperty("address") String address,
+    public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("email") String email,
             @JsonProperty("remark") String remark, @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
-        this.phone = phone;
         this.email = email;
-        this.address = address;
         this.remark = remark;
         if (tags != null) {
             this.tags.addAll(tags);
@@ -76,8 +69,8 @@ class JsonAdaptedPerson {
     /**
      * Constructs a non-sample {@code JsonAdaptedPerson} without contacts, for tests of the other fields.
      */
-    JsonAdaptedPerson(String name, String phone, String email, String address, List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, "", tags);
+    JsonAdaptedPerson(String name, String email, List<JsonAdaptedTag> tags) {
+        this(name, email, "", tags);
         sample = BooleanNode.FALSE;
     }
 
@@ -87,9 +80,7 @@ class JsonAdaptedPerson {
     public JsonAdaptedPerson(Person source) {
         enrolments.addAll(source.getEnrolments().stream().map(JsonAdaptedEnrolment::new).collect(Collectors.toList()));
         name = source.getName().fullName;
-        phone = source.getPhone().value;
         email = source.getEmail().value;
-        address = source.getAddress().value;
         telegram = source.getTelegram().map(handle -> TextNode.valueOf(handle.value)).orElse(null);
         github = source.getGitHub().map(username -> TextNode.valueOf(username.value)).orElse(null);
         sample = BooleanNode.valueOf(source.isSample());
@@ -97,6 +88,20 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+    }
+
+    /** Rejects retired fields, even if null, rather than silently discarding legacy data. */
+    @JsonSetter("phone")
+    public void rejectPhone(JsonNode ignored) {
+        throw new IllegalArgumentException(
+                "Stored phone fields are no longer supported. Preserve and migrate the file.");
+    }
+
+    /** Rejects retired fields, even if null, rather than silently discarding legacy data. */
+    @JsonSetter("address")
+    public void rejectAddress(JsonNode ignored) {
+        throw new IllegalArgumentException(
+                "Stored address fields are no longer supported. Preserve and migrate the file.");
     }
 
     /** Reads the stored Telegram handle; an omitted or null property means no handle. */
@@ -150,14 +155,6 @@ class JsonAdaptedPerson {
             throw new IllegalValueException(MESSAGE_NON_NORMALISED_NAME);
         }
 
-        if (phone == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Phone.class.getSimpleName()));
-        }
-        if (!Phone.isValidPhone(phone)) {
-            throw new IllegalValueException(Phone.MESSAGE_CONSTRAINTS);
-        }
-        final Phone modelPhone = new Phone(phone);
-
         if (email == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName()));
         }
@@ -169,14 +166,6 @@ class JsonAdaptedPerson {
         if (!modelEmail.value.equals(email)) {
             throw new IllegalValueException(MESSAGE_NON_CANONICAL_EMAIL);
         }
-
-        if (address == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Address.class.getSimpleName()));
-        }
-        if (!Address.isValidAddress(address)) {
-            throw new IllegalValueException(Address.MESSAGE_CONSTRAINTS);
-        }
-        final Address modelAddress = new Address(address);
 
         final Optional<Telegram> modelTelegram = toOptionalContact(telegram, "telegram", Telegram::isValidTelegram,
                 Telegram.MESSAGE_CONSTRAINTS, Telegram::new, handle -> handle.value);
@@ -202,7 +191,7 @@ class JsonAdaptedPerson {
         }
         final Set<Tag> modelTags = new HashSet<>(personTags);
         try {
-            return new Person(modelName, modelPhone, modelEmail, modelAddress, modelTelegram, modelGitHub,
+            return new Person(modelName, modelEmail, modelTelegram, modelGitHub,
                     modelIsSample, modelRemark, modelTags, modelEnrolments);
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(e.getMessage());

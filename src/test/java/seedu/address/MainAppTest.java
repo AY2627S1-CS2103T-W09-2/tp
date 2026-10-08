@@ -63,7 +63,7 @@ public class MainAppTest {
             app.logic.execute("find Nobody");
             app.logic.execute("help");
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute("clear"));
-            String add = "add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test";
+            String add = "student add /name Fictional Student /email demo@u.nus.edu";
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(add));
             app.logic.execute("exit");
             app.stop();
@@ -83,9 +83,9 @@ public class MainAppTest {
         new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
         byte[] bytes = Files.readAllBytes(path);
         String json = Files.readString(path);
-        int addressStart = json.indexOf("123, Jurong West Ave 6, #08-111");
-        assertTrue(addressStart >= 0);
-        bytes[addressStart] = (byte) 0x80;
+        int nameStart = json.indexOf("Alice Pauline");
+        assertTrue(nameStart >= 0);
+        bytes[nameStart] = (byte) 0x80;
         Files.write(path, bytes);
         MainApp app = createApp();
         assertTrue(app.model.isReadOnly());
@@ -146,8 +146,8 @@ public class MainAppTest {
         assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
         app.logic.execute("list");
         app.logic.execute("find alice");
-        for (String mutation : new String[] {"add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test",
-            "edit 1 e/demo@u.nus.edu"}) {
+        for (String mutation : new String[] {"student add /name Fictional Student /email demo@u.nus.edu",
+            "edit /email demo@u.nus.edu /github Demo"}) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
             assertArrayEquals(original, Files.readAllBytes(path));
         }
@@ -162,6 +162,26 @@ public class MainAppTest {
     private static String replaceOnce(String text, String target, String replacement) {
         assertEquals(text.length() - target.length(), text.replace(target, "").length());
         return text.replace(target, replacement);
+    }
+
+    @Test
+    public void initModel_retiredFields_recoveryPreservesSourceThroughExit() throws Exception {
+        Path path = folder.resolve("roster.json");
+        new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
+        String valid = Files.readString(path);
+        for (String retired : new String[] {"\"phone\": \"91234567\",", "\"address\": \"Clementi\",",
+            "\"phone\": null,", "\"address\": null,"}) {
+            String invalid = valid.replaceFirst("\"name\"", retired + "\"name\"");
+            Files.writeString(path, invalid);
+            byte[] original = Files.readAllBytes(path);
+            MainApp app = createApp();
+            assertTrue(app.model.isReadOnly());
+            assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () ->
+                    app.logic.execute("student add /name Demo /email demo@u.nus.edu"));
+            app.logic.execute("exit");
+            app.stop();
+            assertArrayEquals(original, Files.readAllBytes(path));
+        }
     }
 
     private MainApp createApp() {

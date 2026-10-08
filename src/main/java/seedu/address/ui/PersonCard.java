@@ -39,10 +39,6 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label id;
     @FXML
-    private Label phone;
-    @FXML
-    private Label address;
-    @FXML
     private Label email;
     @FXML
     private Label telegram;
@@ -52,6 +48,8 @@ public class PersonCard extends UiPart<Region> {
     private Label sample;
     @FXML
     private Label remark;
+    @FXML
+    private Label enrolments;
     @FXML
     private FlowPane tags;
 
@@ -63,9 +61,9 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().value);
-        email.setText(person.getEmail().value);
+        email.setText("NUS email: " + person.getEmail().value);
+        enrolments.setText(person.getEnrolments().isEmpty() ? "Enrolments: none"
+                : "Enrolments: " + person.getEnrolments().size());
         telegram.setText(contactText(TELEGRAM_LABEL, person.getTelegram()));
         github.setText(contactText(GITHUB_LABEL, person.getGitHub()));
         sample.setText(SAMPLE_LABEL);

@@ -9,11 +9,11 @@ import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -34,9 +34,10 @@ public class AddCommandIntegrationTest {
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.addPerson(validPerson);
+        expectedModel.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
 
         assertCommandSuccess(new AddCommand(validPerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+                CommandResult.forTarget(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()), validPerson),
                 expectedModel);
     }
 
@@ -54,9 +55,11 @@ public class AddCommandIntegrationTest {
 
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.addPerson(sameNamePerson);
+        expectedModel.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
 
         assertCommandSuccess(new AddCommand(sameNamePerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(sameNamePerson)),
+                CommandResult.forTarget(String.format(AddCommand.MESSAGE_SUCCESS, sameNamePerson.getName()),
+                        sameNamePerson),
                 expectedModel);
     }
 

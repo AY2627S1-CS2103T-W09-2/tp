@@ -23,7 +23,7 @@ class EnrolmentPreservationTest {
         ModelManager model = new ModelManager();
         model.addPerson(person);
         AddressBookParser parser = new AddressBookParser();
-        parser.parseCommand("edit 1 n/Changed Student p/123456 e/changed@u.nus.edu a/Changed Address t/test")
+        parser.parseCommand("edit /email amy.bee@u.nus.edu /github changed")
                 .execute(model);
         Person edited = model.getAddressBook().getPersonList().get(0);
         assertEquals(person.getEnrolments(), edited.getEnrolments());
