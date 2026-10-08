@@ -183,7 +183,7 @@ This increment adds model and persistence support. The user-facing `enrol` comma
 
 The shared command contract is:
 
-* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `exit` commands do so. Future `sample load` and profile mutations retain the default, so the recovery gate applies before execution.
+* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `exit` commands do so. `sample load` and profile mutations retain the default, so the recovery gate applies before execution.
 * Commands validate and change the model through `execute(Model)`; they must not save directly. `LogicManager` owns persistence and returns the successful `CommandResult` only after storage succeeds.
 * `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
 * `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
@@ -196,7 +196,7 @@ The shared command contract is:
 
 Protection covers detected failures, not power loss or hardware faults. The app does not implement backups, cross-process locking, or concurrent external file-edit detection. Recovery and no-op tests use temporary files and injected failures. The UI acceptance check additionally verifies the persistent warning and selected-row restoration.
 
-The startup guidance names `student add` and says sample loading is unavailable. Update the latter when #62 delivers its command; do not direct users to commands that have not merged.
+The startup guidance names both `student add` and fictional sample loading. Samples are never created automatically.
 
 ### Name and email search (v1.2)
 
@@ -332,6 +332,18 @@ Identity and equality are deliberately separate. `Person#isSamePerson` compares 
 
 `JsonAdaptedPerson` explicitly rejects the presence of retired `phone` and `address` properties (including null). This prevents Jackson from ignoring those properties and silently discarding legacy values. An otherwise valid profile without optional contacts still loads with absence; missing/non-boolean sample classification rejects loading. No migration or inferred classification runs automatically.
 
+### Fictional sample loading (v1.2)
+
+`AddressBookParser` recognises the exact lowercase `sample load` command after removing surrounding spaces and tabs. Repeated spaces or tabs between the two words are accepted. Missing `load`, extra arguments, another subcommand, or different letter case produces the same usage message. The shared single-line guard rejects line breaks and control characters before parsing.
+
+`SampleDataUtil` is the single production fixture provider. It returns five classified fictional profiles and five enrolments in name-and-email display order. The fixture covers equal names with distinct canonical emails, optional contacts, multiple enrolments, missing contacts, missing affiliations, and a profile with no enrolments. The application does not call this provider during startup.
+
+`SampleCommand` first checks that the writable roster is empty. It then copies and validates the complete fixture before changing the model. Validation checks the profile count, enrolment count, and sample classification of every profile. Only a complete fixture replaces the empty roster. The command applies `PersonOrder.BY_NAME_THEN_EMAIL` to the displayed list and returns a selection update with no explicit target, so the GUI clears its selection.
+
+The command does not write storage directly. `LogicManager` applies the shared persistence transaction after command execution. A successful save reports success. A failed save restores the empty model, prior display state, and prior file. `SampleCommand#getSaveFailureMessage` supplies the sample-specific failure text after rollback. Recovery mode blocks the command before fixture creation because it is a data-changing command. Repeated loading stops at the non-empty precondition and performs no save.
+
+The full workflow tests cover parsing, exact fixture contents, sorted display, no selection target, persistence and restart, repeated loading, an injected invalid fixture, an injected first-save failure, and read-only recovery. Selective `sample clear` is outside v1.2 because it requires safe handling of mixed real and fictional data. The existing `clear` command is not reused because it deletes every record.
+
 ### Student creation and contact editing (v1.2)
 
 `AddressBookParser` dispatches `student add` to `AddCommandParser` and `edit` to `EditCommandParser`. Inherited `add` and indexed edit are retired. The edit subset accepts only `/email`, `/telegram` and `/github`; name/email changes and affiliations remain for v1.3.
@@ -346,7 +358,7 @@ Identity and equality are deliberately separate. `Person#isSamePerson` compares 
 
 `Command.getSaveFailureMessage(defaultMessage)` supplies creation/edit-specific feedback only after rollback; other commands retain the existing storage error. It is not used for display failures. UI refresh failures following a completed save from other commands retain the existing guard and never rerun the saved mutation.
 
-Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display, sample loading and enrolment entry remain separate increments.
+Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display and enrolment entry remain separate increments.
 
 **Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
 
@@ -734,7 +746,7 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with an empty roster and guidance to add a student. No sample records load automatically. The window size may not be optimal.
+      Expected: The GUI opens with an empty roster and guidance to add a student or load fictional samples. No sample records load automatically. The window size may not be optimal.
 
 1. Saving window preferences
 
@@ -744,6 +756,26 @@ testers are expected to do more *exploratory* testing.
        Expected: The most recent window size and location are retained.
 
 1. _{ more test cases …​ }_
+
+### Loading fictional samples
+
+1. Loading into an empty roster
+
+   1. Prerequisites: Start the JAR in an empty folder and confirm that the roster is empty.
+
+   1. Test case: `sample load`<br>
+      Expected: SoCdex reports that it loaded five fictional profiles and five enrolments. The list shows two Alex Tan profiles first, ordered by email, followed by Mei Lim, Nur Aisyah, and Ravi Kumar. Every profile shows `Fictional sample`, and no profile is selected.
+
+   1. Restart the JAR.<br>
+      Expected: The same five profiles and their enrolments return in the same order.
+
+1. Rejecting unsafe or malformed loads
+
+   1. Test case: Run `sample load` again on the non-empty sample roster.<br>
+      Expected: SoCdex says samples can only be loaded into an empty roster. The existing roster and data file do not change.
+
+   1. Test cases: `sample`, `sample clear`, `sample load extra`, and `sample LOAD`.<br>
+      Expected: Each command shows `Sample load does not accept parameters. Usage: sample load`. No data changes.
 
 ### Deleting a person
 
