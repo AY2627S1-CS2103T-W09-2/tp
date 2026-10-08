@@ -17,6 +17,7 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Remark;
+import seedu.address.testutil.PersonBuilder;
 
 /** Contains integration tests for {@code RemarkCommand}. */
 public class RemarkCommandTest {
@@ -27,8 +28,7 @@ public class RemarkCommandTest {
     public void execute_addRemark_success() {
         Remark remark = new Remark("Likes baseball");
         Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        Person updated = new Person(original.getName(), original.getPhone(), original.getEmail(), original.getAddress(),
-                remark, original.getTags());
+        Person updated = new PersonBuilder(original).withRemark(remark.value).build();
         Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
         expectedModel.setPerson(original, updated);
 

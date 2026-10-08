@@ -80,7 +80,7 @@ public class DisplayedCommandExecutorTest {
         executor.execute("find Bob");
         assertEquals(List.of(bob), displayed);
         storage.isFailing = true;
-        assertThrows(CommandException.class, () -> executor.execute("edit 1 n/Zoe"));
+        assertThrows(CommandException.class, () -> executor.execute("edit /email bob@u.nus.edu /github Zoe"));
         assertEquals(List.of(bob), displayed);
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
 

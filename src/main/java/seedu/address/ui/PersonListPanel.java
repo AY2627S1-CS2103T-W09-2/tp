@@ -57,6 +57,16 @@ public class PersonListPanel extends UiPart<Region> {
         }
     }
 
+    /** Selects and scrolls to a requested target in the prepared roster. */
+    public void selectTarget(Person target) {
+        int index = personListView.getItems().indexOf(target);
+        if (index < 0) {
+            throw new IllegalArgumentException("The selection target must be displayed.");
+        }
+        personListView.getSelectionModel().clearAndSelect(index);
+        personListView.scrollTo(index);
+    }
+
     /**
      * Selects and reveals the sole search result, or clears selection for an ambiguous or empty result.
      */

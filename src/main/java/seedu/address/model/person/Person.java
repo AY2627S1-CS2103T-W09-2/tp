@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -22,33 +23,26 @@ public class Person {
 
     // Details; only the canonical email identifies the person (see isSamePerson)
     private final Name name;
-    private final Phone phone;
     private final Email email;
 
+    // Optional contact routes and the fictional sample classification
+    private final Optional<Telegram> telegram;
+    private final Optional<GitHub> github;
+    private final boolean isSample;
+
     // Data fields
-    private final Address address;
     private final Remark remark;
     private final Set<Tag> tags = new HashSet<>();
     private final List<Enrolment> enrolments;
 
     /**
-     * Every field must be present and not null.
+     * Creates a profile from every stored field, with a defensive immutable copy of its uniquely keyed enrolments.
+     * An absent contact is {@code Optional.empty()}. Every argument must be non-null.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(name, phone, email, address, new Remark(""), tags);
-    }
-
-    /**
-     * Every field must be present and not null.
-     */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags) {
-        this(name, phone, email, address, remark, tags, List.of());
-    }
-
-    /** Creates a profile with a defensive immutable copy of its uniquely keyed enrolments. */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags,
+    public Person(Name name, Email email, Optional<Telegram> telegram,
+            Optional<GitHub> github, boolean isSample, Remark remark, Set<Tag> tags,
             Collection<Enrolment> enrolments) {
-        requireAllNonNull(name, phone, email, address, remark, tags, enrolments);
+        requireAllNonNull(name, email, telegram, github, remark, tags, enrolments);
         List<Enrolment> copy = List.copyOf(enrolments);
         for (int i = 0; i < copy.size(); i++) {
             for (int j = 0; j < i; j++) {
@@ -59,11 +53,17 @@ public class Person {
         }
         this.enrolments = copy;
         this.name = name;
-        this.phone = phone;
         this.email = email;
-        this.address = address;
+        this.telegram = telegram;
+        this.github = github;
+        this.isSample = isSample;
         this.remark = remark;
         this.tags.addAll(tags);
+    }
+
+    /** Creates a new non-sample student with no enrolments, tags or remark. */
+    public Person(Name name, Email email, Optional<Telegram> telegram, Optional<GitHub> github) {
+        this(name, email, telegram, github, false, new Remark(""), Set.of(), List.of());
     }
 
     /** Returns the immutable enrolment list in stored order. */
@@ -73,23 +73,33 @@ public class Person {
 
     /** Returns a new profile with the supplied enrolments and all other fields preserved. */
     public Person withEnrolments(Collection<Enrolment> updatedEnrolments) {
-        return new Person(name, phone, email, address, remark, tags, updatedEnrolments);
+        return new Person(name, email, telegram, github, isSample, remark, tags, updatedEnrolments);
+    }
+
+    /** Replaces only the contacts, preserving identity, classification and teaching context. */
+    public Person withContacts(Optional<Telegram> updatedTelegram, Optional<GitHub> updatedGitHub) {
+        return new Person(name, email, updatedTelegram, updatedGitHub, isSample, remark, tags, enrolments);
     }
 
     public Name getName() {
         return name;
     }
 
-    public Phone getPhone() {
-        return phone;
-    }
-
     public Email getEmail() {
         return email;
     }
 
-    public Address getAddress() {
-        return address;
+    public Optional<Telegram> getTelegram() {
+        return telegram;
+    }
+
+    public Optional<GitHub> getGitHub() {
+        return github;
+    }
+
+    /** Returns true if this profile is classified as a fictional sample record. */
+    public boolean isSample() {
+        return isSample;
     }
 
     public Remark getRemark() {
@@ -134,9 +144,10 @@ public class Person {
         }
 
         return name.equals(otherPerson.name)
-                && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
-                && address.equals(otherPerson.address)
+                && telegram.equals(otherPerson.telegram)
+                && github.equals(otherPerson.github)
+                && isSample == otherPerson.isSample
                 && remark.equals(otherPerson.remark)
                 && tags.equals(otherPerson.tags)
                 && enrolments.equals(otherPerson.enrolments);
@@ -145,16 +156,17 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, remark, tags, enrolments);
+        return Objects.hash(name, email, telegram, github, isSample, remark, tags, enrolments);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("name", name)
-                .add("phone", phone)
                 .add("email", email)
-                .add("address", address)
+                .add("telegram", telegram)
+                .add("github", github)
+                .add("sample", isSample)
                 .add("remark", remark)
                 .add("tags", tags)
                 .add("enrolments", enrolments)

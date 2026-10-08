@@ -4,6 +4,10 @@ package seedu.address.logic.parser;
  * Contains Command Line Interface (CLI) syntax definitions common to multiple commands
  */
 public class CliSyntax {
+    public static final Prefix STUDENT_NAME = new Prefix("/name");
+    public static final Prefix STUDENT_EMAIL = new Prefix("/email");
+    public static final Prefix STUDENT_TELEGRAM = new Prefix("/telegram");
+    public static final Prefix STUDENT_GITHUB = new Prefix("/github");
 
     /* Prefix definitions */
     public static final Prefix PREFIX_NAME = new Prefix("n/");

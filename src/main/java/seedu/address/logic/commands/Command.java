@@ -15,6 +15,11 @@ public abstract class Command {
         return false;
     }
 
+    /** Returns the feedback after a save failure has restored the previous state. */
+    public String getSaveFailureMessage(String defaultMessage) {
+        return defaultMessage;
+    }
+
     /**
      * Executes the command and returns the result message.
      *

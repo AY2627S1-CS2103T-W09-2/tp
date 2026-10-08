@@ -11,11 +11,13 @@ import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.commands.exceptions.DuplicateStudentException;
 import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 import seedu.address.storage.Storage;
 
 /**
@@ -65,6 +67,16 @@ public class LogicManager implements Logic {
         CommandResult commandResult;
         try {
             commandResult = command.execute(model);
+        } catch (DuplicateStudentException e) {
+            restore.run();
+            model.updateFilteredPersonList(Model.PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
+            try {
+                presentSearch.accept(CommandResult.forTarget(e.getMessage(), e.getExisting()));
+            } catch (RuntimeException | AssertionError displayFailure) {
+                restore.run();
+                throw new CommandException(Messages.MESSAGE_PROFILE_DISPLAY_FAILURE, displayFailure);
+            }
+            throw e;
         } catch (CommandException | RuntimeException e) {
             restore.run();
             throw e;
@@ -80,7 +92,8 @@ public class LogicManager implements Logic {
                 presentSearch.accept(commandResult);
             } catch (RuntimeException | AssertionError e) {
                 restore.run();
-                throw new CommandException(Messages.MESSAGE_SEARCH_DISPLAY_FAILURE, e);
+                throw new CommandException(commandResult.getSelectionTarget() == null
+                        ? Messages.MESSAGE_SEARCH_DISPLAY_FAILURE : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE, e);
             }
         }
 
@@ -92,10 +105,12 @@ public class LogicManager implements Logic {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
             restore.run();
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
+            throw new CommandException(command.getSaveFailureMessage(
+                    String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())), e);
         } catch (IOException | RuntimeException ioe) {
             restore.run();
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
+            throw new CommandException(command.getSaveFailureMessage(
+                    String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())), ioe);
         }
 
         return commandResult;

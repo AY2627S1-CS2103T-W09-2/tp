@@ -5,6 +5,9 @@ title: User Guide
 
 SoCdex is a desktop roster manager for NUS School of Computing tutors who manage students across multiple class sections and project teams. It keeps student identities and roster information in one local application, so tutors do not need to repeatedly cross-reference Canvas, spreadsheets, technical platforms, and personal notes. SoCdex provides a keyboard-first workflow through typed commands while retaining the benefits of a graphical user interface.
 
+SoCdex is based on AddressBook Level 3 (AB3).
+
+
 * Table of Contents
 {:toc}
 
@@ -28,7 +31,7 @@ SoCdex is a desktop roster manager for NUS School of Computing tutors who manage
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@u.nus.edu a/John street, block 123, #01-01` : Adds a contact named `John Doe` to the Address Book.
+   * `student add /name Alex Tan /email e9000001@u.nus.edu` : Creates a student profile without requiring optional contacts.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -46,17 +49,10 @@ SoCdex is a desktop roster manager for NUS School of Computing tutors who manage
 
 **:information_source: Notes about the command format:**<br>
 
-* Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
-  For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.
-
-* Items in square brackets are optional.<br>
-  For example, `n/NAME [t/TAG]` can be used as `n/John Doe t/friend` or as `n/John Doe`.
-
-* Items followed by `…`​ can appear zero or more times.<br>
-  For example, `[t/TAG]…​` may be omitted, or written as `t/friend` or `t/friend t/family`.
-
-* Parameters can be in any order.<br>
-  For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
+* Words in `UPPER_CASE` represent your values. Square brackets mark optional parameters; do not type the brackets.
+* Use lowercase command words and prefixes. Commands must be on one line; spaces and tabs may separate their components.
+* For `student add` and `edit`, prefixes may appear in any order, but only once each. Separate each prefix from its value with a space or tab. Unknown prefixes, repeated prefixes, empty supplied values, malformed slash tokens and text before the first prefix are rejected with usage guidance.
+* A prefix starts at a space/tab boundary with `/` and a letter, followed by letters or hyphens. Values end at the next prefix. An embedded slash such as the one in `AY26/27` is not a prefix.
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
@@ -73,28 +69,30 @@ Shows a message explaining how to access the help page.
 Format: `help`
 
 
-### Adding a person: `add`
+### Adding a student: `student add`
 
-Adds a person to the address book.
+Format: `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​`
+Only name and email are required. The new profile is non-sample and has no enrolments. A successful command shows `Added student: NAME.`, displays the full roster sorted by name (ignoring case) then email, and selects the new student.
 
-* `EMAIL` must be an NUS email address: a local part followed by `@u.nus.edu`, such as `e1234567@u.nus.edu`.
-  * The local part has 1 to 64 ASCII letters, ASCII digits, dots (`.`), underscores (`_`), plus signs (`+`), or hyphens (`-`). It must start and end with an ASCII letter or digit, and it must not contain spaces or consecutive dots. Non-ASCII letters, such as accented letters, are not accepted.
-  * Letter case does not matter, and surrounding spaces and tabs are ignored. The email is saved in lowercase, so `E1234567@U.NUS.EDU` is saved as `e1234567@u.nus.edu`. If you edit the data file directly, write each email in this saved form; the app does not convert emails in the data file.
-  * Dots and plus signs are kept as entered. `alex.tan@u.nus.edu`, `alextan@u.nus.edu`, and `alex.tan+cs2103@u.nus.edu` are three different emails.
-  * The app checks only the format of the email. It does not check that the NUS account exists.
-* Each person is identified by their email. Two persons can have the same name if their emails differ. If another person already has the same email (after it is converted to lowercase), the app shows `A student with this NUS email already exists.` and does not change any data.
+* Names may contain 1 to 100 Unicode characters, including accented and non-Latin names. Surrounding spaces/tabs are removed and internal runs become one space. Names must contain a visible character and cannot contain a slash, line break or control character. Two students may have the same name.
+* Emails have a local part of 1 to 64 ASCII letters, digits, dots, underscores, plus signs or hyphens followed by exactly `@u.nus.edu`. The local part must start and end with a letter or digit and cannot contain consecutive dots or spaces. Input is lowercased and surrounding spaces/tabs are removed. Dots and plus suffixes remain significant: `alex+one@u.nus.edu` and `alex+two@u.nus.edu` are different identities.
+* Telegram handles contain 5 to 32 ASCII letters, digits or underscores and start with a letter. One leading `@` is accepted and removed. Letter case is preserved.
+* GitHub usernames contain 1 to 39 ASCII letters, digits or hyphens. They start and end with a letter or digit and cannot contain consecutive hyphens. A leading `@`, underscore or URL is not accepted. Letter case is preserved.
+* Omit an unknown contact entirely. A supplied empty contact is an error. `Not provided` is displayed for absent contacts and is never stored as a placeholder.
+* Syntax checks do not verify that any institutional, Telegram or GitHub account exists. No external service is contacted.
 
-<div markdown="span" class="alert alert-primary">:bulb: **Tip:**
-A person can have any number of tags, including zero.
-</div>
+Examples using fictional students:
 
-Examples:
-* `add n/John Doe p/98765432 e/johnd@u.nus.edu a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@u.nus.edu a/Newgate Prison p/1234567 t/criminal`
-* `add n/John Doe p/91234567 e/johndoe@u.nus.edu a/Clementi Ave 1` adds a second person named `John Doe`, because the email is different.
-* `add n/Alex Tan p/91234567 e/alex@nus.edu.sg a/Clementi Ave 1` is rejected, because the email does not end with `@u.nus.edu`.
+* `student add /name José Tan /email E9000001@U.NUS.EDU` stores the email as `e9000001@u.nus.edu`.
+* `student add /email e9000002@u.nus.edu /name 王小明 /telegram @Alex_Tan /github alex-tan` accepts mixed prefix order and stores Telegram as `Alex_Tan`.
+* `student add /name José Tan /email e9000003@u.nus.edu` creates a second student with the same name and a different email.
+
+If the canonical email already exists, the command shows `A student with this NUS email already exists.` and reveals/selects that existing student in the full sorted roster. It does not overwrite or save any data. This deliberate reveal is the exception to preserving the previous selection on rejection. `view` guidance will be added when that command is available.
+
+A save failure shows `The student could not be saved. No data was changed.` and restores the previous roster, results and selection. Correct the storage problem and retry. If the new display cannot be prepared, the command shows `Student could not be displayed. No data was changed. Try again.` and does not save.
+
+The inherited `add n/...` command is retired. Phone and address are no longer student fields.
 
 ### Listing all persons: `list`
 
@@ -102,22 +100,21 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
-### Editing a person: `edit`
+### Editing optional contacts: `edit`
 
-Edits an existing person in the address book.
+Format: `edit /email EMAIL [/telegram HANDLE|clear] [/github USERNAME|clear]`
 
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`
+The email selects an existing student across the complete roster, even when a search hides that student. Supply at least one contact field. Omission preserves that contact, the exact lowercase token `clear` removes it, and an empty supplied value is invalid. Contact validation is the same as for `student add`.
 
-* Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, …​
-* At least one of the optional fields must be provided.
-* Existing values will be updated to the input values.
-* When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
-* To remove all of a person's tags, enter `t/` without a tag after it.
-* A new `EMAIL` must follow the same rules as in `add`. You cannot change a person's email to an email that another person already has; the app then shows `A student with the new NUS email already exists.` and does not change any data. Entering a person's current email in different letter case leaves the email unchanged.
+* `edit /email e9000001@u.nus.edu /telegram @Alex_New` updates Telegram and preserves GitHub.
+* `edit /email e9000001@u.nus.edu /github clear` removes GitHub.
+* `edit /email e9000001@u.nus.edu /telegram @clear /github Clear` stores the literal handles `clear` and `Clear`. In creation, `clear` is ordinary text; clearing applies only to this edit command.
 
-Examples:
-*  `edit 1 p/91234567 e/johndoe@u.nus.edu` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@u.nus.edu` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
+Success shows `Updated student: NAME.`, clears the search filter, displays the full sorted roster and selects the updated student. Name, email, enrolments, sample status, tags and remark are preserved. Identical normalised values or clearing an absent contact show `No values changed.`, still reveal/select the target, and do not rewrite the roster. Case-only contact changes are real changes and are saved.
+
+A missing target shows `No student found with NUS email: EMAIL.`; a command without editable fields shows `Provide at least one field to update.` Invalid input preserves the previous data, results and selection. A save failure shows `The record could not be updated. No data was changed.` and restores the prior state. Presentation failure uses the same no-change display message as creation.
+
+Index-based `edit`, `/name`, `/new-email`, and affiliation editing are not supported in this increment. Name/email and affiliation editing remain planned for v1.3.
 
 ### Finding students by name or email: `find`
 
@@ -182,7 +179,7 @@ This protects against detected loading and saving failures. It does not provide 
 
 ### Starting empty or recovering from a load failure
 
-When no saved roster exists, the app starts empty and explains how to add a student. This increment still uses the `add` syntax above. `student add` and explicit fictional sample loading are separate feature increments and are not available yet.
+When no saved roster exists, the app starts empty and explains how to add a student. Use `student add` as described above. Explicit fictional sample loading is a separate feature increment and is not available yet.
 
 If an existing roster is unreadable or invalid, the app preserves it and opens an empty **read-only recovery session**. The initial message is:
 
@@ -202,9 +199,21 @@ Student records can store several module-semester enrolments, with optional tuto
 
 An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
 
+### Stored contacts and sample classification
+
+`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
+
+Each result card shows a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
+
 ### Editing the data file
 
-AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+**Schema compatibility:** files containing the retired `phone` or `address` properties are rejected, even when those properties are null. No data is silently dropped. Keep an external copy of the original file, close the app, and manually migrate only after retaining any phone/address information you need elsewhere. Remove the retired properties, explicitly classify each record with a boolean `sample`, and verify all fields against the rules below before restarting. The app never guesses classification or automatically migrates a file. An otherwise valid record that omits optional contacts or enrolments loads with those values absent or empty.
+
+Roster data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+
+Names in the data file must already have ordinary spaces and tabs normalised: no surrounding ordinary spaces or tabs, no tabs within the name, and no repeated ordinary spaces. Letter case and other permitted Unicode characters, including non-breaking spaces, are preserved. Commands normalise ordinary spaces and tabs, but the app rejects a stored name that needs this normalisation instead of correcting it.
+
+Every record must contain `"sample": false` or `"sample": true`, written as a JSON boolean rather than text. Use `false` for real students and `true` only for fictional sample records. The `"telegram"` and `"github"` properties are optional; omit them or write `null` when there is no value. A stored value must already be in its saved form, with no surrounding spaces or tabs. A Telegram handle has 5 to 32 letters, digits, or underscores, starts with a letter, and is stored without its leading `@` (write `"alex_tan"`, not `"@alex_tan"`). A GitHub username has 1 to 39 letters, digits, or single hyphens, and does not start or end with a hyphen. Letter case is kept as written. Never store `Not provided` as a value. A missing or non-boolean `sample`, or a contact value that is invalid or not in its saved form, rejects the entire load.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Edit the file only while the app is closed, and keep a separate copy before editing it. If your changes make it invalid, SoCdex preserves it and opens a read-only recovery session at the next run. Restore a valid file and restart; commands and normal exit do not replace the invalid roster.<br>
@@ -223,7 +232,10 @@ _Details coming soon ..._
 **A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
 
 **Q**: Why does my data file from an earlier version no longer load?<br>
-**A**: Every email must now be a valid NUS email (see the `add` command), and no two persons can share an email. In the data file, each email must also already be in its saved form: all lowercase, with no spaces or tabs before or after it. Commands such as `add` convert uppercase letters and remove surrounding spaces and tabs, but the app does not convert emails in the data file. A data file that contains another kind of email address (such as one ending in `@example.com`), an email that is not in its saved form (such as `E1234567@u.nus.edu`), or two persons with the same email is treated as an invalid data file. SoCdex then preserves the file and opens a read-only recovery session; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed, and restart SoCdex.
+**A**: Every email must now be a valid NUS email (see `student add`), and no two persons can share an email. In the data file, each email must also already be in its saved form: all lowercase, with no spaces or tabs before or after it. Commands such as `student add` convert uppercase letters and remove surrounding spaces and tabs, but the app does not convert emails in the data file. A data file that contains another kind of email address (such as one ending in `@example.com`), an email that is not in its saved form (such as `E1234567@u.nus.edu`), or two persons with the same email is treated as an invalid data file. SoCdex then preserves the file and opens a read-only recovery session; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed, and restart SoCdex.
+
+**Q**: Why does a data file saved by an earlier SoCdex build open in read-only recovery even though its emails are valid?<br>
+**A**: Every record must now state whether it is fictional sample data. A file saved before this change has no `"sample"` property in its records, so SoCdex preserves it and opens a read-only recovery session instead of guessing; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). To use the file again, close SoCdex and keep a copy of the file. Add `"sample": false` to every record that describes a real student (use `"sample": true` only for fictional sample records), then restart SoCdex. See [Editing the data file](#editing-the-data-file) for the format.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -238,10 +250,10 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
-**Add** | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]…​` <br> e.g., `add n/James Ho p/22224444 e/jamesho@u.nus.edu a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Student add** | `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
-**Edit** | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]…​`<br> e.g., `edit 2 n/James Lee e/jameslee@u.nus.edu`
+**Edit** | `edit /email EMAIL [/telegram HANDLE\|clear] [/github USERNAME\|clear]`
 **Find** | `find QUERY`<br> e.g., `find Alex Tan`
 **List** | `list`
 **Help** | `help`

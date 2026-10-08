@@ -3,13 +3,12 @@ package seedu.address.model.person;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
-import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.Locale;
@@ -35,8 +34,8 @@ public class PersonTest {
         assertFalse(ALICE.isSamePerson(null));
 
         // same email, all other attributes different -> returns true
-        Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).withPhone(VALID_PHONE_BOB)
-                .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).withRemark("Different remark").build();
+        Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
+                .withTags(VALID_TAG_HUSBAND).withRemark("Different remark").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // same name, different email -> returns false
@@ -55,7 +54,7 @@ public class PersonTest {
 
     @Test
     public void isSamePerson_sameEmailDifferentDetails_notEqual() {
-        Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
+        Person editedAlice = new PersonBuilder(ALICE).withTelegram("other_handle").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
         assertFalse(ALICE.equals(editedAlice));
     }
@@ -94,16 +93,8 @@ public class PersonTest {
         Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
-        // different phone -> returns false
-        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
-        assertFalse(ALICE.equals(editedAlice));
-
         // different email -> returns false
         editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
-        assertFalse(ALICE.equals(editedAlice));
-
-        // different address -> returns false
-        editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different tags -> returns false
@@ -113,13 +104,53 @@ public class PersonTest {
         // different remark -> returns false
         editedAlice = new PersonBuilder(ALICE).withRemark("Different remark").build();
         assertFalse(ALICE.equals(editedAlice));
+
+        // name differing only in surrounding or repeated spaces -> same normalised name -> returns true
+        editedAlice = new PersonBuilder(ALICE)
+                .withName(" " + ALICE.getName().fullName.replace(" ", "  ") + " ").build();
+        assertTrue(ALICE.equals(editedAlice));
+
+        // a no-break space is not normalised -> different name -> returns false, but the same email identity
+        editedAlice = new PersonBuilder(ALICE).withName(ALICE.getName().fullName.replace(" ", "\u00A0")).build();
+        assertFalse(ALICE.equals(editedAlice));
+        assertTrue(ALICE.isSamePerson(editedAlice));
+    }
+
+    @Test
+    public void equals_contactsAndSampleClassification_compared() {
+        // different Telegram, including a change of letter case only -> returns false
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withTelegram("Other_Handle").build()));
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withTelegram("benson_meier").build()));
+
+        // different GitHub, including a change of letter case only -> returns false
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withGitHub("other-user").build()));
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withGitHub("bensonm").build()));
+
+        // contacts removed -> returns false
+        Person withoutContacts = new PersonBuilder(BENSON).withoutContacts().build();
+        assertFalse(BENSON.equals(withoutContacts));
+
+        // a leading @ is not part of the saved Telegram handle -> returns true
+        Person prefixedTelegram = new PersonBuilder(BENSON).withTelegram("@Benson_Meier").build();
+        assertTrue(BENSON.equals(prefixedTelegram));
+        assertEquals(BENSON.hashCode(), prefixedTelegram.hashCode());
+
+        // different sample classification -> returns false
+        Person sampleBenson = new PersonBuilder(BENSON).withSample(true).build();
+        assertFalse(BENSON.equals(sampleBenson));
+
+        // contacts and sample classification do not change the email identity
+        assertTrue(BENSON.isSamePerson(withoutContacts));
+        assertTrue(BENSON.isSamePerson(sampleBenson));
     }
 
     @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", remark=" + ALICE.getRemark()
-                + ", tags=" + ALICE.getTags() + ", enrolments=" + ALICE.getEnrolments() + "}";
-        assertEquals(expected, ALICE.toString());
+        String expected = Person.class.getCanonicalName() + "{name=" + BENSON.getName()
+                + ", email=" + BENSON.getEmail()
+                + ", telegram=" + BENSON.getTelegram() + ", github=" + BENSON.getGitHub() + ", sample=false"
+                + ", remark=" + BENSON.getRemark() + ", tags=" + BENSON.getTags()
+                + ", enrolments=" + BENSON.getEnrolments() + "}";
+        assertEquals(expected, BENSON.toString());
     }
 }

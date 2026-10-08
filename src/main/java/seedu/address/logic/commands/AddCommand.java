@@ -1,83 +1,46 @@
 package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_ADDRESS;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_EMAIL;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_PHONE;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
-import seedu.address.commons.util.ToStringBuilder;
-import seedu.address.logic.Messages;
-import seedu.address.logic.commands.exceptions.CommandException;
+import seedu.address.logic.commands.exceptions.DuplicateStudentException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 
-/**
- * Adds a person to the address book.
- */
+/** Creates a student profile without manufacturing unrelated fields. */
 public class AddCommand extends Command {
-
-    public static final String COMMAND_WORD = "add";
-
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Adds a person to the address book. "
-            + "Parameters: "
-            + PREFIX_NAME + "NAME "
-            + PREFIX_PHONE + "PHONE "
-            + PREFIX_EMAIL + "EMAIL "
-            + PREFIX_ADDRESS + "ADDRESS "
-            + "[" + PREFIX_TAG + "TAG]...\n"
-            + "Example: " + COMMAND_WORD + " "
-            + PREFIX_NAME + "John Doe "
-            + PREFIX_PHONE + "98765432 "
-            + PREFIX_EMAIL + "johnd@u.nus.edu "
-            + PREFIX_ADDRESS + "311, Clementi Ave 2, #02-25 "
-            + PREFIX_TAG + "friends "
-            + PREFIX_TAG + "owesMoney";
-
-    public static final String MESSAGE_SUCCESS = "New person added: %1$s";
+    public static final String COMMAND_WORD = "student";
+    public static final String MESSAGE_USAGE =
+            "student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]";
+    public static final String MESSAGE_SUCCESS = "Added student: %s.";
     public static final String MESSAGE_DUPLICATE_PERSON = "A student with this NUS email already exists.";
-
     private final Person toAdd;
 
-    /**
-     * Creates an AddCommand to add the specified {@code Person}
-     */
     public AddCommand(Person person) {
-        requireNonNull(person);
-        toAdd = person;
+        toAdd = requireNonNull(person);
     }
 
     @Override
-    public CommandResult execute(Model model) throws CommandException {
+    public CommandResult execute(Model model) throws DuplicateStudentException {
         requireNonNull(model);
-
-        if (model.hasPerson(toAdd)) {
-            throw new CommandException(MESSAGE_DUPLICATE_PERSON);
+        for (Person existing : model.getAddressBook().getPersonList()) {
+            if (existing.isSamePerson(toAdd)) {
+                throw new DuplicateStudentException(MESSAGE_DUPLICATE_PERSON, existing);
+            }
         }
-
         model.addPerson(toAdd);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, Messages.format(toAdd)));
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
+        return CommandResult.forTarget(String.format(MESSAGE_SUCCESS, toAdd.getName()), toAdd);
+    }
+
+    @Override
+    public String getSaveFailureMessage(String defaultMessage) {
+        return "The student could not be saved. No data was changed.";
     }
 
     @Override
     public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-
-        // instanceof handles nulls
-        if (!(other instanceof AddCommand otherAddCommand)) {
-            return false;
-        }
-
-        return toAdd.equals(otherAddCommand.toAdd);
-    }
-
-    @Override
-    public String toString() {
-        return new ToStringBuilder(this)
-                .add("toAdd", toAdd)
-                .toString();
+        return other == this || other instanceof AddCommand command && toAdd.equals(command.toAdd);
     }
 }

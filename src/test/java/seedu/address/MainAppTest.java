@@ -14,6 +14,10 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
@@ -59,7 +63,7 @@ public class MainAppTest {
             app.logic.execute("find Nobody");
             app.logic.execute("help");
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute("clear"));
-            String add = "add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test";
+            String add = "student add /name Fictional Student /email demo@u.nus.edu";
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(add));
             app.logic.execute("exit");
             app.stop();
@@ -79,9 +83,9 @@ public class MainAppTest {
         new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
         byte[] bytes = Files.readAllBytes(path);
         String json = Files.readString(path);
-        int addressStart = json.indexOf("123, Jurong West Ave 6, #08-111");
-        assertTrue(addressStart >= 0);
-        bytes[addressStart] = (byte) 0x80;
+        int nameStart = json.indexOf("Alice Pauline");
+        assertTrue(nameStart >= 0);
+        bytes[nameStart] = (byte) 0x80;
         Files.write(path, bytes);
         MainApp app = createApp();
         assertTrue(app.model.isReadOnly());
@@ -102,22 +106,54 @@ public class MainAppTest {
         String nonCanonical = replaceOnce(validJson, "\"alice@u.nus.edu\"", "\"ALICE@u.nus.edu\"");
         String duplicate = replaceOnce(validJson, "\"johnd@u.nus.edu\"", "\"alice@u.nus.edu\"");
         for (String incompatible : new String[] {legacy, nonCanonical, duplicate}) {
-            Files.writeString(path, incompatible);
-            byte[] original = Files.readAllBytes(path);
-            MainApp app = createApp();
-            assertTrue(app.model.isReadOnly());
-            assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
-            app.logic.execute("list");
-            app.logic.execute("find alice");
-            for (String mutation : new String[] {"add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test",
-                "edit 1 e/demo@u.nus.edu"}) {
-                assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
-                assertArrayEquals(original, Files.readAllBytes(path));
-            }
-            app.logic.execute("exit");
-            app.stop();
+            assertRecoveryPreservesFileThroughExit(path, incompatible);
+        }
+    }
+
+    @Test
+    public void initModel_missingOrInvalidSampleClassification_entersRecoveryAndPreservesFile() throws Exception {
+        Path path = folder.resolve("roster.json");
+        new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
+        assertEquals(getTypicalAddressBook(), new JsonAddressBookStorage(path).readAddressBook().orElseThrow());
+        ObjectMapper mapper = new ObjectMapper();
+        String validJson = Files.readString(path);
+
+        // an older file without the classification, and classifications that are null or not booleans
+        JsonNode missing = mapper.readTree(validJson);
+        secondRecord(missing).remove("sample");
+        JsonNode nullSample = mapper.readTree(validJson);
+        secondRecord(nullSample).putNull("sample");
+        JsonNode textSample = mapper.readTree(validJson);
+        secondRecord(textSample).put("sample", "false");
+        for (JsonNode incompatible : new JsonNode[] {missing, nullSample, textSample}) {
+            assertRecoveryPreservesFileThroughExit(path, mapper.writeValueAsString(incompatible));
+        }
+    }
+
+    private static ObjectNode secondRecord(JsonNode roster) {
+        return (ObjectNode) roster.get("persons").get(1);
+    }
+
+    /**
+     * Writes {@code incompatible} to {@code path}, starts the app on it, and asserts that the app opens an empty
+     * read-only recovery session that blocks mutations and leaves the file's bytes unchanged through exit.
+     */
+    private void assertRecoveryPreservesFileThroughExit(Path path, String incompatible) throws Exception {
+        Files.writeString(path, incompatible);
+        byte[] original = Files.readAllBytes(path);
+        MainApp app = createApp();
+        assertTrue(app.model.isReadOnly());
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        app.logic.execute("list");
+        app.logic.execute("find alice");
+        for (String mutation : new String[] {"student add /name Fictional Student /email demo@u.nus.edu",
+            "edit /email demo@u.nus.edu /github Demo"}) {
+            assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
             assertArrayEquals(original, Files.readAllBytes(path));
         }
+        app.logic.execute("exit");
+        app.stop();
+        assertArrayEquals(original, Files.readAllBytes(path));
     }
 
     /**
@@ -126,6 +162,26 @@ public class MainAppTest {
     private static String replaceOnce(String text, String target, String replacement) {
         assertEquals(text.length() - target.length(), text.replace(target, "").length());
         return text.replace(target, replacement);
+    }
+
+    @Test
+    public void initModel_retiredFields_recoveryPreservesSourceThroughExit() throws Exception {
+        Path path = folder.resolve("roster.json");
+        new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
+        String valid = Files.readString(path);
+        for (String retired : new String[] {"\"phone\": \"91234567\",", "\"address\": \"Clementi\",",
+            "\"phone\": null,", "\"address\": null,"}) {
+            String invalid = valid.replaceFirst("\"name\"", retired + "\"name\"");
+            Files.writeString(path, invalid);
+            byte[] original = Files.readAllBytes(path);
+            MainApp app = createApp();
+            assertTrue(app.model.isReadOnly());
+            assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () ->
+                    app.logic.execute("student add /name Demo /email demo@u.nus.edu"));
+            app.logic.execute("exit");
+            app.stop();
+            assertArrayEquals(original, Files.readAllBytes(path));
+        }
     }
 
     private MainApp createApp() {

@@ -2,14 +2,11 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Comparator;
-import java.util.Locale;
-
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.model.Model;
 import seedu.address.model.person.NameOrEmailContainsQueryPredicate;
-import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 
 /**
  * Finds students whose name or email contains a single literal query, ignoring case.
@@ -23,10 +20,6 @@ public class FindCommand extends Command {
             + "Telegram and GitHub searches are not available in v1.2.";
     public static final String MESSAGE_EMPTY_QUERY = "Enter a name or email to search.";
     public static final String MESSAGE_LONG_QUERY = "Search text must not contain more than 100 characters.";
-
-    private static final Comparator<Person> RESULT_ORDER = Comparator
-            .comparing((Person person) -> person.getName().fullName.toLowerCase(Locale.ROOT))
-            .thenComparing(person -> person.getEmail().value.toLowerCase(Locale.ROOT));
 
     private final String query;
 
@@ -45,7 +38,7 @@ public class FindCommand extends Command {
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        model.updateFilteredPersonList(new NameOrEmailContainsQueryPredicate(query), RESULT_ORDER);
+        model.updateFilteredPersonList(new NameOrEmailContainsQueryPredicate(query), PersonOrder.BY_NAME_THEN_EMAIL);
         return CommandResult.forSearch(Messages.formatSearchResult(query, model.getFilteredPersonList().size()));
     }
 

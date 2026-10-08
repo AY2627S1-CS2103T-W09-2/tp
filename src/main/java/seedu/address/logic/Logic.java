@@ -23,8 +23,8 @@ public interface Logic {
     CommandResult execute(String commandText) throws CommandException, ParseException;
 
     /**
-     * Executes a command and presents search results before reporting success.
-     * A failed search presentation restores the preceding filter and order.
+     * Executes a command and presents search results or its target profile before reporting success.
+     * A failed presentation restores the preceding data, filter and order.
      */
     CommandResult execute(String commandText, Consumer<CommandResult> presentSearch)
             throws CommandException, ParseException;

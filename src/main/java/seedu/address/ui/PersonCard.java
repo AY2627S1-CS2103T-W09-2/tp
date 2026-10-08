@@ -1,6 +1,7 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.Optional;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -13,6 +14,11 @@ import seedu.address.model.person.Person;
  * A UI component that displays information of a {@code Person}.
  */
 public class PersonCard extends UiPart<Region> {
+
+    static final String TELEGRAM_LABEL = "Telegram";
+    static final String GITHUB_LABEL = "GitHub";
+    static final String NOT_PROVIDED = "Not provided";
+    static final String SAMPLE_LABEL = "Fictional sample";
 
     private static final String FXML = "PersonListCard.fxml";
 
@@ -33,13 +39,17 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label id;
     @FXML
-    private Label phone;
-    @FXML
-    private Label address;
-    @FXML
     private Label email;
     @FXML
+    private Label telegram;
+    @FXML
+    private Label github;
+    @FXML
+    private Label sample;
+    @FXML
     private Label remark;
+    @FXML
+    private Label enrolments;
     @FXML
     private FlowPane tags;
 
@@ -51,12 +61,24 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        phone.setText(person.getPhone().value);
-        address.setText(person.getAddress().value);
-        email.setText(person.getEmail().value);
+        email.setText("NUS email: " + person.getEmail().value);
+        enrolments.setText(person.getEnrolments().isEmpty() ? "Enrolments: none"
+                : "Enrolments: " + person.getEnrolments().size());
+        telegram.setText(contactText(TELEGRAM_LABEL, person.getTelegram()));
+        github.setText(contactText(GITHUB_LABEL, person.getGitHub()));
+        sample.setText(SAMPLE_LABEL);
+        sample.setVisible(person.isSample());
+        sample.setManaged(person.isSample());
         remark.setText(person.getRemark().value);
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.tagName))
                 .forEach(tag -> tags.getChildren().add(new Label(tag.tagName)));
+    }
+
+    /**
+     * Returns the card line for an optional contact. The not-provided text is display only and is never stored.
+     */
+    static String contactText(String label, Optional<?> contact) {
+        return label + ": " + contact.map(Object::toString).orElse(NOT_PROVIDED);
     }
 }
