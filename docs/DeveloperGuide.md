@@ -175,7 +175,7 @@ An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Option
 
 Otherwise valid older profiles with no `enrolments` property load with an empty list. An explicit empty array also means no enrolments; an explicit null array, null item, malformed item, missing module/semester, invalid value, or repeated key rejects the entire load. Omitted or null `section` and `team` mean absence; empty strings are invalid. Stored strings must already equal the validated value's canonical form. Loading does not silently correct lowercase modules, semester spacing, or affiliation whitespace. Equivalent JSON escapes decode to the same valid string.
 
-This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. Integration with #59 must retain canonical email identity and allow same-name students. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
 
 ### Storage safety (v1.2)
 

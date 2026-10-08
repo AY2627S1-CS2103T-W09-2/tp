@@ -2,6 +2,7 @@ package seedu.address.storage;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 
@@ -67,7 +68,13 @@ class EnrolmentStorageTest {
 
     @Test
     void malformedEnrolments_rejectWholeFileAndPreserveBytes() throws Exception {
-        String validPerson = JsonUtil.toJsonString(new JsonAdaptedPerson(new PersonBuilder().build()));
+        String validPerson = JsonUtil.toJsonString(new JsonAdaptedPerson(new PersonBuilder()
+                .withName("First Student").withEmail("e9000001@u.nus.edu").build()));
+        String secondPerson = JsonUtil.toJsonString(new JsonAdaptedPerson(new PersonBuilder()
+                .withName("Second Student").withEmail("e9000002@u.nus.edu").build()));
+        Path positive = folder.resolve("valid.json");
+        Files.writeString(positive, "{\"persons\":[" + validPerson + "," + secondPerson + "]}");
+        assertEquals(2, new JsonAddressBookStorage(positive).readAddressBook().orElseThrow().getPersonList().size());
         String context = "{\"module\":\"CS2103T\",\"semester\":\"AY26/27 S1\"}";
         String assigned = "{\"module\":\"CS2103T\",\"semester\":\"AY26/27 S1\",\"section\":\"T14\"}";
         for (String invalid : List.of("null", "[null]", "[{}]", "[" + context + "," + assigned + "]",
@@ -79,14 +86,33 @@ class EnrolmentStorageTest {
                 "[" + assigned.replace("T14", "T/14") + "]",
                 "[" + assigned.replace("T14", " T14 ") + "]",
                 "[" + assigned.replace("\"T14\"", "123") + "]", "{}", "123")) {
-            String invalidPerson = validPerson.replaceAll("\"enrolments\"\\s*:\\s*\\[\\s*\\]",
+            String invalidPerson = secondPerson.replaceAll("\"enrolments\"\\s*:\\s*\\[\\s*\\]",
                     "\"enrolments\":" + invalid);
+            assertNotEquals(secondPerson, invalidPerson);
             Path target = folder.resolve("invalid.json");
             Files.writeString(target, "{\"persons\":[" + validPerson + "," + invalidPerson + "]}");
             byte[] original = Files.readAllBytes(target);
             assertThrows(DataLoadingException.class, () -> new JsonAddressBookStorage(target).readAddressBook());
             assertArrayEquals(original, Files.readAllBytes(target));
         }
+    }
+
+    @Test
+    void sameNameDifferentEmails_preserveEnrolmentsAndStrictStoredIdentity() throws Exception {
+        Person first = new PersonBuilder().withName("Alex Demo").withEmail("e9000001@u.nus.edu")
+                .withEnrolments(new Enrolment(new ModuleCode("CS2103T"), new Semester("AY26/27 S1"))).build();
+        Person second = new PersonBuilder(first).withEmail("e9000002@u.nus.edu").build();
+        AddressBook roster = new AddressBook();
+        roster.addPerson(first);
+        roster.addPerson(second);
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(folder.resolve("same-name.json"));
+        storage.saveAddressBook(roster);
+        assertEquals(roster, storage.readAddressBook().orElseThrow());
+        String valid = Files.readString(storage.getAddressBookFilePath());
+        Files.writeString(storage.getAddressBookFilePath(), valid.replace("e9000002@u.nus.edu", "E9000002@U.NUS.EDU"));
+        byte[] original = Files.readAllBytes(storage.getAddressBookFilePath());
+        assertThrows(DataLoadingException.class, storage::readAddressBook);
+        assertArrayEquals(original, Files.readAllBytes(storage.getAddressBookFilePath()));
     }
 
     @Test
