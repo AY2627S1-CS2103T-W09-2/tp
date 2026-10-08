@@ -2,12 +2,15 @@ package seedu.address.model.person;
 
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
+import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.tag.Tag;
 
 /**
@@ -15,6 +18,7 @@ import seedu.address.model.tag.Tag;
  * Guarantees: details are present and not null, field values are validated, immutable.
  */
 public class Person {
+    public static final String MESSAGE_DUPLICATE_ENROLMENT = "Duplicate module-semester enrolment.";
 
     // Details; only the canonical email identifies the person (see isSamePerson)
     private final Name name;
@@ -25,6 +29,7 @@ public class Person {
     private final Address address;
     private final Remark remark;
     private final Set<Tag> tags = new HashSet<>();
+    private final List<Enrolment> enrolments;
 
     /**
      * Every field must be present and not null.
@@ -37,13 +42,38 @@ public class Person {
      * Every field must be present and not null.
      */
     public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, address, remark, tags);
+        this(name, phone, email, address, remark, tags, List.of());
+    }
+
+    /** Creates a profile with a defensive immutable copy of its uniquely keyed enrolments. */
+    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags,
+            Collection<Enrolment> enrolments) {
+        requireAllNonNull(name, phone, email, address, remark, tags, enrolments);
+        List<Enrolment> copy = List.copyOf(enrolments);
+        for (int i = 0; i < copy.size(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (copy.get(i).hasSameKey(copy.get(j))) {
+                    throw new IllegalArgumentException(MESSAGE_DUPLICATE_ENROLMENT);
+                }
+            }
+        }
+        this.enrolments = copy;
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.address = address;
         this.remark = remark;
         this.tags.addAll(tags);
+    }
+
+    /** Returns the immutable enrolment list in stored order. */
+    public List<Enrolment> getEnrolments() {
+        return enrolments;
+    }
+
+    /** Returns a new profile with the supplied enrolments and all other fields preserved. */
+    public Person withEnrolments(Collection<Enrolment> updatedEnrolments) {
+        return new Person(name, phone, email, address, remark, tags, updatedEnrolments);
     }
 
     public Name getName() {
@@ -108,13 +138,14 @@ public class Person {
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
                 && remark.equals(otherPerson.remark)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && enrolments.equals(otherPerson.enrolments);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, remark, tags);
+        return Objects.hash(name, phone, email, address, remark, tags, enrolments);
     }
 
     @Override
@@ -126,6 +157,7 @@ public class Person {
                 .add("address", address)
                 .add("remark", remark)
                 .add("tags", tags)
+                .add("enrolments", enrolments)
                 .toString();
     }
 

@@ -1,8 +1,10 @@
 package seedu.address.testutil;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
@@ -29,6 +31,7 @@ public class PersonBuilder {
     private Address address;
     private Remark remark;
     private Set<Tag> tags;
+    private List<Enrolment> enrolments = List.of();
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -46,6 +49,7 @@ public class PersonBuilder {
      * Initializes the PersonBuilder with the data of {@code personToCopy}.
      */
     public PersonBuilder(Person personToCopy) {
+        enrolments = personToCopy.getEnrolments();
         name = personToCopy.getName();
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
@@ -100,8 +104,14 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Sets the enrolments of the profile being built. */
+    public PersonBuilder withEnrolments(Enrolment... enrolments) {
+        this.enrolments = List.of(enrolments);
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, remark, tags);
+        return new Person(name, phone, email, address, remark, tags, enrolments);
     }
 
 }
