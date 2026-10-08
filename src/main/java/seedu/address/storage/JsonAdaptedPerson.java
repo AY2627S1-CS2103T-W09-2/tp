@@ -8,8 +8,10 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import seedu.address.commons.exceptions.IllegalValueException;
+import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
 import seedu.address.model.person.Name;
@@ -33,6 +35,7 @@ class JsonAdaptedPerson {
     private final String address;
     private final String remark;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final List<JsonAdaptedEnrolment> enrolments = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
@@ -59,6 +62,7 @@ class JsonAdaptedPerson {
      * Converts a given {@code Person} into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
+        enrolments.addAll(source.getEnrolments().stream().map(JsonAdaptedEnrolment::new).collect(Collectors.toList()));
         name = source.getName().fullName;
         phone = source.getPhone().value;
         email = source.getEmail().value;
@@ -67,6 +71,16 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+    }
+
+    /** Reads an explicitly supplied enrolment array; an omitted property retains the legacy empty list. */
+    @JsonSetter("enrolments")
+    public void setEnrolments(List<JsonAdaptedEnrolment> enrolments) {
+        if (enrolments == null) {
+            throw new IllegalArgumentException("The enrolments field must be an array, not null.");
+        }
+        this.enrolments.clear();
+        this.enrolments.addAll(enrolments);
     }
 
     /**
@@ -117,8 +131,19 @@ class JsonAdaptedPerson {
         final Address modelAddress = new Address(address);
         final Remark modelRemark = new Remark(remark == null ? "" : remark);
 
+        final List<Enrolment> modelEnrolments = new ArrayList<>();
+        for (JsonAdaptedEnrolment enrolment : enrolments) {
+            if (enrolment == null) {
+                throw new IllegalValueException("Enrolment records must not be null.");
+            }
+            modelEnrolments.add(enrolment.toModelType());
+        }
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRemark, modelTags);
+        try {
+            return new Person(modelName, modelPhone, modelEmail, modelAddress, modelRemark, modelTags, modelEnrolments);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalValueException(e.getMessage());
+        }
     }
 
 }
