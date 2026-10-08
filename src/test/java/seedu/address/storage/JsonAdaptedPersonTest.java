@@ -77,6 +77,18 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_nonCanonicalEmail_throwsIllegalValueException() {
+        List<String> nonCanonicalEmails = List.of("JOHND@u.nus.edu", "johnd@U.NUS.EDU",
+                " " + VALID_EMAIL, VALID_EMAIL + " ", "\t" + VALID_EMAIL, VALID_EMAIL + "\t");
+        for (String nonCanonicalEmail : nonCanonicalEmails) {
+            JsonAdaptedPerson person =
+                    new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, nonCanonicalEmail, VALID_ADDRESS, VALID_TAGS);
+            String expectedMessage = JsonAdaptedPerson.MESSAGE_NON_CANONICAL_EMAIL;
+            assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
+        }
+    }
+
+    @Test
     public void toModelType_nullEmail_throwsIllegalValueException() {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, null, VALID_ADDRESS, VALID_TAGS);
         String expectedMessage = String.format(MISSING_FIELD_MESSAGE_FORMAT, Email.class.getSimpleName());

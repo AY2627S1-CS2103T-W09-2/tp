@@ -4,6 +4,8 @@ import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +45,27 @@ public class AddCommandIntegrationTest {
         Person personInList = model.getAddressBook().getPersonList().get(0);
         assertCommandFailure(new AddCommand(personInList), model,
                 AddCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_sameNameDifferentEmail_success() {
+        Person personInList = model.getAddressBook().getPersonList().get(0);
+        Person sameNamePerson = new PersonBuilder(personInList).withEmail("alice.pauline@u.nus.edu").build();
+
+        Model expectedModel = new ModelManager(model.getAddressBook(), new UserPrefs());
+        expectedModel.addPerson(sameNamePerson);
+
+        assertCommandSuccess(new AddCommand(sameNamePerson), model,
+                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(sameNamePerson)),
+                expectedModel);
+    }
+
+    @Test
+    public void execute_existingEmailInDifferentCase_throwsCommandException() {
+        Person personInList = model.getAddressBook().getPersonList().get(0);
+        Person differentName = new PersonBuilder().withName("Alicia Tan")
+                .withEmail(personInList.getEmail().value.toUpperCase(Locale.ROOT)).build();
+        assertCommandFailure(new AddCommand(differentName), model, AddCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
 }
