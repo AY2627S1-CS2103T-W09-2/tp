@@ -1,12 +1,15 @@
 package seedu.address.logic;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.BENSON;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +17,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
@@ -111,6 +116,82 @@ public class StorageSafetyTest {
         }
     }
 
+    @Test
+    public void execute_duplicateAndCanonicalNoOpEmails_doNotSave() throws Exception {
+        assertEquals("alice@u.nus.edu", ALICE.getEmail().value); // the commands below use this email
+        ModelManager model = createModel();
+        Path rosterFile = folder.resolve("roster.json");
+        new JsonAddressBookStorage(rosterFile).saveAddressBook(model.getAddressBook());
+        byte[] originalBytes = Files.readAllBytes(rosterFile);
+        AddressBook original = new AddressBook(model.getAddressBook());
+        CountingStorage storage = new CountingStorage(rosterFile);
+        Logic logic = createLogic(model, storage);
+
+        // duplicate creation with the existing email in another case
+        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () ->
+                logic.execute("add n/Mei Lim p/12345 e/ALICE@U.NUS.EDU a/Test"));
+        assertNothingSaved(storage, model, original, rosterFile, originalBytes);
+
+        // another profile edited to the existing email in another case
+        String editBenson = "edit " + displayedIndexOf(model, BENSON) + " e/ Alice@U.Nus.Edu";
+        assertThrows(CommandException.class, EditCommand.MESSAGE_DUPLICATE_PERSON, () ->
+                logic.execute(editBenson));
+        assertNothingSaved(storage, model, original, rosterFile, originalBytes);
+
+        // a profile edited to its own email in another case changes no stored value
+        logic.execute("edit " + displayedIndexOf(model, ALICE) + " e/ALICE@U.NUS.EDU");
+        assertNothingSaved(storage, model, original, rosterFile, originalBytes);
+    }
+
+    @Test
+    public void execute_canonicalisedEmailChanges_savedOnceAndReloaded() throws Exception {
+        ModelManager model = createModel();
+        Path rosterFile = folder.resolve("roster.json");
+        CountingStorage storage = new CountingStorage(rosterFile);
+        Logic logic = createLogic(model, storage);
+
+        logic.execute("add n/Mei Lim p/12345 e/ \tMEI@U.NUS.EDU\t a/Test");
+        assertEquals(1, storage.saves);
+        assertEquals("mei@u.nus.edu", findReloadedByName(model, rosterFile, "Mei Lim").getEmail().value);
+
+        Person mei = findByName(model.getAddressBook(), "Mei Lim");
+        logic.execute("edit " + displayedIndexOf(model, mei) + " e/Mei.Lim@U.Nus.EDU");
+        assertEquals(2, storage.saves);
+        assertEquals("mei.lim@u.nus.edu", findReloadedByName(model, rosterFile, "Mei Lim").getEmail().value);
+        assertEquals(storage.saves, storage.attempts);
+    }
+
+    @Test
+    public void execute_failedEmailSave_rollsBackAndRetrySucceeds() throws Exception {
+        ModelManager model = createModel();
+        Path rosterFile = folder.resolve("roster.json");
+        new JsonAddressBookStorage(rosterFile).saveAddressBook(model.getAddressBook());
+        byte[] originalBytes = Files.readAllBytes(rosterFile);
+        AddressBook original = new AddressBook(model.getAddressBook());
+        model.updateFilteredPersonList(person -> person.equals(ALICE) || person.equals(BENSON),
+                Comparator.comparing((Person person) -> person.getName().fullName).reversed());
+        CountingStorage storage = new CountingStorage(rosterFile);
+        storage.failNextAttempt = true;
+        Logic logic = createLogic(model, storage);
+        String add = "add n/Mei Lim p/12345 e/MEI@U.NUS.EDU a/Test";
+
+        assertThrows(CommandException.class,
+                String.format(LogicManager.FILE_OPS_ERROR_FORMAT, CountingStorage.FAILURE_MESSAGE), () ->
+                logic.execute(add));
+        assertEquals(1, storage.attempts);
+        assertEquals(0, storage.saves);
+        assertEquals(original, model.getAddressBook());
+        assertEquals(List.of(BENSON, ALICE), model.getFilteredPersonList());
+        assertArrayEquals(originalBytes, Files.readAllBytes(rosterFile));
+
+        // the retry succeeds, so the failed attempt left no duplicate behind
+        logic.execute(add);
+        assertEquals(2, storage.attempts);
+        assertEquals(1, storage.saves);
+        assertEquals(3, model.getAddressBook().getPersonList().size());
+        assertEquals("mei@u.nus.edu", findReloadedByName(model, rosterFile, "Mei Lim").getEmail().value);
+    }
+
     private ModelManager createModel() {
         ModelManager model = new ModelManager();
         model.addPerson(ALICE);
@@ -121,5 +202,62 @@ public class StorageSafetyTest {
     private Logic createLogic(ModelManager model, JsonAddressBookStorage storage) {
         return new LogicManager(model,
                 new StorageManager(storage, new JsonUserPrefsStorage(folder.resolve("prefs.json"))));
+    }
+
+    /**
+     * Returns the one-based displayed index of {@code person}.
+     */
+    private static int displayedIndexOf(ModelManager model, Person person) {
+        int index = model.getFilteredPersonList().indexOf(person);
+        assertTrue(index >= 0);
+        return index + 1;
+    }
+
+    private static Person findByName(ReadOnlyAddressBook roster, String name) {
+        return roster.getPersonList().stream()
+                .filter(person -> person.getName().fullName.equals(name))
+                .findFirst().orElseThrow();
+    }
+
+    /**
+     * Reloads the roster file, checks that it equals the roster in the model, and returns the named person.
+     */
+    private static Person findReloadedByName(ModelManager model, Path rosterFile, String name) throws Exception {
+        ReadOnlyAddressBook reloaded = new JsonAddressBookStorage(rosterFile).readAddressBook().orElseThrow();
+        assertEquals(model.getAddressBook(), new AddressBook(reloaded));
+        return findByName(reloaded, name);
+    }
+
+    private static void assertNothingSaved(CountingStorage storage, ModelManager model, AddressBook original,
+            Path rosterFile, byte[] originalBytes) throws IOException {
+        assertEquals(0, storage.attempts);
+        assertEquals(original, model.getAddressBook());
+        assertArrayEquals(originalBytes, Files.readAllBytes(rosterFile));
+    }
+
+    /**
+     * Counts roster save attempts and completed saves; can fail the next attempt before anything is written.
+     */
+    private static class CountingStorage extends JsonAddressBookStorage {
+        static final String FAILURE_MESSAGE = "replacement failed";
+
+        private int attempts;
+        private int saves;
+        private boolean failNextAttempt;
+
+        CountingStorage(Path filePath) {
+            super(filePath);
+        }
+
+        @Override
+        public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+            attempts++;
+            if (failNextAttempt) {
+                failNextAttempt = false;
+                throw new IOException(FAILURE_MESSAGE);
+            }
+            super.saveAddressBook(addressBook);
+            saves++;
+        }
     }
 }

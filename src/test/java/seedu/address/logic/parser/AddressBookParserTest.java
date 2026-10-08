@@ -5,6 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.Messages.MESSAGE_SINGLE_LINE;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_AMY;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_AMY;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
@@ -73,6 +81,37 @@ public class AddressBookParserTest {
         for (String command : new String[] {"find Alex\n", "\0find Alex", "find Alex\u2028Tan"}) {
             assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () -> parser.parseCommand(command));
         }
+    }
+
+    @Test
+    public void parseCommand_controlAtEmailBoundary_throwsParseException() {
+        String add = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY;
+        String edit = EditCommand.COMMAND_WORD + " 1 e/";
+        String[] commands = {
+            add + EMAIL_DESC_AMY + "\u0001" + ADDRESS_DESC_AMY, // before another prefix
+            add + ADDRESS_DESC_AMY + EMAIL_DESC_AMY + "\u0001", // last argument and end of command
+            edit + "\u000B" + VALID_EMAIL_AMY, // vertical tab before the email
+            edit + VALID_EMAIL_AMY + "\r" + NAME_DESC_AMY, // carriage return
+            edit + VALID_EMAIL_AMY + "\n" + NAME_DESC_AMY, // line feed
+            edit + "\u0085" + VALID_EMAIL_AMY, // C1 control (next line)
+            edit + VALID_EMAIL_AMY + "\u007F", // delete
+            edit + VALID_EMAIL_AMY + "\u2029" // paragraph separator
+        };
+        for (String command : commands) {
+            assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () -> parser.parseCommand(command));
+        }
+    }
+
+    @Test
+    public void parseCommand_tabsAndUppercaseEmail_canonicalisesEmail() throws Exception {
+        Person amy = new PersonBuilder().withName(VALID_NAME_AMY).withPhone(VALID_PHONE_AMY)
+                .withEmail(VALID_EMAIL_AMY).withAddress(VALID_ADDRESS_AMY).build();
+        assertEquals(new AddCommand(amy), parser.parseCommand(AddCommand.COMMAND_WORD + NAME_DESC_AMY
+                + PHONE_DESC_AMY + " e/\t AMY@U.NUS.EDU \t" + ADDRESS_DESC_AMY));
+
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withEmail(VALID_EMAIL_AMY).build();
+        assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor),
+                parser.parseCommand("\tedit\t1 e/\t AMY@U.NUS.EDU \t"));
     }
 
     @Test

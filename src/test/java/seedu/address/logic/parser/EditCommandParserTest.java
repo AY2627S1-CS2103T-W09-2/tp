@@ -32,6 +32,8 @@ import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
@@ -161,6 +163,34 @@ public class EditCommandParserTest {
         descriptor = new EditPersonDescriptorBuilder().withTags(VALID_TAG_FRIEND).build();
         expectedCommand = new EditCommand(targetIndex, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_emailWithSurroundingTabsAndUppercase_canonicalEmail() {
+        Index targetIndex = INDEX_FIRST_PERSON;
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withEmail(VALID_EMAIL_AMY).build();
+        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+
+        // email is the last argument
+        assertParseSuccess(parser, targetIndex.getOneBased() + " " + PREFIX_EMAIL + "\t"
+                + VALID_EMAIL_AMY.toUpperCase(Locale.ROOT) + "\t", expectedCommand);
+
+        // email is followed by another prefix
+        descriptor = new EditPersonDescriptorBuilder().withEmail(VALID_EMAIL_AMY).withPhone(VALID_PHONE_AMY).build();
+        assertParseSuccess(parser, targetIndex.getOneBased() + " " + PREFIX_EMAIL + "  "
+                + VALID_EMAIL_AMY.toUpperCase(Locale.ROOT) + "  " + PHONE_DESC_AMY,
+                new EditCommand(targetIndex, descriptor));
+    }
+
+    @Test
+    public void parse_invalidNusEmail_failure() {
+        for (String email : new String[] {"amy@u.nus.edu.sg", "amy..bee@u.nus.edu", "amy@example.com",
+            "\u212Amy@u.nus.edu"}) {
+            assertParseFailure(parser, "1 " + PREFIX_EMAIL + email, Email.MESSAGE_CONSTRAINTS);
+        }
+
+        // an invalid name is reported before an invalid email
+        assertParseFailure(parser, "1" + INVALID_NAME_DESC + " " + PREFIX_EMAIL + "bad", Name.MESSAGE_CONSTRAINTS);
     }
 
     @Test

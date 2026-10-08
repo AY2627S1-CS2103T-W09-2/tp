@@ -33,6 +33,8 @@ import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSucces
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.Messages;
@@ -205,5 +207,36 @@ public class AddCommandParserTest {
         assertParseFailure(parser, PREAMBLE_NON_EMPTY + NAME_DESC_BOB + PHONE_DESC_BOB + EMAIL_DESC_BOB
                 + ADDRESS_DESC_BOB + TAG_DESC_HUSBAND + TAG_DESC_FRIEND,
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+    }
+
+    @Test
+    public void parse_emailWithSurroundingSpacesTabsOrUppercase_canonicalEmail() {
+        Person expectedPerson = new PersonBuilder(BOB).withTags().build();
+        String uppercaseEmail = VALID_EMAIL_BOB.toUpperCase(Locale.ROOT);
+
+        // email is the last argument, surrounded by tabs
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + ADDRESS_DESC_BOB + " " + PREFIX_EMAIL
+                + "\t" + uppercaseEmail + "\t", new AddCommand(expectedPerson));
+
+        // email is followed by another prefix, with extra spaces
+        assertParseSuccess(parser, NAME_DESC_BOB + PHONE_DESC_BOB + " " + PREFIX_EMAIL + "  " + uppercaseEmail
+                + "   " + ADDRESS_DESC_BOB, new AddCommand(expectedPerson));
+    }
+
+    @Test
+    public void parse_invalidNusEmail_failure() {
+        String argsBeforeEmail = NAME_DESC_BOB + PHONE_DESC_BOB + ADDRESS_DESC_BOB + " " + PREFIX_EMAIL;
+        for (String email : new String[] {"bob 1@u.nus.edu", "\u00A0" + VALID_EMAIL_BOB, "\u212Aevin@u.nus.edu",
+            "bob@nus.edu.sg", "bob@@u.nus.edu", "bob.u.nus.edu", "bob..tan@u.nus.edu", "bob@example.com"}) {
+            assertParseFailure(parser, argsBeforeEmail + email, Email.MESSAGE_CONSTRAINTS);
+        }
+
+        // an ASCII 'K' remains valid
+        Person expectedPerson = new PersonBuilder(BOB).withEmail("kevin@u.nus.edu").withTags().build();
+        assertParseSuccess(parser, argsBeforeEmail + "Kevin@u.nus.edu", new AddCommand(expectedPerson));
+
+        // an invalid name is reported before an invalid email
+        assertParseFailure(parser, INVALID_NAME_DESC + PHONE_DESC_BOB + INVALID_EMAIL_DESC + ADDRESS_DESC_BOB,
+                Name.MESSAGE_CONSTRAINTS);
     }
 }
