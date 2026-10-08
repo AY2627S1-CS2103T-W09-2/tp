@@ -1,7 +1,9 @@
 package seedu.address.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
 import static seedu.address.testutil.TypicalPersons.HOON;
@@ -9,15 +11,20 @@ import static seedu.address.testutil.TypicalPersons.IDA;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ReadOnlyAddressBook;
+import seedu.address.model.person.Email;
 
 public class JsonAddressBookStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonAddressBookStorageTest");
@@ -58,6 +65,89 @@ public class JsonAddressBookStorageTest {
     @Test
     public void readAddressBook_invalidAndValidPersonAddressBook_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readAddressBook("invalidAndValidPersonAddressBook.json"));
+    }
+
+    @Test
+    public void readAddressBook_legacyNonNusEmails_throwDataLoadingExceptionAndPreserveFile() throws Exception {
+        Path legacyFile = testFolder.resolve("legacyAddressBook.json");
+        Files.copy(TEST_DATA_FOLDER.resolve("legacyAb3EmailAddressBook.json"), legacyFile);
+        assertLoadRejectedAndFilePreserved(legacyFile, Email.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void readAddressBook_canonicalDistinctEmails_success() throws Exception {
+        List<String> emails = List.of("alex.tan@u.nus.edu", "alextan@u.nus.edu", "alex.tan+cs2103@u.nus.edu");
+        Path file = writeRoster("canonical.json", personJson("Alex Tan", emails.get(0)),
+                personJson("Alex Tan", emails.get(1)), personJson("Alex Tan", emails.get(2)));
+
+        ReadOnlyAddressBook readBack = new JsonAddressBookStorage(file).readAddressBook().get();
+        assertEquals(emails, readBack.getPersonList().stream().map(person -> person.getEmail().value).toList());
+    }
+
+    @Test
+    public void readAddressBook_unicodeEscapedCanonicalEmail_success() throws Exception {
+        // The JSON Unicode escape for the letter 'a' decodes to a canonical email
+        Path file = writeRoster("escaped.json", personJson("Alex Tan", "\\u0061lex@u.nus.edu"));
+
+        ReadOnlyAddressBook readBack = new JsonAddressBookStorage(file).readAddressBook().get();
+        assertEquals("alex@u.nus.edu", readBack.getPersonList().get(0).getEmail().value);
+    }
+
+    @Test
+    public void readAddressBook_nonCanonicalEmail_throwDataLoadingExceptionAndPreserveFile() throws Exception {
+        // tabs are written as JSON escapes so that the files remain valid JSON
+        List<String> nonCanonicalEmails = List.of("ALEX@u.nus.edu", "alex@U.NUS.EDU", " alex@u.nus.edu",
+                "alex@u.nus.edu ", "\\talex@u.nus.edu", "alex@u.nus.edu\\t");
+        for (String nonCanonicalEmail : nonCanonicalEmails) {
+            Path file = writeRoster("nonCanonical.json", personJson("Alex Tan", nonCanonicalEmail));
+            assertLoadRejectedAndFilePreserved(file, JsonAdaptedPerson.MESSAGE_NON_CANONICAL_EMAIL);
+        }
+    }
+
+    @Test
+    public void readAddressBook_validAndNonCanonicalEmails_throwDataLoadingExceptionAndPreserveFile() throws Exception {
+        Path file = writeRoster("mixed.json", personJson("Alex Tan", "alex@u.nus.edu"),
+                personJson("Alice Lim", "ALICE@u.nus.edu"));
+        assertLoadRejectedAndFilePreserved(file, JsonAdaptedPerson.MESSAGE_NON_CANONICAL_EMAIL);
+    }
+
+    @Test
+    public void readAddressBook_duplicateCanonicalEmails_throwDataLoadingExceptionAndPreserveFile() throws Exception {
+        Path file = writeRoster("duplicate.json", personJson("Alex Tan", "alex@u.nus.edu"),
+                personJson("Alexander Tan", "alex@u.nus.edu"));
+        assertLoadRejectedAndFilePreserved(file, JsonSerializableAddressBook.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    /**
+     * Writes a data file with the given JSON person records to the temporary folder and returns its path.
+     */
+    private Path writeRoster(String fileName, String... personRecords) throws IOException {
+        Path file = testFolder.resolve(fileName);
+        Files.writeString(file, "{ \"persons\": [ " + String.join(", ", personRecords) + " ] }");
+        return file;
+    }
+
+    /**
+     * Returns a JSON person record with valid details and the given email, which must already be JSON-escaped.
+     */
+    private static String personJson(String name, String jsonEscapedEmail) {
+        return "{ \"name\": \"" + name + "\", \"phone\": \"91234567\", \"email\": \"" + jsonEscapedEmail
+                + "\", \"address\": \"Clementi Ave 1\", \"tags\": [ ] }";
+    }
+
+    /**
+     * Asserts that reading {@code file} fails with a stored-data violation with {@code expectedCauseMessage},
+     * and that the bytes of {@code file} are unchanged.
+     */
+    private static void assertLoadRejectedAndFilePreserved(Path file, String expectedCauseMessage)
+            throws IOException {
+        byte[] originalBytes = Files.readAllBytes(file);
+
+        DataLoadingException exception = Assertions.assertThrows(DataLoadingException.class, () ->
+                new JsonAddressBookStorage(file).readAddressBook());
+        assertInstanceOf(IllegalValueException.class, exception.getCause());
+        assertEquals(expectedCauseMessage, exception.getCause().getMessage());
+        assertArrayEquals(originalBytes, Files.readAllBytes(file));
     }
 
     @Test

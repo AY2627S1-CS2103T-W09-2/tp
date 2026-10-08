@@ -24,6 +24,8 @@ import seedu.address.model.tag.Tag;
 class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
+    public static final String MESSAGE_NON_CANONICAL_EMAIL = "Stored NUS email must already be lowercase, "
+            + "with no surrounding spaces or tabs.";
 
     private final String name;
     private final String phone;
@@ -101,6 +103,10 @@ class JsonAdaptedPerson {
             throw new IllegalValueException(Email.MESSAGE_CONSTRAINTS);
         }
         final Email modelEmail = new Email(email);
+        // Stored emails are never corrected: the decoded stored value must already be canonical.
+        if (!modelEmail.value.equals(email)) {
+            throw new IllegalValueException(MESSAGE_NON_CANONICAL_EMAIL);
+        }
 
         if (address == null) {
             throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Address.class.getSimpleName()));

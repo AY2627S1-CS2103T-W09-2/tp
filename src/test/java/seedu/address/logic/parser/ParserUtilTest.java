@@ -7,6 +7,7 @@ import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ public class ParserUtilTest {
     private static final String VALID_NAME = "Rachel Walker";
     private static final String VALID_PHONE = "123456";
     private static final String VALID_ADDRESS = "123 Main Street #0505";
-    private static final String VALID_EMAIL = "rachel@example.com";
+    private static final String VALID_EMAIL = "rachel@u.nus.edu";
     private static final String VALID_TAG_1 = "friend";
     private static final String VALID_TAG_2 = "neighbour";
 
@@ -140,10 +141,25 @@ public class ParserUtilTest {
     }
 
     @Test
-    public void parseEmail_validValueWithWhitespace_returnsTrimmedEmail() throws Exception {
-        String emailWithWhitespace = WHITESPACE + VALID_EMAIL + WHITESPACE;
+    public void parseEmail_validValueWithSpacesAndTabs_returnsTrimmedEmail() throws Exception {
+        String emailWithWhitespace = " \t" + VALID_EMAIL + "\t ";
         Email expectedEmail = new Email(VALID_EMAIL);
         assertEquals(expectedEmail, ParserUtil.parseEmail(emailWithWhitespace));
+    }
+
+    @Test
+    public void parseEmail_uppercaseValue_returnsCanonicalEmail() throws Exception {
+        assertEquals(new Email(VALID_EMAIL), ParserUtil.parseEmail(VALID_EMAIL.toUpperCase(Locale.ROOT)));
+    }
+
+    @Test
+    public void parseEmail_valueWithLineBreakOrControlCharacter_throwsParseException() {
+        for (String surrounding : new String[] {"\n", "\r", "\r\n", "\u0000", "\u0001"}) {
+            assertThrows(ParseException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                    ParserUtil.parseEmail(surrounding + VALID_EMAIL));
+            assertThrows(ParseException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                    ParserUtil.parseEmail(VALID_EMAIL + surrounding));
+        }
     }
 
     @Test

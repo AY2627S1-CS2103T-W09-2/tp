@@ -9,6 +9,7 @@ import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -87,6 +88,44 @@ public class MainAppTest {
         app.logic.execute("list");
         app.stop();
         assertArrayEquals(bytes, Files.readAllBytes(path));
+    }
+
+    @Test
+    public void initModel_incompatibleEmailFile_entersRecoveryAndPreservesFileThroughExit() throws Exception {
+        Path path = folder.resolve("roster.json");
+        new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
+        assertEquals(getTypicalAddressBook(), new JsonAddressBookStorage(path).readAddressBook().orElseThrow());
+        String validJson = Files.readString(path);
+
+        String legacy = Files.readString(
+                Paths.get("src", "test", "data", "JsonAddressBookStorageTest", "legacyAb3EmailAddressBook.json"));
+        String nonCanonical = replaceOnce(validJson, "\"alice@u.nus.edu\"", "\"ALICE@u.nus.edu\"");
+        String duplicate = replaceOnce(validJson, "\"johnd@u.nus.edu\"", "\"alice@u.nus.edu\"");
+        for (String incompatible : new String[] {legacy, nonCanonical, duplicate}) {
+            Files.writeString(path, incompatible);
+            byte[] original = Files.readAllBytes(path);
+            MainApp app = createApp();
+            assertTrue(app.model.isReadOnly());
+            assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+            app.logic.execute("list");
+            app.logic.execute("find alice");
+            for (String mutation : new String[] {"add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test",
+                "edit 1 e/demo@u.nus.edu"}) {
+                assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
+                assertArrayEquals(original, Files.readAllBytes(path));
+            }
+            app.logic.execute("exit");
+            app.stop();
+            assertArrayEquals(original, Files.readAllBytes(path));
+        }
+    }
+
+    /**
+     * Replaces the only occurrence of {@code target} in {@code text}.
+     */
+    private static String replaceOnce(String text, String target, String replacement) {
+        assertEquals(text.length() - target.length(), text.replace(target, "").length());
+        return text.replace(target, replacement);
     }
 
     private MainApp createApp() {

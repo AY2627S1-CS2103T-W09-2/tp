@@ -123,6 +123,7 @@ How the parsing works:
 The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
+* identifies each `Person` by its canonical NUS email: `Person#isSamePerson(Person)` compares only the `Email` values, so `UniquePersonList` accepts persons with equal names but rejects a second person with the same email. `Person#equals(Object)` and `Person#hashCode()` still compare every stored field, so a change to any saved field remains detectable.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
@@ -188,7 +189,7 @@ The startup guidance temporarily names the existing `add` command and says sampl
 
 `FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other read-only commands and unchanged rosters also skip persistence. Data-changing commands use the storage recovery and atomic-save contract above.
 
-Search does not change identity or field validation. Until #59 and #63 are integrated, inherited profile creation still rejects exactly identical names and non-ASCII names. Predicate tests cover two independent same-name records, and command tests exercise case-insensitive name ties with different emails; the complete identical-name roster scenario must also be verified after email identity is integrated.
+Search does not change identity or field validation. Email identity allows profiles with identical names when their canonical emails differ; inherited profile creation still rejects non-ASCII names until #63 applies the Feature 3 name rule. Predicate and command tests cover independent same-name records, including an identical-name roster ordered by email.
 
 Verification covers literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
 
@@ -279,6 +280,16 @@ _{more aspects and alternatives to be added}_
 ### \[Proposed\] Data archiving
 
 _{Explain here how the data archiving feature will be implemented}_
+
+### NUS email identity (v1.2)
+
+`Email` contains the single validation and canonicalisation rule used by both commands and storage. `Email#isValidEmail(String)` ignores only surrounding spaces and tabs and rejects any non-ASCII character before lowercasing, so a character such as the Kelvin sign cannot become an ASCII letter. It then lowercases the value with `Locale.ROOT` and requires a local part of 1 to 64 ASCII letters, ASCII digits, `.`, `_`, `+`, or `-` that starts and ends with an ASCII letter or digit and contains no consecutive dots, followed by exactly `@u.nus.edu`. The constructor stores this canonical value, so `Email#equals` and `Email#hashCode` compare canonical emails. Dots and plus suffixes remain significant, no aliases are inferred, and no network check is made: the rule is a local syntax check, not account verification.
+
+`ParserUtil#parseEmail` delegates to `Email` instead of trimming the input itself, so command input may contain uppercase letters and surrounding spaces or tabs. Stored data is stricter. `JsonAdaptedPerson` validates each stored email with the same rule and then requires the decoded stored string to equal the resulting `Email#value`. A syntax-valid but non-canonical stored email, such as one with uppercase letters or surrounding spaces or tabs, is rejected instead of corrected, so the app never rewrites a stored identity automatically. `JsonSerializableAddressBook` also rejects a data file in which two records share a canonical email. Any rejected record makes the whole load fail; no record is skipped or partially imported. `MainApp` then opens the read-only recovery session described in [Storage safety (v1.2)](#storage-safety-v12), so the incompatible file is not overwritten.
+
+Identity and equality are deliberately separate. `Person#isSamePerson` compares canonical emails and drives duplicate detection in `UniquePersonList`, `AddCommand`, and `EditCommand`, so students with equal names can coexist. `Person#equals` and `Person#hashCode` compare every stored field. Any field added to `Person` later, such as enrolments, optional contacts, or a sample classification, must also take part in `equals` and `hashCode`; otherwise a change to that field could be treated as no change.
+
+**Design consideration:** names are not unique among students and are not a reliable key. A canonical NUS email gives each student one unambiguous key for lookup, editing, and duplicate checks. The cost is that data files from earlier versions with other email addresses are no longer valid; such files open in read-only recovery instead of being replaced. Requiring stored emails to be canonical keeps stored email values consistent with the form written by the app, at the cost of rejecting hand-edited emails that use uppercase letters or surrounding spaces or tabs.
 
 
 --------------------------------------------------------------------------------------------------------------------

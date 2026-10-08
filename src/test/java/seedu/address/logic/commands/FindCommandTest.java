@@ -59,6 +59,22 @@ public class FindCommandTest {
     }
 
     @Test
+    public void execute_identicalNames_returnsBothOrderedByEmail() {
+        Model model = new ModelManager();
+        Person laterAlex = createPerson("Alex Tan", "e9000002@u.nus.edu");
+        Person earlierAlex = createPerson("Alex Tan", "e9000001@u.nus.edu");
+        model.addPerson(laterAlex);
+        model.addPerson(earlierAlex);
+        model.addPerson(createPerson("Mei Tan", "e9000003@u.nus.edu"));
+        AddressBook before = new AddressBook(model.getAddressBook());
+
+        CommandResult result = new FindCommand("Alex Tan").execute(model);
+        assertEquals(List.of(earlierAlex, laterAlex), model.getFilteredPersonList());
+        assertEquals("2 students found for \"Alex Tan\".", result.getFeedbackToUser());
+        assertEquals(before, model.getAddressBook());
+    }
+
+    @Test
     public void execute_bothFieldsMatch_returnsProfileOnce() {
         Model model = new ModelManager();
         Person alex = createPerson("Alex Tan", "alex@u.nus.edu");
