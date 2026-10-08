@@ -3,6 +3,7 @@ package seedu.address.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.testutil.Assert.assertThrows;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import seedu.address.commons.exceptions.IllegalValueException;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.AddressBook;
+import seedu.address.model.person.Email;
 import seedu.address.testutil.TypicalPersons;
 
 public class JsonSerializableAddressBookTest {
@@ -35,7 +37,13 @@ public class JsonSerializableAddressBookTest {
     public void toModelType_invalidPersonFile_throwsIllegalValueException() throws Exception {
         JsonSerializableAddressBook dataFromFile = JsonUtil.readJsonFile(INVALID_PERSON_FILE,
                 JsonSerializableAddressBook.class).get();
-        assertThrows(IllegalValueException.class, dataFromFile::toModelType);
+        assertThrows(IllegalValueException.class, Email.MESSAGE_CONSTRAINTS, dataFromFile::toModelType);
+
+        // positive control: the same record with a valid email loads, so the email is its only defect
+        String corrected = Files.readString(INVALID_PERSON_FILE).replace("invalid@email!3e", "hans@u.nus.edu");
+        JsonSerializableAddressBook correctedData = JsonUtil.fromJsonString(corrected,
+                JsonSerializableAddressBook.class);
+        assertEquals(1, correctedData.toModelType().getPersonList().size());
     }
 
     @Test

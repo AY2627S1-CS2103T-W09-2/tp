@@ -2,15 +2,18 @@ package seedu.address.testutil;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.person.Address;
 import seedu.address.model.person.Email;
+import seedu.address.model.person.GitHub;
 import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.Remark;
+import seedu.address.model.person.Telegram;
 import seedu.address.model.tag.Tag;
 import seedu.address.model.util.SampleDataUtil;
 
@@ -29,6 +32,9 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Address address;
+    private Optional<Telegram> telegram = Optional.empty();
+    private Optional<GitHub> github = Optional.empty();
+    private boolean isSample = false;
     private Remark remark;
     private Set<Tag> tags;
     private List<Enrolment> enrolments = List.of();
@@ -54,6 +60,9 @@ public class PersonBuilder {
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
         address = personToCopy.getAddress();
+        telegram = personToCopy.getTelegram();
+        github = personToCopy.getGitHub();
+        isSample = personToCopy.isSample();
         remark = personToCopy.getRemark();
         tags = new HashSet<>(personToCopy.getTags());
     }
@@ -110,8 +119,33 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Sets the Telegram handle of the profile being built. */
+    public PersonBuilder withTelegram(String telegram) {
+        this.telegram = Optional.of(new Telegram(telegram));
+        return this;
+    }
+
+    /** Sets the GitHub username of the profile being built. */
+    public PersonBuilder withGitHub(String github) {
+        this.github = Optional.of(new GitHub(github));
+        return this;
+    }
+
+    /** Removes both contact handles of the profile being built. */
+    public PersonBuilder withoutContacts() {
+        this.telegram = Optional.empty();
+        this.github = Optional.empty();
+        return this;
+    }
+
+    /** Sets the sample classification of the profile being built. */
+    public PersonBuilder withSample(boolean isSample) {
+        this.isSample = isSample;
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, address, remark, tags, enrolments);
+        return new Person(name, phone, email, address, telegram, github, isSample, remark, tags, enrolments);
     }
 
 }

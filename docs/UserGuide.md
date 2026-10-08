@@ -202,11 +202,19 @@ Student records can store several module-semester enrolments, with optional tuto
 
 An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
 
+### Stored contacts and sample classification
+
+Student records can store an optional Telegram handle and an optional GitHub username, and each record states whether it is fictional sample data. This increment supplies storage and display support only. The existing `add` and `edit` commands cannot set contact handles; `student add` and contact editing are separate increments and are not available yet. Profiles created with `add` have no contact handles and are never classified as samples. Existing commands that edit a profile or its remark keep its contact handles and sample classification.
+
+Each result card shows a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
+
 ### Editing the data file
 
 AddressBook data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
 
 Names in the data file must already have ordinary spaces and tabs normalised: no surrounding ordinary spaces or tabs, no tabs within the name, and no repeated ordinary spaces. Letter case and other permitted Unicode characters, including non-breaking spaces, are preserved. Commands normalise ordinary spaces and tabs, but the app rejects a stored name that needs this normalisation instead of correcting it.
+
+Every record must contain `"sample": false` or `"sample": true`, written as a JSON boolean rather than text. Use `false` for real students and `true` only for fictional sample records. The `"telegram"` and `"github"` properties are optional; omit them or write `null` when there is no value. A stored value must already be in its saved form, with no surrounding spaces or tabs. A Telegram handle has 5 to 32 letters, digits, or underscores, starts with a letter, and is stored without its leading `@` (write `"alex_tan"`, not `"@alex_tan"`). A GitHub username has 1 to 39 letters, digits, or single hyphens, and does not start or end with a hyphen. Letter case is kept as written. Never store `Not provided` as a value. A missing or non-boolean `sample`, or a contact value that is invalid or not in its saved form, rejects the entire load.
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Edit the file only while the app is closed, and keep a separate copy before editing it. If your changes make it invalid, SoCdex preserves it and opens a read-only recovery session at the next run. Restore a valid file and restart; commands and normal exit do not replace the invalid roster.<br>
@@ -226,6 +234,9 @@ _Details coming soon ..._
 
 **Q**: Why does my data file from an earlier version no longer load?<br>
 **A**: Every email must now be a valid NUS email (see the `add` command), and no two persons can share an email. In the data file, each email must also already be in its saved form: all lowercase, with no spaces or tabs before or after it. Commands such as `add` convert uppercase letters and remove surrounding spaces and tabs, but the app does not convert emails in the data file. A data file that contains another kind of email address (such as one ending in `@example.com`), an email that is not in its saved form (such as `E1234567@u.nus.edu`), or two persons with the same email is treated as an invalid data file. SoCdex then preserves the file and opens a read-only recovery session; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed, and restart SoCdex.
+
+**Q**: Why does a data file saved by an earlier SoCdex build open in read-only recovery even though its emails are valid?<br>
+**A**: Every record must now state whether it is fictional sample data. A file saved before this change has no `"sample"` property in its records, so SoCdex preserves it and opens a read-only recovery session instead of guessing; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). To use the file again, close SoCdex and keep a copy of the file. Add `"sample": false` to every record that describes a real student (use `"sample": true` only for fictional sample records), then restart SoCdex. See [Editing the data file](#editing-the-data-file) for the format.
 
 --------------------------------------------------------------------------------------------------------------------
 

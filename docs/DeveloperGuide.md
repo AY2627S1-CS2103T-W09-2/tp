@@ -158,7 +158,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Enrolment storage (v1.2)
 
-Each `Person` owns an immutable list of `Enrolment` values. `getEnrolments()` returns that list in stored order. `withEnrolments(Collection<Enrolment>)` returns a new profile, preserving all existing identity, contact, remark, and tag fields. The extended `Person` constructor and `PersonBuilder.withEnrolments(...)` support fixtures and dependent features. Existing constructors create an empty list; reconstruction of an existing profile must carry its enrolments forward. The current edit and remark commands do so.
+Each `Person` owns an immutable list of `Enrolment` values. `getEnrolments()` returns that list in stored order. `withEnrolments(Collection<Enrolment>)` returns a new profile, preserving all existing identity, contact, remark, and tag fields. The extended `Person` constructor and `PersonBuilder.withEnrolments(...)` support fixtures and dependent features. `Person` has a single constructor that takes every stored field, including enrolments; reconstruction of an existing profile must carry its enrolments forward. The current edit and remark commands do so.
 
 An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Optional<Team>`. Missing affiliations are `Optional.empty()`, never the UI label `Not assigned`. Module codes accept 2 to 4 ASCII letters, four ASCII digits, and up to 3 final ASCII letters, and are stored uppercase. Semesters accept `AYyy/yy S1` or `AYyy/yy S2` with consecutive years interpreted within 2000–2099; they are stored uppercase with a single separator space. Section and team labels allow 1 to 30 ASCII letters, digits, spaces, or hyphens, including at least one letter or digit. They preserve case. Input normalisation trims spaces/tabs and collapses their internal runs for semesters and affiliation labels; line breaks and other unsupported characters remain invalid.
 
@@ -311,6 +311,28 @@ _{Explain here how the data archiving feature will be implemented}_
 Identity and equality are deliberately separate. `Person#isSamePerson` compares canonical emails and drives duplicate detection in `UniquePersonList`, `AddCommand`, and `EditCommand`, so students with equal names can coexist. `Person#equals` and `Person#hashCode` compare every stored field. Any field added to `Person` later, such as enrolments, optional contacts, or a sample classification, must also take part in `equals` and `hashCode`; otherwise a change to that field could be treated as no change.
 
 **Design consideration:** names are not unique among students and are not a reliable key. A canonical NUS email gives each student one unambiguous key for lookup, editing, and duplicate checks. The cost is that data files from earlier versions with other email addresses are no longer valid; such files open in read-only recovery instead of being replaced. Requiring stored emails to be canonical keeps stored email values consistent with the form written by the app, at the cost of rejecting hand-edited emails that use uppercase letters or surrounding spaces or tabs.
+
+### Optional contacts and sample classification (v1.2)
+
+`Person` stores an `Optional<Telegram>`, an `Optional<GitHub>`, and a `boolean` sample classification. An absent contact is `Optional.empty()`, never display text such as `Not provided`. `Telegram` and `GitHub` remove surrounding spaces and tabs from input, and `Telegram` also removes one leading `@`. Both keep the letter case of the value and compare values case-sensitively. The literal word `clear` is an ordinary value. `Person#equals` and `Person#hashCode` include all three fields, so a contact change, a case-only contact change, or a classification change is a real change. `Person#isSamePerson` still compares only canonical emails.
+
+`Person` has a single constructor that takes every stored field: name, phone, email, address, Telegram handle, GitHub username, sample classification, remark, tags, and enrolments. No constructor supplies defaults for any of these fields, so every path that rebuilds a profile must pass each one explicitly. `EditCommand`, `RemarkCommand`, `Person#withEnrolments`, and the test `PersonBuilder(Person)` copy the contacts and classification from the existing profile. `AddCommandParser` creates a profile with no contacts that is not a sample. `SampleDataUtil` builds records with the classification set to `true`; it is not used to create records at startup.
+
+`JsonAdaptedPerson` stores the fields as follows:
+
+```json
+"telegram": "Alex_Tan",
+"github": null,
+"sample": false
+```
+
+`telegram` and `github` are optional; an omitted property or `null` means absence. `sample` is required and must be a JSON boolean. The adapter reads all three as Jackson `JsonNode` values through `@JsonSetter` methods, so text, numbers, arrays, and objects are rejected instead of being coerced. After the address, `toModelType` checks the Telegram handle, then the GitHub username, then the classification. A stored contact must be a JSON string, must be valid, and must already equal its saved form (`Telegram#value` or `GitHub#value`). For example, a stored `"@alex_tan"` or `" alex_tan"` is rejected with `MESSAGE_NON_NORMALISED_CONTACT` instead of being corrected. Comparisons use the decoded string, so equivalent JSON escapes are accepted. A missing, `null`, or non-boolean `sample` is rejected. The writer always emits `sample` and writes `null` for an absent contact. Any rejection makes the whole load fail, and `MainApp` opens the read-only recovery session described in [Storage safety (v1.2)](#storage-safety-v12).
+
+`PersonCard` shows a `Telegram:` line and a `GitHub:` line, using `Not provided` for absence. It also shows a `Fictional sample` label, which is visible and managed only when `Person#isSample()` is true.
+
+This is an intermediate stage of #63. The inherited `add`, `edit`, and `remark` commands, and the phone and address fields, still work unchanged. `student add`, contact editing, and the retirement of the phone and address fields are later stages.
+
+**Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
 
 
 --------------------------------------------------------------------------------------------------------------------

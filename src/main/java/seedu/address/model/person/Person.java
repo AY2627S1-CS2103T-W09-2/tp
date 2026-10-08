@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import seedu.address.commons.util.ToStringBuilder;
@@ -25,6 +26,11 @@ public class Person {
     private final Phone phone;
     private final Email email;
 
+    // Optional contact routes and the fictional sample classification
+    private final Optional<Telegram> telegram;
+    private final Optional<GitHub> github;
+    private final boolean isSample;
+
     // Data fields
     private final Address address;
     private final Remark remark;
@@ -32,23 +38,13 @@ public class Person {
     private final List<Enrolment> enrolments;
 
     /**
-     * Every field must be present and not null.
+     * Creates a profile from every stored field, with a defensive immutable copy of its uniquely keyed enrolments.
+     * An absent contact is {@code Optional.empty()}. Every argument must be non-null.
      */
-    public Person(Name name, Phone phone, Email email, Address address, Set<Tag> tags) {
-        this(name, phone, email, address, new Remark(""), tags);
-    }
-
-    /**
-     * Every field must be present and not null.
-     */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags) {
-        this(name, phone, email, address, remark, tags, List.of());
-    }
-
-    /** Creates a profile with a defensive immutable copy of its uniquely keyed enrolments. */
-    public Person(Name name, Phone phone, Email email, Address address, Remark remark, Set<Tag> tags,
+    public Person(Name name, Phone phone, Email email, Address address, Optional<Telegram> telegram,
+            Optional<GitHub> github, boolean isSample, Remark remark, Set<Tag> tags,
             Collection<Enrolment> enrolments) {
-        requireAllNonNull(name, phone, email, address, remark, tags, enrolments);
+        requireAllNonNull(name, phone, email, address, telegram, github, remark, tags, enrolments);
         List<Enrolment> copy = List.copyOf(enrolments);
         for (int i = 0; i < copy.size(); i++) {
             for (int j = 0; j < i; j++) {
@@ -61,6 +57,9 @@ public class Person {
         this.name = name;
         this.phone = phone;
         this.email = email;
+        this.telegram = telegram;
+        this.github = github;
+        this.isSample = isSample;
         this.address = address;
         this.remark = remark;
         this.tags.addAll(tags);
@@ -73,7 +72,7 @@ public class Person {
 
     /** Returns a new profile with the supplied enrolments and all other fields preserved. */
     public Person withEnrolments(Collection<Enrolment> updatedEnrolments) {
-        return new Person(name, phone, email, address, remark, tags, updatedEnrolments);
+        return new Person(name, phone, email, address, telegram, github, isSample, remark, tags, updatedEnrolments);
     }
 
     public Name getName() {
@@ -86,6 +85,19 @@ public class Person {
 
     public Email getEmail() {
         return email;
+    }
+
+    public Optional<Telegram> getTelegram() {
+        return telegram;
+    }
+
+    public Optional<GitHub> getGitHub() {
+        return github;
+    }
+
+    /** Returns true if this profile is classified as a fictional sample record. */
+    public boolean isSample() {
+        return isSample;
     }
 
     public Address getAddress() {
@@ -137,6 +149,9 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && address.equals(otherPerson.address)
+                && telegram.equals(otherPerson.telegram)
+                && github.equals(otherPerson.github)
+                && isSample == otherPerson.isSample
                 && remark.equals(otherPerson.remark)
                 && tags.equals(otherPerson.tags)
                 && enrolments.equals(otherPerson.enrolments);
@@ -145,7 +160,7 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, address, remark, tags, enrolments);
+        return Objects.hash(name, phone, email, address, telegram, github, isSample, remark, tags, enrolments);
     }
 
     @Override
@@ -155,6 +170,9 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("address", address)
+                .add("telegram", telegram)
+                .add("github", github)
+                .add("sample", isSample)
                 .add("remark", remark)
                 .add("tags", tags)
                 .add("enrolments", enrolments)

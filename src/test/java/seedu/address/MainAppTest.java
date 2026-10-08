@@ -14,6 +14,10 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
@@ -102,22 +106,54 @@ public class MainAppTest {
         String nonCanonical = replaceOnce(validJson, "\"alice@u.nus.edu\"", "\"ALICE@u.nus.edu\"");
         String duplicate = replaceOnce(validJson, "\"johnd@u.nus.edu\"", "\"alice@u.nus.edu\"");
         for (String incompatible : new String[] {legacy, nonCanonical, duplicate}) {
-            Files.writeString(path, incompatible);
-            byte[] original = Files.readAllBytes(path);
-            MainApp app = createApp();
-            assertTrue(app.model.isReadOnly());
-            assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
-            app.logic.execute("list");
-            app.logic.execute("find alice");
-            for (String mutation : new String[] {"add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test",
-                "edit 1 e/demo@u.nus.edu"}) {
-                assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
-                assertArrayEquals(original, Files.readAllBytes(path));
-            }
-            app.logic.execute("exit");
-            app.stop();
+            assertRecoveryPreservesFileThroughExit(path, incompatible);
+        }
+    }
+
+    @Test
+    public void initModel_missingOrInvalidSampleClassification_entersRecoveryAndPreservesFile() throws Exception {
+        Path path = folder.resolve("roster.json");
+        new JsonAddressBookStorage(path).saveAddressBook(getTypicalAddressBook());
+        assertEquals(getTypicalAddressBook(), new JsonAddressBookStorage(path).readAddressBook().orElseThrow());
+        ObjectMapper mapper = new ObjectMapper();
+        String validJson = Files.readString(path);
+
+        // an older file without the classification, and classifications that are null or not booleans
+        JsonNode missing = mapper.readTree(validJson);
+        secondRecord(missing).remove("sample");
+        JsonNode nullSample = mapper.readTree(validJson);
+        secondRecord(nullSample).putNull("sample");
+        JsonNode textSample = mapper.readTree(validJson);
+        secondRecord(textSample).put("sample", "false");
+        for (JsonNode incompatible : new JsonNode[] {missing, nullSample, textSample}) {
+            assertRecoveryPreservesFileThroughExit(path, mapper.writeValueAsString(incompatible));
+        }
+    }
+
+    private static ObjectNode secondRecord(JsonNode roster) {
+        return (ObjectNode) roster.get("persons").get(1);
+    }
+
+    /**
+     * Writes {@code incompatible} to {@code path}, starts the app on it, and asserts that the app opens an empty
+     * read-only recovery session that blocks mutations and leaves the file's bytes unchanged through exit.
+     */
+    private void assertRecoveryPreservesFileThroughExit(Path path, String incompatible) throws Exception {
+        Files.writeString(path, incompatible);
+        byte[] original = Files.readAllBytes(path);
+        MainApp app = createApp();
+        assertTrue(app.model.isReadOnly());
+        assertTrue(app.model.getAddressBook().getPersonList().isEmpty());
+        app.logic.execute("list");
+        app.logic.execute("find alice");
+        for (String mutation : new String[] {"add n/Fictional Student p/12345 e/demo@u.nus.edu a/Test",
+            "edit 1 e/demo@u.nus.edu"}) {
+            assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(mutation));
             assertArrayEquals(original, Files.readAllBytes(path));
         }
+        app.logic.execute("exit");
+        app.stop();
+        assertArrayEquals(original, Files.readAllBytes(path));
     }
 
     /**

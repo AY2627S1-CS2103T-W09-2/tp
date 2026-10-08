@@ -10,6 +10,7 @@ import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.ALICE;
+import static seedu.address.testutil.TypicalPersons.BENSON;
 import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.util.Locale;
@@ -126,10 +127,40 @@ public class PersonTest {
     }
 
     @Test
+    public void equals_contactsAndSampleClassification_compared() {
+        // different Telegram, including a change of letter case only -> returns false
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withTelegram("Other_Handle").build()));
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withTelegram("benson_meier").build()));
+
+        // different GitHub, including a change of letter case only -> returns false
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withGitHub("other-user").build()));
+        assertFalse(BENSON.equals(new PersonBuilder(BENSON).withGitHub("bensonm").build()));
+
+        // contacts removed -> returns false
+        Person withoutContacts = new PersonBuilder(BENSON).withoutContacts().build();
+        assertFalse(BENSON.equals(withoutContacts));
+
+        // a leading @ is not part of the saved Telegram handle -> returns true
+        Person prefixedTelegram = new PersonBuilder(BENSON).withTelegram("@Benson_Meier").build();
+        assertTrue(BENSON.equals(prefixedTelegram));
+        assertEquals(BENSON.hashCode(), prefixedTelegram.hashCode());
+
+        // different sample classification -> returns false
+        Person sampleBenson = new PersonBuilder(BENSON).withSample(true).build();
+        assertFalse(BENSON.equals(sampleBenson));
+
+        // contacts and sample classification do not change the email identity
+        assertTrue(BENSON.isSamePerson(withoutContacts));
+        assertTrue(BENSON.isSamePerson(sampleBenson));
+    }
+
+    @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", remark=" + ALICE.getRemark()
-                + ", tags=" + ALICE.getTags() + ", enrolments=" + ALICE.getEnrolments() + "}";
-        assertEquals(expected, ALICE.toString());
+        String expected = Person.class.getCanonicalName() + "{name=" + BENSON.getName()
+                + ", phone=" + BENSON.getPhone() + ", email=" + BENSON.getEmail() + ", address=" + BENSON.getAddress()
+                + ", telegram=" + BENSON.getTelegram() + ", github=" + BENSON.getGitHub() + ", sample=false"
+                + ", remark=" + BENSON.getRemark() + ", tags=" + BENSON.getTags()
+                + ", enrolments=" + BENSON.getEnrolments() + "}";
+        assertEquals(expected, BENSON.toString());
     }
 }

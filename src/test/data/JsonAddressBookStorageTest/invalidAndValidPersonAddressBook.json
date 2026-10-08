@@ -3,11 +3,13 @@
     "name": "Valid Person",
     "phone": "9482424",
     "email": "hans@u.nus.edu",
-    "address": "4th street"
+    "address": "4th street",
+    "sample": false
   }, {
     "name": "Person With Invalid Phone Field",
     "phone": "948asdf2424",
     "email": "hans.muster@u.nus.edu",
-    "address": "4th street"
+    "address": "4th street",
+    "sample": false
   } ]
 }
