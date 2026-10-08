@@ -7,6 +7,7 @@ import java.util.function.BiFunction;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
@@ -21,6 +22,8 @@ public class PersonListPanel extends UiPart<Region> {
 
     @FXML
     private ListView<Person> personListView;
+    @FXML
+    private Label selectionPrompt;
 
     /**
      * Creates every result card before the panel can replace the previous complete display.
@@ -37,6 +40,8 @@ public class PersonListPanel extends UiPart<Region> {
         }
         personListView.setItems(FXCollections.unmodifiableObservableList(snapshot));
         personListView.setCellFactory(listView -> new PersonListViewCell());
+        selectionPrompt.visibleProperty().bind(personListView.getSelectionModel().selectedItemProperty().isNull());
+        selectionPrompt.managedProperty().bind(selectionPrompt.visibleProperty());
     }
 
     /** Returns whether this panel already represents the supplied results in the same order. */

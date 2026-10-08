@@ -33,6 +33,8 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
    * `student add /name Alex Tan /email e9000001@u.nus.edu` : Creates a student profile without requiring optional contacts.
 
+   * `sample load` : Loads five fictional student profiles into an empty roster.
+
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
    * `clear` : Deletes all contacts.
@@ -56,6 +58,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
+  `sample load` is an exception. It rejects all extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -67,6 +70,30 @@ Shows a message explaining how to access the help page.
 ![help message](images/helpMessage.png)
 
 Format: `help`
+
+### Loading fictional sample profiles: `sample load`
+
+Loads a fixed set of five fictional student profiles and five enrolments, so you can explore SoCdex without entering real student data.
+
+Format: `sample load`
+
+The roster must be empty and writable. The command accepts extra spaces or tabs around and between `sample` and `load`, but it does not accept any parameters. The command is lowercase and must be on one line.
+
+The fixture contains these fictional profiles:
+
+* Alex Tan, `e9000001@u.nus.edu`, with Telegram and GitHub contacts, and two enrolments.
+* Alex Tan, `e9000002@u.nus.edu`, with a GitHub contact and one enrolment.
+* Mei Lim, `e9000003@u.nus.edu`, with a Telegram contact and one enrolment.
+* Nur Aisyah, `e9000005@u.nus.edu`, with no optional contacts or enrolments.
+* Ravi Kumar, `e9000004@u.nus.edu`, with Telegram and GitHub contacts, and one enrolment.
+
+Every loaded profile shows the `Fictional sample` label. Missing contacts show `Not provided`. Missing section and team values are stored as absent; detailed enrolment display is a separate feature increment. Display labels are not stored as data. The five profiles appear in name order, with email used to order equal names. No profile is selected automatically, and the prompt says `Select a student to view their profile.` The fixture is saved and returns after restart.
+
+A successful command shows `Loaded 5 fictional student profiles and 5 enrolments. You can explore SoCdex without using real student data.`
+
+If the roster is not empty, SoCdex shows `Sample data can only be loaded into an empty roster. Existing data was not changed.` It does not add, merge, or replace any profile. If the fixed fixture is invalid, SoCdex shows `Sample data is invalid. No data was changed.` If saving fails, it shows `Sample data could not be saved. No data was changed.` These failures keep the previous roster and saved file unchanged. A read-only recovery session rejects the command with the existing recovery message.
+
+SoCdex does not load samples at startup. `sample clear` is planned for v1.3 and is not available in v1.2. The existing `clear` command deletes the whole roster, including real profiles, so it is not a safe selective replacement for `sample clear` in a mixed roster.
 
 
 ### Adding a student: `student add`
@@ -179,7 +206,7 @@ This protects against detected loading and saving failures. It does not provide 
 
 ### Starting empty or recovering from a load failure
 
-When no saved roster exists, the app starts empty and explains how to add a student. Use `student add` as described above. Explicit fictional sample loading is a separate feature increment and is not available yet.
+When no saved roster exists, the app starts empty and explains how to add a student or load fictional samples. Use `student add` to enter your own record, or use `sample load` to explore the fixed fictional fixture. Samples do not load automatically.
 
 If an existing roster is unreadable or invalid, the app preserves it and opens an empty **read-only recovery session**. The initial message is:
 
@@ -201,7 +228,7 @@ An otherwise valid older profile without an `enrolments` property loads with no 
 
 ### Stored contacts and sample classification
 
-`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
+`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
 
 Each result card shows a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
 
@@ -257,3 +284,4 @@ Action | Format, Examples
 **Find** | `find QUERY`<br> e.g., `find Alex Tan`
 **List** | `list`
 **Help** | `help`
+**Sample load** | `sample load`

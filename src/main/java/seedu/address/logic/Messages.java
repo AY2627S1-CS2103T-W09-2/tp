@@ -15,8 +15,8 @@ public class Messages {
     public static final String MESSAGE_LOAD_FAILURE = "Stored data could not be loaded. "
             + "The existing file was preserved. "
             + "This session is read-only. Restore a valid data file and restart SoCdex.";
-    public static final String MESSAGE_EMPTY_ROSTER = "No students in the roster. Add a student using student add. "
-            + "Fictional sample loading is not available in this increment.";
+    public static final String MESSAGE_EMPTY_ROSTER =
+            "No students in the roster. Add a student or load fictional samples.";
 
 
     public static final String MESSAGE_SEARCH_DISPLAY_FAILURE =
