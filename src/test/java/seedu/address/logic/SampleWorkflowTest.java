@@ -24,6 +24,9 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.enrolment.Enrolment;
+import seedu.address.model.enrolment.ModuleCode;
+import seedu.address.model.enrolment.Semester;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -107,6 +110,52 @@ public class SampleWorkflowTest {
         assertEquals(0, storage.attempts);
         assertTrue(recoveryModel.getAddressBook().getPersonList().isEmpty());
         assertFalse(Files.exists(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void execute_saveFailure_preservesExistingEmptyFileAndAllowsRetry() throws Exception {
+        storage.saveAddressBook(model.getAddressBook());
+        byte[] before = Files.readAllBytes(storage.getAddressBookFilePath());
+        storage.fail = true;
+
+        CommandException error = assertThrows(CommandException.class, () -> logic.execute("sample load"));
+
+        assertEquals(SampleCommand.MESSAGE_SAVE_FAILURE, error.getMessage());
+        assertArrayEquals(before, Files.readAllBytes(storage.getAddressBookFilePath()));
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        storage.fail = false;
+        logic.execute("sample load");
+        assertEquals(5, storage.readAddressBook().orElseThrow().getPersonList().size());
+    }
+
+    @Test
+    public void execute_displayFailure_rollsBackBeforeSaving() {
+        assertThrows(CommandException.class, () -> logic.execute("sample load", result -> {
+            throw new IllegalStateException("Injected presentation failure");
+        }));
+        assertEquals(0, storage.attempts);
+        assertTrue(model.getAddressBook().getPersonList().isEmpty());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertFalse(Files.exists(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void execute_editAndEnrolmentCopy_preservesSampleClassificationAfterReload() throws Exception {
+        logic.execute("sample load");
+        logic.execute("edit /email e9000005@u.nus.edu /telegram @nur_demo");
+        Person nur = model.getAddressBook().getPersonList().stream()
+                .filter(person -> person.getEmail().value.equals("e9000005@u.nus.edu")).findFirst().orElseThrow();
+        assertTrue(nur.isSample());
+        Person enrolled = nur.withEnrolments(List.of(new Enrolment(
+                new ModuleCode("CS2103T"), new Semester("AY26/27 S1"))));
+        model.setPerson(nur, enrolled);
+        storage.saveAddressBook(model.getAddressBook());
+        Person reloaded = storage.readAddressBook().orElseThrow().getPersonList().stream()
+                .filter(person -> person.getEmail().equals(nur.getEmail())).findFirst().orElseThrow();
+        assertEquals(enrolled, reloaded);
+        assertTrue(reloaded.isSample());
+        assertEquals("nur_demo", reloaded.getTelegram().orElseThrow().value);
+        assertEquals(1, reloaded.getEnrolments().size());
     }
 
     private static class CountingStorage extends JsonAddressBookStorage {

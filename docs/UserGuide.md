@@ -87,7 +87,7 @@ The fixture contains these fictional profiles:
 * Nur Aisyah, `e9000005@u.nus.edu`, with no optional contacts or enrolments.
 * Ravi Kumar, `e9000004@u.nus.edu`, with Telegram and GitHub contacts, and one enrolment.
 
-Every loaded profile shows the `Fictional sample` label. Missing contacts show `Not provided`, and missing section or team values show `Not assigned`. These labels are not stored as data. The five profiles appear in name order, with email used to order equal names. No profile is selected automatically. The fixture is saved and returns after restart.
+Every loaded profile shows the `Fictional sample` label. Missing contacts show `Not provided`. Missing section and team values are stored as absent; detailed enrolment display is a separate feature increment. Display labels are not stored as data. The five profiles appear in name order, with email used to order equal names. No profile is selected automatically, and the prompt says `Select a student to view their profile.` The fixture is saved and returns after restart.
 
 A successful command shows `Loaded 5 fictional student profiles and 5 enrolments. You can explore SoCdex without using real student data.`
 
