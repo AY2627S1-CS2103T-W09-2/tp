@@ -87,7 +87,7 @@ The fixture contains these fictional profiles:
 * Nur Aisyah, `e9000005@u.nus.edu`, with no optional contacts or enrolments.
 * Ravi Kumar, `e9000004@u.nus.edu`, with Telegram and GitHub contacts, and one enrolment.
 
-Every loaded profile shows the `Fictional sample` label. Missing contacts show `Not provided`. Missing section and team values are stored as absent; detailed enrolment display is a separate feature increment. Display labels are not stored as data. The five profiles appear in name order, with email used to order equal names. No profile is selected automatically, and the prompt says `Select a student to view their profile.` The fixture is saved and returns after restart.
+Every loaded profile shows the `Fictional sample` label. Missing contacts show `Not provided`. Missing section and team values are stored as absent and are displayed as `Not assigned`. Display labels are not stored as data. The five profiles appear in name order, with email used to order equal names. No profile is selected automatically, and the profile panel says `Select a student to view their profile.` Use `view EMAIL` to open one profile. The fixture is saved and returns after restart.
 
 A successful command shows `Loaded 5 fictional student profiles and 5 enrolments. You can explore SoCdex without using real student data.`
 
@@ -115,7 +115,7 @@ Examples using fictional students:
 * `student add /email e9000002@u.nus.edu /name 王小明 /telegram @Alex_Tan /github alex-tan` accepts mixed prefix order and stores Telegram as `Alex_Tan`.
 * `student add /name José Tan /email e9000003@u.nus.edu` creates a second student with the same name and a different email.
 
-If the canonical email already exists, the command shows `A student with this NUS email already exists.` and reveals/selects that existing student in the full sorted roster. It does not overwrite or save any data. This deliberate reveal is the exception to preserving the previous selection on rejection. `view` guidance will be added when that command is available.
+If the canonical email already exists, the command shows `A student with this NUS email already exists.` and reveals/selects that existing student in the full sorted roster. It does not overwrite or save any data. This deliberate reveal is the exception to preserving the previous selection on rejection. Use `view EMAIL` to reopen that profile later.
 
 A save failure shows `The student could not be saved. No data was changed.` and restores the previous roster, results and selection. Correct the storage problem and retry. If the new display cannot be prepared, the command shows `Student could not be displayed. No data was changed. Try again.` and does not save.
 
@@ -169,9 +169,34 @@ Examples using fictional records:
 * After `sample load`, `find @socdex_demo_mei` selects Mei Lim through Telegram, and `find socdex-demo-ravi` selects Ravi Kumar through GitHub. Shared handles return every matching student once, even when another field also matches.
 * `find *` searches for a literal asterisk. If no profile matches, the app displays `No students found for "*". Check the spelling or search with another identifier.`
 
-Complete enrolment details and the `view EMAIL` command are delivered separately; this increment displays the fields currently available on each result card.
+Every result card shows the student's contacts and enrolments. The selected student's complete profile appears in the profile panel; use `view EMAIL` to open one specific profile.
 
 If the student list cannot be refreshed after a command, the app blocks further command execution until it can show the current list. Submit again to refresh it, then check the displayed indexes before re-entering your intended command. The earlier command may already have changed data; refreshing the list does not repeat it.
+
+### Viewing a student profile: `view`
+
+Open the complete profile of one student, identified by NUS email.
+
+Format: `view EMAIL`
+
+* The email is matched against the complete roster, including students hidden by a previous search. Letter case and surrounding spaces or tabs are ignored, so `view E9000001@U.NUS.EDU` opens `e9000001@u.nus.edu`.
+* Success shows `Viewing student: NAME.`, selects that student, scrolls to them, and shows their complete profile in the profile panel. If the student is already in the displayed results, those results are kept. Otherwise the full roster is shown, sorted by name then email.
+* The profile shows the name, `Fictional sample` for sample records, NUS email, Telegram, GitHub, and every enrolment ordered by academic year, then semester, then module code. Each enrolment is shown as `CS2103T | AY26/27 S1 | Section: T12 | Team: SEED`. An absent section or team shows `Not assigned`, an absent contact shows `Not provided`, and a student without enrolments shows `Enrolments: none`. These labels are display text only and are never stored.
+* Selecting a row in the student list also shows that student's profile. With no selection, the profile panel shows `Select a student to view their profile.`
+* `view` does not change or save roster data, and it is available in a read-only recovery session.
+
+Error messages keep the previous results and selection:
+
+* `view` alone shows `NUS email is required. Usage: view EMAIL`.
+* More than one value, such as `view e9000001@u.nus.edu e9000002@u.nus.edu` or `view /email e9000001@u.nus.edu`, shows `View accepts one NUS email only. Usage: view EMAIL`.
+* A name, index, or non-NUS email shows the NUS email rules from `student add`.
+* An unknown email shows `No student found with NUS email: EMAIL.`
+* If the profile cannot be displayed, the app shows `Profile could not be displayed. Try viewing the student again.` Retry the command.
+
+Examples using the fictional sample profiles:
+
+* `view e9000001@u.nus.edu` shows the first Alex Tan with both enrolments; `view e9000002@u.nus.edu` shows the other Alex Tan.
+* `view e9000005@u.nus.edu` shows Nur Aisyah with `Not provided` contacts and `Enrolments: none`.
 
 ### Deleting a person: `delete`
 
@@ -201,7 +226,7 @@ Format: `exit`
 
 ### Saving the data
 
-SoCdex saves roster changes before reporting success. You do not need to save manually. Read-only commands (`find`, `list`, `help`, and `exit`), rejected commands, and changes that leave all stored values unchanged do not rewrite the roster file.
+SoCdex saves roster changes before reporting success. You do not need to save manually. Read-only commands (`find`, `view`, `list`, `help`, and `exit`), rejected commands, and changes that leave all stored values unchanged do not rewrite the roster file.
 
 If saving fails, the app reports that no data was changed and restores the previous roster, result list, and selected profile. Correct the file or folder permissions, or free disk space, then retry. A failed first save does not create a partial roster file. If the filesystem cannot safely replace the file, saving fails instead of overwriting it in place; use a local filesystem that supports atomic file replacement.
 
@@ -215,7 +240,7 @@ If an existing roster is unreadable or invalid, the app preserves it and opens a
 
 > Stored data could not be loaded. The existing file was preserved. This session is read-only. Restore a valid data file and restart SoCdex.
 
-**Storage unavailable — read-only recovery** remains visible in the status bar, including after searches. An empty recovery view does not mean that the saved roster is empty. Data-changing commands are disabled for the entire session. Searching, listing, help, and exiting remain available. Closing the app does not overwrite the preserved roster.
+**Storage unavailable — read-only recovery** remains visible in the status bar, including after searches. An empty recovery view does not mean that the saved roster is empty. Data-changing commands are disabled for the entire session. Searching, viewing, listing, help, and exiting remain available. Closing the app does not overwrite the preserved roster.
 
 To recover:
 
@@ -225,7 +250,7 @@ To recover:
 
 ### Stored enrolments
 
-Student records can store several module-semester enrolments, with optional tutorial sections and project teams. This increment supplies storage support; the `enrol` command and complete profile display are separate increments and are not available yet. Existing commands that edit a profile or its remark preserve its stored enrolments.
+Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. The `enrol` command is a separate increment and is not available yet. Existing commands that edit a profile or its remark preserve its stored enrolments.
 
 An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
 
@@ -233,7 +258,7 @@ An otherwise valid older profile without an `enrolments` property loads with no 
 
 `student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
 
-Each result card shows a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
+Each result card and the profile panel show a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
 
 ### Editing the data file
 
@@ -288,3 +313,4 @@ Action | Format, Examples
 **List** | `list`
 **Help** | `help`
 **Sample load** | `sample load`
+**View** | `view EMAIL`<br> e.g., `view e9000001@u.nus.edu`

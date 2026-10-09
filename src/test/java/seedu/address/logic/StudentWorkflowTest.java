@@ -140,6 +140,28 @@ public class StudentWorkflowTest {
         }
     }
 
+    @Test
+    public void execute_view_selectsCanonicalTargetWithoutSaving() throws Exception {
+        logic.execute("find Mei");
+        AtomicReference<Person> selected = new AtomicReference<>();
+        assertEquals("Viewing student: Alex Tan.", logic.execute("view \tALEX@U.NUS.EDU ",
+                result -> selected.set(result.getSelectionTarget())).getFeedbackToUser());
+        assertEquals(alex, selected.get());
+        assertEquals(List.of(alex, mei), model.getFilteredPersonList());
+        assertUnchangedFile(0);
+    }
+
+    @Test
+    public void execute_viewDisplayFailure_restoresResultsWithRetryGuidance() throws Exception {
+        logic.execute("find Mei");
+        assertEquals("Profile could not be displayed. Try viewing the student again.",
+                assertThrows(CommandException.class, () -> logic.execute("view alex@u.nus.edu", result -> {
+                    throw new AssertionError("Injected display failure");
+                })).getMessage());
+        assertEquals(List.of(mei), model.getFilteredPersonList());
+        assertUnchangedFile(0);
+    }
+
     private void assertUnchangedFile(int attempts) throws IOException {
         assertEquals(attempts, storage.attempts);
         assertArrayEquals(originalBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
