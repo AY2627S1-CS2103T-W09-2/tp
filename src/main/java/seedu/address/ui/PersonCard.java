@@ -1,13 +1,16 @@
 package seedu.address.ui;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.person.Person;
 
 /**
@@ -18,7 +21,10 @@ public class PersonCard extends UiPart<Region> {
     static final String TELEGRAM_LABEL = "Telegram";
     static final String GITHUB_LABEL = "GitHub";
     static final String NOT_PROVIDED = "Not provided";
+    static final String NOT_ASSIGNED = "Not assigned";
     static final String SAMPLE_LABEL = "Fictional sample";
+    static final String EMAIL_PREFIX = "NUS email: ";
+    static final String ENROLMENTS_PREFIX = "Enrolments: ";
 
     private static final String FXML = "PersonListCard.fxml";
 
@@ -61,9 +67,8 @@ public class PersonCard extends UiPart<Region> {
         this.person = person;
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().fullName);
-        email.setText("NUS email: " + person.getEmail().value);
-        enrolments.setText(person.getEnrolments().isEmpty() ? "Enrolments: none"
-                : "Enrolments: " + person.getEnrolments().size());
+        email.setText(EMAIL_PREFIX + person.getEmail().value);
+        enrolments.setText(enrolmentText(person.getEnrolments()));
         telegram.setText(contactText(TELEGRAM_LABEL, person.getTelegram()));
         github.setText(contactText(GITHUB_LABEL, person.getGitHub()));
         sample.setText(SAMPLE_LABEL);
@@ -80,5 +85,29 @@ public class PersonCard extends UiPart<Region> {
      */
     static String contactText(String label, Optional<?> contact) {
         return label + ": " + contact.map(Object::toString).orElse(NOT_PROVIDED);
+    }
+
+    /** Returns one enrolment line. The not-assigned text is display only and is never stored. */
+    static String enrolmentLine(Enrolment enrolment) {
+        return enrolment.getModuleCode() + " | " + enrolment.getSemester()
+                + " | Section: " + enrolment.getSection().map(Object::toString).orElse(NOT_ASSIGNED)
+                + " | Team: " + enrolment.getTeam().map(Object::toString).orElse(NOT_ASSIGNED);
+    }
+
+    /**
+     * Returns the enrolment count followed by every enrolment in display order, or {@code Enrolments: none}.
+     * The stored order is not changed.
+     */
+    static String enrolmentText(List<Enrolment> enrolments) {
+        return String.join("\n", enrolmentLines(enrolments));
+    }
+
+    /** Returns the lines of {@link #enrolmentText(List)}, one per displayed line. */
+    static List<String> enrolmentLines(List<Enrolment> enrolments) {
+        if (enrolments.isEmpty()) {
+            return List.of(ENROLMENTS_PREFIX + "none");
+        }
+        return Stream.concat(Stream.of(ENROLMENTS_PREFIX + enrolments.size()),
+                enrolments.stream().sorted(Enrolment.DISPLAY_ORDER).map(PersonCard::enrolmentLine)).toList();
     }
 }

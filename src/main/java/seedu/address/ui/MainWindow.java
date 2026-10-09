@@ -3,6 +3,7 @@ package seedu.address.ui;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,6 +42,7 @@ public class MainWindow extends UiPart<Stage> {
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
+    private PersonDetailsPanel personDetailsPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
 
@@ -52,6 +54,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane personListPanelPlaceholder;
+
+    @FXML
+    private StackPane personDetailsPanelPlaceholder;
 
     @FXML
     private StackPane resultDisplayPlaceholder;
@@ -125,6 +130,9 @@ public class MainWindow extends UiPart<Stage> {
     void fillInnerParts() {
         personListPanel = createPersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+        personDetailsPanel = createPersonDetailsPanel(null);
+        personDetailsPanelPlaceholder.getChildren().add(personDetailsPanel.getRoot());
+        followSelection(personListPanel);
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -191,6 +199,11 @@ public class MainWindow extends UiPart<Stage> {
         return new PersonListPanel(persons);
     }
 
+    /** Creates a detached profile display so a failed profile never replaces the current one. */
+    PersonDetailsPanel createPersonDetailsPanel(Person person) {
+        return new PersonDetailsPanel(person);
+    }
+
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
         if (result.getSelectionTarget() == null) {
@@ -198,7 +211,7 @@ public class MainWindow extends UiPart<Stage> {
         } else {
             replacement.selectTarget(result.getSelectionTarget());
         }
-        prepareAndReplacePersonListPanel(replacement);
+        prepareAndReplaceDisplay(replacement);
     }
 
     private boolean isPersonListCurrent() {
@@ -208,29 +221,59 @@ public class MainWindow extends UiPart<Stage> {
     private void refreshPersonList() {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
         replacement.restoreSelection(personListPanel.getSelectedPerson());
-        prepareAndReplacePersonListPanel(replacement);
+        prepareAndReplaceDisplay(replacement);
     }
 
-    private void prepareAndReplacePersonListPanel(PersonListPanel replacement) {
-        Region root = replacement.getRoot();
+    /**
+     * Prepares the list and its selected profile off screen, then replaces both together.
+     * Any failure keeps the previous complete list and profile.
+     */
+    private void prepareAndReplaceDisplay(PersonListPanel replacement) {
+        PersonDetailsPanel details = createPersonDetailsPanel(replacement.getSelectedPerson());
+        prepare(replacement.getRoot(), personListPanelPlaceholder);
+        prepare(details.getRoot(), personDetailsPanelPlaceholder);
+        PersonListPanel previousList = personListPanel;
+        PersonDetailsPanel previousDetails = personDetailsPanel;
+        try {
+            personListPanelPlaceholder.getChildren().setAll(replacement.getRoot());
+            personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+        } catch (RuntimeException | AssertionError e) {
+            personListPanelPlaceholder.getChildren().setAll(previousList.getRoot());
+            personDetailsPanelPlaceholder.getChildren().setAll(previousDetails.getRoot());
+            throw e;
+        }
+        personListPanel = replacement;
+        personDetailsPanel = details;
+        followSelection(replacement);
+    }
+
+    private void prepare(Region root, Region placeholder) {
         Scene preparationScene = new Scene(root);
         preparationScene.getStylesheets().setAll(primaryStage.getScene().getStylesheets());
-        root.resize(personListPanelPlaceholder.getWidth(), personListPanelPlaceholder.getHeight());
+        root.resize(placeholder.getWidth(), placeholder.getHeight());
         root.applyCss();
         root.layout();
         preparationScene.setRoot(new StackPane());
-        replacePersonListPanel(replacement);
     }
 
-    private void replacePersonListPanel(PersonListPanel replacement) {
-        PersonListPanel previous = personListPanel;
-        try {
-            personListPanelPlaceholder.getChildren().setAll(replacement.getRoot());
-            personListPanel = replacement;
-        } catch (RuntimeException | AssertionError e) {
-            personListPanelPlaceholder.getChildren().setAll(previous.getRoot());
-            throw e;
-        }
+    /** Shows the complete profile when the tutor selects another row directly in the list. */
+    private void followSelection(PersonListPanel panel) {
+        panel.selectedPersonProperty().addListener((observable, previous, selected) -> {
+            if (panel != personListPanel || selected == personDetailsPanel.getPerson()) {
+                return;
+            }
+            try {
+                PersonDetailsPanel details = createPersonDetailsPanel(selected);
+                prepare(details.getRoot(), personDetailsPanelPlaceholder);
+                personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+                personDetailsPanel = details;
+            } catch (RuntimeException | AssertionError e) {
+                logger.warning("Profile could not be displayed: " + e);
+                resultDisplay.setFeedbackToUser(Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
+                // Keep the row selection consistent with the complete profile that is still shown.
+                Platform.runLater(() -> panel.restoreSelection(personDetailsPanel.getPerson()));
+            }
+        });
     }
 
     /**
