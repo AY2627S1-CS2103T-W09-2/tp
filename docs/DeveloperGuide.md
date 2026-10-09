@@ -249,6 +249,14 @@ On Windows, replace the classpath separator `:` with `;`. This opt-in utility dr
 
 `PersonCard.enrolmentLine` and `PersonCard.enrolmentText` format enrolments in `Enrolment.DISPLAY_ORDER`, and `PersonDetailsPanel.profileLines` lists the profile fields in a fixed order. Both are static and can be tested without starting JavaFX. `Not provided`, `Not assigned` and `Enrolments: none` are display text only and are never stored.
 
+For an opt-in layout check using fictional data, build with `./gradlew testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ProfileViewAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
+
 ### \[Proposed\] Undo/redo feature
 
 #### Proposed Implementation
