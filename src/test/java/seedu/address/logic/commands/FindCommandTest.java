@@ -75,12 +75,32 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_bothFieldsMatch_returnsProfileOnce() {
+    public void execute_allFourFieldsMatch_returnsProfileOnce() {
         Model model = new ModelManager();
-        Person alex = createPerson("Alex Tan", "alex@u.nus.edu");
+        Person alex = new PersonBuilder().withName("Alex Tan").withEmail("alex@u.nus.edu")
+                .withTelegram("alex_chat").withGitHub("alex-repo").build();
         model.addPerson(alex);
         new FindCommand("alex").execute(model);
         assertEquals(List.of(alex), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_sharedHandles_searchesFullRosterAndSortsAmbiguousMatches() {
+        Model model = new ModelManager();
+        Person later = new PersonBuilder().withName("Alex Tan").withEmail("e9000002@u.nus.edu")
+                .withTelegram("Shared_Handle").withGitHub("shared-repo").build();
+        Person earlier = new PersonBuilder(later).withEmail("e9000001@u.nus.edu").build();
+        model.addPerson(later);
+        model.addPerson(earlier);
+        AddressBook before = new AddressBook(model.getAddressBook());
+        for (String query : List.of("@SHARED_HANDLE", "shared-repo")) {
+            new FindCommand("missing").execute(model);
+            CommandResult result = new FindCommand(query).execute(model);
+            assertEquals(List.of(earlier, later), model.getFilteredPersonList());
+            assertEquals("2 students found for \"" + query + "\".", result.getFeedbackToUser());
+            assertTrue(result.isUpdateSelection());
+            assertEquals(before, model.getAddressBook());
+        }
     }
 
     @Test

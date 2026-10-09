@@ -4,7 +4,7 @@ import seedu.address.logic.commands.FindCommand;
 import seedu.address.logic.parser.exceptions.ParseException;
 
 /**
- * Parses one literal name or email search query.
+ * Parses one literal query for any of the four student identifiers.
  */
 public class FindCommandParser implements Parser<FindCommand> {
     @Override
