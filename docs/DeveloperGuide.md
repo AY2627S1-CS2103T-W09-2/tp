@@ -72,7 +72,7 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/se-
 
 ![Structure of the UI Component](images/UiClassDiagram.png)
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
 
@@ -175,7 +175,23 @@ An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Option
 
 Otherwise valid older profiles with no `enrolments` property load with an empty list. An explicit empty array also means no enrolments; an explicit null array, null item, malformed item, missing module/semester, invalid value, or repeated key rejects the entire load. Omitted or null `section` and `team` mean absence; empty strings are invalid. Stored strings must already equal the validated value's canonical form. Loading does not silently correct lowercase modules, semester spacing, or affiliation whitespace. Equivalent JSON escapes decode to the same valid string.
 
-This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+This increment adds model and persistence support. The user-facing `enrol` command is implemented by `EnrolCommand`; complete enrolment display was delivered by #65 (see [Profile viewing (v1.3)](#profile-viewing-v13)). The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+
+### Enrolment entry (v1.3)
+
+`EnrolCommandParser` reuses `SlashPrefixTokenizer` and `SlashArguments`. Structural errors are checked first from left to right; values are constructed in email/module/semester/section/team order with the shared value types. Omitted affiliations are absent optionals. `AY26/27` stays within a value because its slash is not at a prefix boundary.
+
+`EnrolCommand` resolves the canonical email against the complete roster, checks `Enrolment.hasSameKey`, copies the existing enrolment list and calls `Person.withEnrolments`. It preserves contacts, sample classification, tags, remark and every other profile. A successful result uses `CommandResult.forTarget` with the updated owner and the saved context in feedback, allowing #64 to run independently of #65. It applies `PersonOrder.BY_NAME_THEN_EMAIL` and clears the filter. Existing logic prepares presentation before persistence, rolls back failures, and returns success only after the save. Failed input/target/duplicate checks do not request presentation or persistence.
+
+`EnrolWorkflowTest` exercises actual parsing, selection requests, complete JSON reload, same-name owners, classified samples, multiple contexts, duplicate normalisation, save/presentation failure and read-only recovery. `EnrolCommandParserTest` covers prefix combinations, ordering, missing/blank values, structural precedence and field constraints.
+
+For opt-in real-window acceptance using fictional data, build with `./gradlew testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.EnrolmentAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` remains optional planned work and unavailable despite its mention in the specified duplicate message.
 
 ### Storage safety (v1.2)
 
@@ -188,7 +204,7 @@ The shared command contract is:
 * `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
 * `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
 
-`createRestorePoint()` reuses the search display restore point so failed saves preserve both the result filter and comparator. The profile-view increment in #65 must preserve the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
+`createRestorePoint()` reuses the search display restore point so failed saves preserve both the result filter and comparator. The profile view from #65 preserves the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
 
 `JsonAddressBookStorage` writes the complete candidate into a temporary file in the destination directory and closes it before an atomic replacement. Unsupported or failed atomic replacement is an error; there is no non-atomic fallback and the previous destination is not truncated first. Failed first saves leave no roster destination. Temporary-file cleanup is attempted on success and failure, and a cleanup error after a committed replacement is logged rather than reported as a failed save. Save attempts reject symbolic-link destinations and existing read-only files.
 
@@ -198,21 +214,48 @@ Protection covers detected failures, not power loss or hardware faults. The app 
 
 The startup guidance names both `student add` and fictional sample loading. Samples are never created automatically.
 
-### Name and email search (v1.2)
+### Identifier search (v1.3)
 
 `FindCommandParser` treats the complete argument as one literal query. It rejects controls and line breaks before trimming spaces and tabs, changes internal tabs to spaces, and checks the 100-code-point limit. `AddressBookParser` also validates the original command before trimming so that trailing line breaks cannot disappear before validation.
 
-`NameOrEmailContainsQueryPredicate` compares the query with names and emails using `Locale.ROOT` lowercase and contiguous substring matching. It does not split words, remove accents, or interpret prefixes, regular expressions, or wildcards. Contact-handle search remains planned for v1.3.
+`IdentifierContainsQueryPredicate` compares the query with names, canonical emails and present Telegram/GitHub values using `Locale.ROOT` lowercase and contiguous substring matching. It removes exactly one leading `@` for Telegram comparison only; an empty remaining Telegram query never matches. Other fields retain the original query, so `@` can still match email addresses. The comparisons are combined with OR, returning each profile once. Absent contacts are not converted to display labels. It does not split words, remove accents, search enrolments, or interpret prefixes, regular expressions, or wildcards.
 
 `ModelManager` exposes a `SortedList` over its `FilteredList`. The comparator overload of `updateFilteredPersonList` filters the complete roster and sorts only the display by lowercase name, then lowercase email. Stored order and records remain unchanged. Existing commands using the single-argument overload retain their previous unsorted display behavior. Index-based commands operate on the displayed list.
 
-`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. Issue #65 extends profile display with contacts and enrolments.
+`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. [Profile viewing (v1.3)](#profile-viewing-v13) extends this display with a complete profile panel.
 
 `FindCommand.isReadOnly()` returns true, so `LogicManager` skips persistence for successful searches, including zero matches. Other read-only commands and unchanged rosters also skip persistence. Data-changing commands use the storage recovery and atomic-save contract above.
 
 Search does not change identity or field validation. Email identity allows profiles with identical names when their canonical emails differ. Names follow the Feature 3 rule: Unicode text is accepted, surrounding and repeated spaces and tabs are normalised, and the normalised name must contain 1 to 100 code points, include at least one visible character, and contain no forward slash, control character or malformed Unicode. Stored names are stricter: `JsonAdaptedPerson` validates each decoded stored name with the same rule and then requires it to equal the resulting `Name#fullName`, so a stored name with surrounding spaces or tabs, tabs between words or repeated spaces is rejected rather than corrected, and the whole load fails; `MainApp` then opens the read-only recovery session described in [Storage safety (v1.2)](#storage-safety-v12). Predicate and command tests cover independent same-name records, including an identical-name roster ordered by email.
 
-Verification covers literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
+Verification covers Telegram-only and GitHub-only matches, shared handles, multiple-field matches without duplicates, `@`/`@@` handling, absent contacts, literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
+
+For a repeatable JavaFX check using fictional data, build with `./gradlew testClasses shadowJar`, then run the following from the repository root with a JavaFX-enabled JDK 25 (macOS/Linux classpath syntax):
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ContactSearchAcceptance
+```
+
+On Windows, replace the classpath separator `:` with `;`. This opt-in utility drives the real command box, checks selection and rendering-failure recovery, and refuses search save attempts. It writes its fictional files and screenshot under `build/reports/contact-search`. It measures four queries over 500 profiles with 1,000 enrolments, recording the first invocation and five repeats through command handling, feedback, layout and a scene snapshot. Report the printed runtime, actual machine specifications and tested commit with results. This is programmatic UI evidence, not manual keyboard input or reference-hardware certification; reference-condition acceptance belongs to #80.
+
+
+### Profile viewing (v1.3)
+
+`ViewCommandParser` rejects line breaks, trims spaces and tabs, and counts tokens before validating the email. An empty argument gives the missing-email message and two or more tokens give the extra-argument message, so `view /email EMAIL` is reported as an extra argument rather than an invalid email. A single token is canonicalised by `ParserUtil.parseEmail`.
+
+`ViewCommand` looks up the canonical email in the complete roster, not the displayed list, so hidden students can be viewed. If the target is already displayed, the filter and comparator are kept. Otherwise the command shows all students with `PersonOrder.BY_NAME_THEN_EMAIL`. It returns `CommandResult.forTarget`, and `isReadOnly()` is true, so `LogicManager` never saves and the command remains available during read-only recovery. `Command#getDisplayFailureMessage` lets the command replace the generic profile-display failure message with its own retry guidance. The rollback path is unchanged.
+
+`MainWindow` places `PersonListPanel` and `PersonDetailsPanel` side by side in a `SplitPane`. The details panel follows the list selection. A sole `find` result, `view`, `student add`, `edit` and a revealed duplicate therefore all show the complete profile, and a cleared selection shows the selection prompt. For a command presentation, `prepareAndReplaceDisplay` builds both panels in detached scenes with the window stylesheets, applies CSS and layout, then swaps both placeholders. If either swap fails, both previous panels are restored before the error reaches `LogicManager`, so failed presentation never shows a new list with a stale profile. A selection made with the mouse or keyboard prepares a new details panel the same way. If that fails, the previous profile stays visible, the result display shows `Messages.MESSAGE_PROFILE_DISPLAY_FAILURE`, and the list selection is restored to the displayed profile.
+
+`PersonCard.enrolmentLine` and `PersonCard.enrolmentText` format enrolments in `Enrolment.DISPLAY_ORDER`, and `PersonDetailsPanel.profileLines` lists the profile fields in a fixed order. Both are static and can be tested without starting JavaFX. `Not provided`, `Not assigned` and `Enrolments: none` are display text only and are never stored.
+
+For an opt-in layout check using fictional data, build with `./gradlew testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ProfileViewAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
 
 ### \[Proposed\] Undo/redo feature
 
@@ -364,7 +407,7 @@ The full workflow tests cover parsing, exact fixture contents, mixed real and fi
 
 `Command.getSaveFailureMessage(defaultMessage)` supplies creation/edit-specific feedback only after rollback; other commands retain the existing storage error. It is not used for display failures. UI refresh failures following a completed save from other commands retain the existing guard and never rerun the saved mutation.
 
-Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display and enrolment entry remain separate increments.
+Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display remains a separate increment.
 
 **Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
 
@@ -810,6 +853,23 @@ testers are expected to do more *exploratory* testing.
    1. Test cases: `sample clear extra`, `sample clear 1`, and `sample CLEAR`.<br>
       Expected: Extra text shows `Sample clear does not accept parameters. Usage: sample clear`. Incorrect case shows `Usage: sample load | sample clear`. No data changes.
 
+### Viewing a profile
+
+1. Viewing hidden and same-name students
+
+   1. Prerequisites: Load the samples with `sample load`, then run `find Mei`.
+
+   1. Test case: `view E9000001@U.NUS.EDU`<br>
+      Expected: `Viewing student: Alex Tan.` The full sorted roster is shown, the first Alex Tan is selected, and the profile panel lists both enrolments, including `CS2113T | AY26/27 S2 | Section: T14 | Team: Not assigned`.
+
+   1. Test case: `view e9000005@u.nus.edu`<br>
+      Expected: Nur Aisyah is shown with `Telegram: Not provided`, `GitHub: Not provided` and `Enrolments: none`.
+
+1. Rejected input
+
+   1. Test cases: `view`, `view e9000001@u.nus.edu e9000002@u.nus.edu`, `view Alex`, and `view e9000009@u.nus.edu`.<br>
+      Expected: The missing-email, extra-argument, email-rule and not-found messages respectively. The previous results, selection and profile remain, and the data file is not rewritten.
+
 ### Deleting a person
 
 1. Deleting a person while all persons are being shown
@@ -832,7 +892,7 @@ testers are expected to do more *exploratory* testing.
 1. Dealing with missing/corrupted data files
 
    1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` and restart; the saved contact returns.
-   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
+   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
    1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
 
 1. _{ more test cases …​ }_

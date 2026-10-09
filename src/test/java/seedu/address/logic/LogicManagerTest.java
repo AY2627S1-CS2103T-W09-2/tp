@@ -23,9 +23,11 @@ import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.UserPrefs;
+import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
 import seedu.address.storage.StorageManager;
+import seedu.address.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -95,7 +97,13 @@ public class LogicManagerTest {
         assertEquals("1 student found for \"Amy\".", logic.execute("find Amy").getFeedbackToUser());
         assertEquals("No students found for \"missing\". Check the spelling or search with another identifier.",
                 logic.execute("find missing").getFeedbackToUser());
-        assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
+        Person contact = new PersonBuilder(AMY).withTelegram("Fictional_Chat").withGitHub("fictional-repo").build();
+        model.setPerson(AMY, contact);
+        assertEquals("1 student found for \"@FICTIONAL_CHAT\".",
+                logic.execute("find @FICTIONAL_CHAT").getFeedbackToUser());
+        assertEquals("1 student found for \"fictional-repo\".",
+                logic.execute("find fictional-repo").getFeedbackToUser());
+        assertEquals(List.of(contact), model.getAddressBook().getPersonList());
     }
 
     @Test

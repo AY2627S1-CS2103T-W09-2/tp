@@ -92,8 +92,9 @@ public class LogicManager implements Logic {
                 presentSearch.accept(commandResult);
             } catch (RuntimeException | AssertionError e) {
                 restore.run();
-                throw new CommandException(commandResult.getSelectionTarget() == null
-                        ? Messages.MESSAGE_SEARCH_DISPLAY_FAILURE : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE, e);
+                String defaultMessage = commandResult.getSelectionTarget() == null
+                        ? Messages.MESSAGE_SEARCH_DISPLAY_FAILURE : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE;
+                throw new CommandException(command.getDisplayFailureMessage(defaultMessage), e);
             }
         }
 

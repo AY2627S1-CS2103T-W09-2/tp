@@ -5,15 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.ModelManager;
+import seedu.address.model.ReadOnlyAddressBook;
 import seedu.address.model.person.Person;
 import seedu.address.storage.JsonAddressBookStorage;
 import seedu.address.storage.JsonUserPrefsStorage;
@@ -27,22 +30,34 @@ public class SearchPresentationTest {
     @Test
     public void execute_failedPresentation_restoresPriorFilterOrderAndSavedData() throws Exception {
         ModelManager model = new ModelManager();
-        Person mei = new PersonBuilder().withName("Mei Tan").withEmail("e9000003@u.nus.edu").build();
-        Person alex = new PersonBuilder().withName("Alex Tan").withEmail("e9000002@u.nus.edu").build();
-        Person otherAlex = new PersonBuilder().withName("alex tan").withEmail("e9000001@u.nus.edu").build();
+        Person mei = new PersonBuilder().withName("Mei Tan").withEmail("e9000003@u.nus.edu")
+                .withTelegram("Mei_Handle").withGitHub("Mei-Repo").build();
+        Person alex = new PersonBuilder().withName("Alex Tan").withEmail("e9000002@u.nus.edu")
+                .withTelegram("Shared_Handle").withGitHub("Shared-Repo").build();
+        Person otherAlex = new PersonBuilder().withName("alex tan").withEmail("e9000001@u.nus.edu")
+                .withTelegram("Shared_Handle").withGitHub("Shared-Repo").build();
         model.addPerson(mei);
         model.addPerson(alex);
         model.addPerson(otherAlex);
-        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("roster.json"));
+        AtomicInteger saveAttempts = new AtomicInteger();
+        JsonAddressBookStorage storage = new JsonAddressBookStorage(temporaryFolder.resolve("roster.json")) {
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook data) throws IOException {
+                saveAttempts.incrementAndGet();
+                super.saveAddressBook(data);
+            }
+        };
         storage.saveAddressBook(model.getAddressBook());
         byte[] originalBytes = Files.readAllBytes(storage.getAddressBookFilePath());
         Logic logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
 
-        for (String previousQuery : List.of("find missing", "find Mei", "find Alex")) {
+        for (String previousQuery : List.of("find missing", "find Mei",
+                "find @Mei_Handle", "find Shared-Repo", "find Alex")) {
             logic.execute(previousQuery);
             List<Person> previousResults = List.copyOf(model.getFilteredPersonList());
-            for (String nextQuery : List.of("find missing", "find Mei", "find Tan")) {
+            for (String nextQuery : List.of("find missing", "find Mei", "find Tan",
+                    "find @Mei_Handle", "find Shared-Repo")) {
                 CommandException failure = assertThrows(CommandException.class, () ->
                         logic.execute(nextQuery, result -> {
                             throw new IllegalStateException("Injected selection/layout failure");
@@ -70,5 +85,6 @@ public class SearchPresentationTest {
         });
         assertEquals(List.of(another), model.getFilteredPersonList());
         assertArrayEquals(originalBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+        assertEquals(1, saveAttempts.get());
     }
 }

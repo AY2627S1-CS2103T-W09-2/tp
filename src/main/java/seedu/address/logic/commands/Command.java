@@ -20,6 +20,11 @@ public abstract class Command {
         return defaultMessage;
     }
 
+    /** Returns the feedback after a failed display has restored the previous results and selection. */
+    public String getDisplayFailureMessage(String defaultMessage) {
+        return defaultMessage;
+    }
+
     /**
      * Executes the command and returns the result message.
      *

@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
-import seedu.address.logic.Messages;
 import seedu.address.model.person.Person;
 
 /**
@@ -23,8 +22,6 @@ public class PersonListPanel extends UiPart<Region> {
 
     @FXML
     private ListView<Person> personListView;
-    @FXML
-    private Label selectionPrompt;
 
     /**
      * Creates every result card before the panel can replace the previous complete display.
@@ -41,13 +38,11 @@ public class PersonListPanel extends UiPart<Region> {
         }
         personListView.setItems(FXCollections.unmodifiableObservableList(snapshot));
         personListView.setCellFactory(listView -> new PersonListViewCell());
-        selectionPrompt.visibleProperty().bind(personListView.getSelectionModel().selectedItemProperty().isNull());
-        selectionPrompt.managedProperty().bind(selectionPrompt.visibleProperty());
     }
 
-    /** Replaces the selection prompt with the empty-roster recovery guidance. */
-    public void showEmptyRosterGuidance() {
-        selectionPrompt.setText(Messages.MESSAGE_EMPTY_ROSTER);
+    /** Returns the observable selection, so the window can display the complete selected profile. */
+    public ReadOnlyObjectProperty<Person> selectedPersonProperty() {
+        return personListView.getSelectionModel().selectedItemProperty();
     }
 
     /** Returns whether this panel already represents the supplied results in the same order. */
@@ -62,9 +57,11 @@ public class PersonListPanel extends UiPart<Region> {
 
     /** Restores a surviving selection when another command refreshes the displayed results. */
     public void restoreSelection(Person person) {
-        personListView.getSelectionModel().clearSelection();
-        if (person != null && personListView.getItems().contains(person)) {
-            personListView.getSelectionModel().select(person);
+        int index = person == null ? -1 : personListView.getItems().indexOf(person);
+        if (index < 0) {
+            personListView.getSelectionModel().clearSelection();
+        } else {
+            personListView.getSelectionModel().clearAndSelect(index);
         }
     }
 
