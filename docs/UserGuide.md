@@ -121,6 +121,30 @@ A save failure shows `The student could not be saved. No data was changed.` and 
 
 The inherited `add n/...` command is retired. Phone and address are no longer student fields.
 
+### Adding a module-semester enrolment: `enrol`
+
+Format: `enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION] [/team TEAM]`
+
+Create the student first with `student add`. The normalised NUS email selects the exact owner from the complete roster, including students hidden by a search. Prefixes may appear in any order, once each. Unknown or repeated prefixes, text before the first prefix and supplied empty values reject the whole command. The slash inside `AY26/27` is part of the semester value.
+
+* Module codes have 2 to 4 ASCII letters, four digits and up to 3 final letters; input is trimmed and stored uppercase.
+* Semesters use `AYyy/yy S1` or `AYyy/yy S2`, ignoring case and normalising spaces/tabs. Years must be consecutive within 2000–2099. Special terms are unsupported.
+* Optional section and team labels have 1 to 30 ASCII letters, digits, spaces or hyphens after spaces/tabs are normalised, and need at least one letter or digit. Case is preserved. Omit a prefix for an unknown affiliation; do not supply a blank value or store `Not assigned` as a placeholder.
+
+Examples using an existing fictional student:
+
+* `enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1` adds an unassigned context.
+* Alternatively, `enrol /email E9000001@U.NUS.EDU /module cs2103t /semester ay26/27 s1 /section T12 /team SEED` adds the same context with affiliations. Run either example, not both: the second is a duplicate after the first succeeds.
+* `enrol /semester AY26/27 S2 /module CS2103T /email e9000001@u.nus.edu` adds a separate context for the next semester.
+
+Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. Complete profile/enrolment presentation remains a separate increment.
+
+A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` **`edit-enrol` is planned optional work and is currently unavailable.** Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
+
+A missing owner shows `No student found with NUS email: EMAIL. Create the student profile before adding an enrolment.` Invalid values show their field rule. Syntax errors include usage help and report structural errors from left to right, then check values in email/module/semester/section/team order. Rejections leave data, results and selection unchanged.
+
+A save failure shows `The enrollment could not be saved. No data was changed.` and restores the previous roster, results and selection. Correct the storage problem and retry. A display preparation failure shows `Student could not be displayed. No data was changed. Try again.` and does not save. Read-only recovery sessions reject enrolment changes with the existing recovery guidance.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in the address book.
@@ -250,7 +274,7 @@ To recover:
 
 ### Stored enrolments
 
-Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. The `enrol` command is a separate increment and is not available yet. Existing commands that edit a profile or its remark preserve its stored enrolments.
+Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Use `enrol` to add a context to an existing student. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. Existing commands that edit a profile or its remark preserve its stored enrolments.
 
 An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
 
@@ -305,6 +329,7 @@ _Details coming soon ..._
 
 Action | Format, Examples
 --------|------------------
+**Enrol** | `enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION] [/team TEAM]`
 **Student add** | `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
 **Clear** | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
