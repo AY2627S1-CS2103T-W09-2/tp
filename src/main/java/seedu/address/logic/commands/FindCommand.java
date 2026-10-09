@@ -5,20 +5,22 @@ import static java.util.Objects.requireNonNull;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.logic.Messages;
 import seedu.address.model.Model;
-import seedu.address.model.person.NameOrEmailContainsQueryPredicate;
+import seedu.address.model.person.IdentifierContainsQueryPredicate;
 import seedu.address.model.person.PersonOrder;
 
 /**
- * Finds students whose name or email contains a single literal query, ignoring case.
+ * Finds students by a literal substring in their name, email, Telegram or GitHub, ignoring case.
  */
 public class FindCommand extends Command {
     public static final String COMMAND_WORD = "find";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Searches names and emails for one literal substring, ignoring case.\n"
+            + ": Searches names, NUS emails, Telegram handles and GitHub usernames "
+            + "for one literal substring, ignoring case.\n"
             + "Parameters: QUERY (1 to 100 Unicode characters)\n"
-            + "Example: " + COMMAND_WORD + " Alex Tan\n"
-            + "Telegram and GitHub searches are not available in v1.2.";
-    public static final String MESSAGE_EMPTY_QUERY = "Enter a name or email to search.";
+            + "Examples: " + COMMAND_WORD + " Alex Tan; " + COMMAND_WORD + " @socdex_demo_mei\n"
+            + "One leading @ is ignored for Telegram comparison only.";
+    public static final String MESSAGE_EMPTY_QUERY =
+            "Enter a name, NUS email, Telegram handle, or GitHub username to search.";
     public static final String MESSAGE_LONG_QUERY = "Search text must not contain more than 100 characters.";
 
     private final String query;
@@ -38,7 +40,7 @@ public class FindCommand extends Command {
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        model.updateFilteredPersonList(new NameOrEmailContainsQueryPredicate(query), PersonOrder.BY_NAME_THEN_EMAIL);
+        model.updateFilteredPersonList(new IdentifierContainsQueryPredicate(query), PersonOrder.BY_NAME_THEN_EMAIL);
         return CommandResult.forSearch(Messages.formatSearchResult(query, model.getFilteredPersonList().size()));
     }
 

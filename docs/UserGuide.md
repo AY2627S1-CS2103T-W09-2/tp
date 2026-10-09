@@ -143,30 +143,33 @@ A missing target shows `No student found with NUS email: EMAIL.`; a command with
 
 Index-based `edit`, `/name`, `/new-email`, and affiliation editing are not supported in this increment. Name/email and affiliation editing remain planned for v1.3.
 
-### Finding students by name or email: `find`
+### Finding students by an identifier: `find`
 
-Search the complete roster using a name, email, or part of either identifier.
+Search the complete roster using a name, NUS email, Telegram handle, GitHub username, or part of any identifier.
 
 Format: `find QUERY`
 
 * Enter one literal query of 1 to 100 Unicode characters. `find Alex Tan` searches for the phrase `Alex Tan`; it does not match `Alex Lim` or `Mei Tan`.
-* Matching ignores letter case and allows partial names and emails. Accents remain significant, and punctuation such as `*` is literal; wildcards and regular expressions are not supported.
+* Matching ignores letter case and checks the whole query as a contiguous substring in any of the four fields. Accents remain significant, and punctuation such as `*` is literal; wildcards and regular expressions are not supported.
 * Surrounding spaces and tabs are ignored. Internal tabs become spaces, and repeated internal spaces remain significant. For example, `find Alex  Tan` (two spaces) does not match `Alex Tan` (one space).
+* For Telegram only, one leading `@` is removed from the query. `find @` has no Telegram match but still matches email addresses. Names, emails and GitHub usernames use the original query, so `find @socdex-demo-ravi` does not match GitHub username `socdex-demo-ravi`.
+* Absent contacts do not match the display label `Not provided`. Enrolment fields and the `Fictional sample` label are not searched.
 * Every search starts from the complete roster, including students hidden by a previous search.
 * Results appear in name order, ignoring case, with email used to break ties. Each matching profile appears once and shows its name, email, and currently supported fields.
 * A single match is selected automatically. Zero or multiple matches clear the selection.
-* A blank query, more than 100 characters, a line break, or an unsupported control character is rejected. The previous results and selection remain available; correct the command and retry.
+* A blank query shows `Enter a name, NUS email, Telegram handle, or GitHub username to search.` with usage help. More than 100 characters, a line break, or an unsupported control character is also rejected. The previous results and selection remain available; correct the command and retry.
 * Searching does not change or save roster data.
 * If results cannot be displayed, the app shows `Search results could not be displayed. Try the search again.` and retains the previous results and selected profile. Retry the search.
 
 Examples using fictional records:
 
-* `find Alex Tan` finds every profile whose name or email contains `Alex Tan`.
+* `find Alex Tan` finds every profile with an identifier containing `Alex Tan`.
 * `find E9000001@U.NUS.EDU` finds a profile with the email `e9000001@u.nus.edu`, even after an earlier search returned no results.
 * `find @u.nus.edu` lists matching student emails.
+* After `sample load`, `find @socdex_demo_mei` selects Mei Lim through Telegram, and `find socdex-demo-ravi` selects Ravi Kumar through GitHub. Shared handles return every matching student once, even when another field also matches.
 * `find *` searches for a literal asterisk. If no profile matches, the app displays `No students found for "*". Check the spelling or search with another identifier.`
 
-Telegram and GitHub searches are not available in v1.2. Complete enrolment details and the `view EMAIL` command are delivered separately; this increment displays the fields currently available on each result card.
+Complete enrolment details and the `view EMAIL` command are delivered separately; this increment displays the fields currently available on each result card.
 
 If the student list cannot be refreshed after a command, the app blocks further command execution until it can show the current list. Submit again to refresh it, then check the displayed indexes before re-entering your intended command. The earlier command may already have changed data; refreshing the list does not repeat it.
 

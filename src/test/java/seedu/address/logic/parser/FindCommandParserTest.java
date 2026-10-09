@@ -26,6 +26,9 @@ public class FindCommandParserTest {
         assertParseSuccess(parser, "Alex\tTan", new FindCommand("Alex Tan"));
         assertParseSuccess(parser, "/name Alex * .+", new FindCommand("/name Alex * .+"));
         assertParseSuccess(parser, "Élodie", new FindCommand("Élodie"));
+        assertParseSuccess(parser, " \t@Mixed_Handle ", new FindCommand("@Mixed_Handle"));
+        assertParseSuccess(parser, "@", new FindCommand("@"));
+        assertParseSuccess(parser, "@@handle", new FindCommand("@@handle"));
     }
 
     @Test
