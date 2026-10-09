@@ -11,6 +11,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.Region;
+import seedu.address.logic.Messages;
 import seedu.address.model.person.Person;
 
 /**
@@ -42,6 +43,11 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.setCellFactory(listView -> new PersonListViewCell());
         selectionPrompt.visibleProperty().bind(personListView.getSelectionModel().selectedItemProperty().isNull());
         selectionPrompt.managedProperty().bind(selectionPrompt.visibleProperty());
+    }
+
+    /** Replaces the selection prompt with the empty-roster recovery guidance. */
+    public void showEmptyRosterGuidance() {
+        selectionPrompt.setText(Messages.MESSAGE_EMPTY_ROSTER);
     }
 
     /** Returns whether this panel already represents the supplied results in the same order. */

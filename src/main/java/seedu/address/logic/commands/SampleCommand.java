@@ -17,6 +17,7 @@ import seedu.address.model.util.SampleDataUtil;
 /** Loads the fixed fictional fixture into an empty writable roster. */
 public class SampleCommand extends Command {
     public static final String COMMAND_WORD = "sample";
+    public static final String MESSAGE_SUBCOMMAND_USAGE = "Usage: sample load | sample clear";
     public static final String MESSAGE_USAGE = "Sample load does not accept parameters. Usage: sample load";
     public static final String MESSAGE_SUCCESS = "Loaded 5 fictional student profiles and 5 enrolments. "
             + "You can explore SoCdex without using real student data.";

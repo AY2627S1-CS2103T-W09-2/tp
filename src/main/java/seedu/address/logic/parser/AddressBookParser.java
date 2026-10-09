@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.ClearSamplesCommand;
 import seedu.address.logic.commands.Command;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.EditCommand;
@@ -81,9 +82,19 @@ public class AddressBookParser {
     }
 
     private Command parseSample(String args) throws ParseException {
-        if (!args.trim().equals("load")) {
+        String stripped = args.trim();
+        if (stripped.equals("load")) {
+            return new SampleCommand();
+        }
+        if (stripped.matches("load[ \\t].*")) {
             throw new ParseException(SampleCommand.MESSAGE_USAGE);
         }
-        return new SampleCommand();
+        if (stripped.equals("clear")) {
+            return new ClearSamplesCommand();
+        }
+        if (stripped.matches("clear[ \\t].*")) {
+            throw new ParseException(ClearSamplesCommand.MESSAGE_USAGE);
+        }
+        throw new ParseException(SampleCommand.MESSAGE_SUBCOMMAND_USAGE);
     }
 }

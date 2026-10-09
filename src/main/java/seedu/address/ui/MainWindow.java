@@ -193,7 +193,12 @@ public class MainWindow extends UiPart<Stage> {
 
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
-        if (result.getSelectionTarget() == null) {
+        if (result.isPreserveSurvivingSelection()) {
+            replacement.restoreSelection(personListPanel.getSelectedPerson());
+            if (logic.getFilteredPersonList().isEmpty()) {
+                replacement.showEmptyRosterGuidance();
+            }
+        } else if (result.getSelectionTarget() == null) {
             replacement.selectOnlyResult();
         } else {
             replacement.selectTarget(result.getSelectionTarget());
