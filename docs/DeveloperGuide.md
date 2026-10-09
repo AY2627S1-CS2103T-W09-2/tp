@@ -175,7 +175,23 @@ An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Option
 
 Otherwise valid older profiles with no `enrolments` property load with an empty list. An explicit empty array also means no enrolments; an explicit null array, null item, malformed item, missing module/semester, invalid value, or repeated key rejects the entire load. Omitted or null `section` and `team` mean absence; empty strings are invalid. Stored strings must already equal the validated value's canonical form. Loading does not silently correct lowercase modules, semester spacing, or affiliation whitespace. Equivalent JSON escapes decode to the same valid string.
 
-This increment adds model and persistence support. The user-facing `enrol` command belongs to #64, and complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+This increment adds model and persistence support. The user-facing `enrol` command is implemented by `EnrolCommand`; complete enrolment display belongs to #65. The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
+
+### Enrolment entry (v1.3)
+
+`EnrolCommandParser` reuses `SlashPrefixTokenizer` and `SlashArguments`. Structural errors are checked first from left to right; values are constructed in email/module/semester/section/team order with the shared value types. Omitted affiliations are absent optionals. `AY26/27` stays within a value because its slash is not at a prefix boundary.
+
+`EnrolCommand` resolves the canonical email against the complete roster, checks `Enrolment.hasSameKey`, copies the existing enrolment list and calls `Person.withEnrolments`. It preserves contacts, sample classification, tags, remark and every other profile. A successful result uses `CommandResult.forTarget` with the updated owner and the saved context in feedback, allowing #64 to run independently of #65. It applies `PersonOrder.BY_NAME_THEN_EMAIL` and clears the filter. Existing logic prepares presentation before persistence, rolls back failures, and returns success only after the save. Failed input/target/duplicate checks do not request presentation or persistence.
+
+`EnrolWorkflowTest` exercises actual parsing, selection requests, complete JSON reload, same-name owners, classified samples, multiple contexts, duplicate normalisation, save/presentation failure and read-only recovery. `EnrolCommandParserTest` covers prefix combinations, ordering, missing/blank values, structural precedence and field constraints.
+
+For opt-in real-window acceptance using fictional data, build with `./gradlew testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.EnrolmentAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` remains optional planned work and unavailable despite its mention in the specified duplicate message.
 
 ### Storage safety (v1.2)
 
@@ -367,7 +383,7 @@ The full workflow tests cover parsing, exact fixture contents, sorted display, n
 
 `Command.getSaveFailureMessage(defaultMessage)` supplies creation/edit-specific feedback only after rollback; other commands retain the existing storage error. It is not used for display failures. UI refresh failures following a completed save from other commands retain the existing guard and never rerun the saved mutation.
 
-Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display and enrolment entry remain separate increments.
+Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display remains a separate increment.
 
 **Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
 
@@ -808,7 +824,7 @@ testers are expected to do more *exploratory* testing.
 1. Dealing with missing/corrupted data files
 
    1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` and restart; the saved contact returns.
-   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
+   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
    1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
 
 1. _{ more test cases …​ }_
