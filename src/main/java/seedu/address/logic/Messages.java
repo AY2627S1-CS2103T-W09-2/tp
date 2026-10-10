@@ -24,6 +24,8 @@ public class Messages {
     public static final String MESSAGE_PROFILE_DISPLAY_FAILURE =
             "Student could not be displayed. No data was changed. Try again.";
     public static final String MESSAGE_SINGLE_LINE = "Enter one command on a single line.";
+    public static final String MESSAGE_ENTER_COMMAND = "Enter a command.";
+    public static final String MESSAGE_PENDING_DELETION_CANCELLED = "Pending deletion cancelled.";
     public static final String MESSAGE_UNKNOWN_COMMAND =
             "Unknown command. Check the command name and use lowercase command words.";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format!\n%1$s";

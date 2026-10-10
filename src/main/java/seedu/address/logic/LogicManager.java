@@ -52,12 +52,69 @@ public class LogicManager implements Logic {
         return execute(commandText, result -> { });
     }
 
+    /**
+     * {@inheritDoc}
+     * A pending deletion is cancelled by every submission except a deletion confirmation, which consumes it.
+     * The cancellation is reported on the first line of the result or error. A failed command never leaves a
+     * deletion pending.
+     */
     @Override
     public CommandResult execute(String commandText, Consumer<CommandResult> presentSearch)
             throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        Command command = addressBookParser.parseCommand(commandText);
+        boolean hadPendingDeletion = model.getPendingDeletion().isPresent();
+        Command command;
+        try {
+            command = addressBookParser.parseCommand(commandText);
+        } catch (ParseException e) {
+            model.clearPendingDeletion();
+            throw hadPendingDeletion ? new ParseException(withCancellationNotice(e.getMessage()), e) : e;
+        }
+
+        boolean isCancelling = hadPendingDeletion && !command.isDeletionConfirmation();
+        if (isCancelling) {
+            model.clearPendingDeletion();
+            logger.info("Pending deletion cancelled by another command.");
+        }
+
+        boolean isSuccessful = false;
+        try {
+            CommandResult commandResult = executeParsed(command, presentSearch);
+            isSuccessful = true;
+            return isCancelling ? commandResult.withNotice(Messages.MESSAGE_PENDING_DELETION_CANCELLED) : commandResult;
+        } catch (CommandException e) {
+            throw isCancelling ? withCancellationNotice(e) : e;
+        } finally {
+            if (!isSuccessful) {
+                // A fresh preview is required after any failure, including a failed replacement preview.
+                model.clearPendingDeletion();
+            }
+        }
+    }
+
+    /** Returns {@code message} preceded by the pending-deletion cancellation notice on its own line. */
+    private static String withCancellationNotice(String message) {
+        return Messages.MESSAGE_PENDING_DELETION_CANCELLED + "\n" + message;
+    }
+
+    /** Returns a copy of {@code e} with the cancellation notice, keeping its type and any revealed profile. */
+    private static CommandException withCancellationNotice(CommandException e) {
+        String message = withCancellationNotice(e.getMessage());
+        if (e instanceof DuplicateStudentException duplicate) {
+            DuplicateStudentException noticed = new DuplicateStudentException(message, duplicate.getExisting());
+            noticed.initCause(e);
+            return noticed;
+        }
+        return new CommandException(message, e);
+    }
+
+    /**
+     * Runs a parsed command as one transaction: presents its results before saving, saves only changed data and
+     * restores the previous roster, filter and order if any step fails.
+     */
+    private CommandResult executeParsed(Command command, Consumer<CommandResult> presentSearch)
+            throws CommandException {
         if (model.isReadOnly() && !command.isReadOnly()) {
             throw new CommandException(MESSAGE_READ_ONLY);
         }

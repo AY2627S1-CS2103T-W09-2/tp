@@ -2,7 +2,6 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,10 +57,14 @@ public class DisplayedCommandExecutorTest {
                 result -> refreshDisplay(), this::refreshDisplay);
     }
 
+    // `remark INDEX` is the remaining index-targeted command that saves and then refreshes the display.
+    // Each attempt uses a distinct remark so that a repeated or misdirected mutation is observable.
+
     @Test
-    public void execute_failedDeleteThenSuccessfulDelete_targetsDisplayedStudent() throws Exception {
+    public void execute_failedIndexCommandThenRetry_targetsDisplayedStudent() throws Exception {
         storage.isFailing = true;
-        CommandException failure = assertThrows(CommandException.class, () -> executor.execute("delete 1"));
+        CommandException failure = assertThrows(CommandException.class, () ->
+                executor.execute("remark 1 r/First"));
         assertTrue(failure.getMessage().contains("Injected save failure"));
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
         assertEquals(List.of(alice, bob, carl), displayed);
@@ -69,14 +72,13 @@ public class DisplayedCommandExecutorTest {
         Person visibleTarget = displayed.get(1);
 
         storage.isFailing = false;
-        executor.execute("delete 2");
-        assertFalse(model.hasPerson(visibleTarget));
-        assertEquals(List.of(alice, carl), displayed);
+        executor.execute("remark 2 r/Target");
+        assertEquals(List.of(alice, withRemark(visibleTarget, "Target"), carl), displayed);
         assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
     @Test
-    public void execute_failedFilteredEditThenDelete_preservesDisplayedTarget() throws Exception {
+    public void execute_failedFilteredEditThenIndexCommand_preservesDisplayedTarget() throws Exception {
         executor.execute("find Bob");
         assertEquals(List.of(bob), displayed);
         storage.isFailing = true;
@@ -85,10 +87,10 @@ public class DisplayedCommandExecutorTest {
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
 
         storage.isFailing = false;
-        executor.execute("delete 1");
-        assertFalse(model.hasPerson(bob));
-        assertTrue(displayed.isEmpty());
-        assertEquals(List.of(alice, carl), storage.readAddressBook().orElseThrow().getPersonList());
+        executor.execute("remark 1 r/Target");
+        // Index 1 referred to the displayed Bob, not the first stored student; remark then shows everyone.
+        assertEquals(List.of(alice, withRemark(bob, "Target"), carl), displayed);
+        assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
     @Test
@@ -96,32 +98,34 @@ public class DisplayedCommandExecutorTest {
         List<Person> previous = displayed;
         storage.isFailing = true;
         isDisplayFailing = true;
-        CommandException failure = assertThrows(CommandException.class, () -> executor.execute("delete 1"));
+        CommandException failure = assertThrows(CommandException.class, () ->
+                executor.execute("remark 1 r/First"));
         assertTrue(failure.getMessage().contains("Injected save failure"));
         assertSame(previous, displayed);
         assertEquals(displayed, model.getFilteredPersonList());
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
 
-        assertThrows(CommandException.class, () -> executor.execute("delete 2"));
+        assertThrows(CommandException.class, () -> executor.execute("remark 2 r/Second"));
         assertSame(previous, displayed);
         assertEquals(displayed, model.getFilteredPersonList());
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
 
         storage.isFailing = false;
         isDisplayFailing = false;
-        executor.execute("delete 2");
-        assertEquals(List.of(alice, carl), displayed);
+        executor.execute("remark 2 r/Third");
+        assertEquals(List.of(alice, withRemark(bob, "Third"), carl), displayed);
         assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
     @Test
     public void execute_savedCommandWithDisplayFailure_doesNotRepeatMutationOnRefresh() throws Exception {
         isDisplayFailing = true;
-        assertThrows(CommandException.class, () -> executor.execute("delete 1"));
-        assertEquals(List.of(bob, carl), storage.readAddressBook().orElseThrow().getPersonList());
+        assertThrows(CommandException.class, () -> executor.execute("remark 1 r/First"));
+        List<Person> savedOnce = List.of(withRemark(alice, "First"), bob, carl);
+        assertEquals(savedOnce, storage.readAddressBook().orElseThrow().getPersonList());
         isDisplayFailing = false;
-        assertThrows(CommandException.class, () -> executor.execute("delete 1"));
-        assertEquals(List.of(bob, carl), displayed);
+        assertThrows(CommandException.class, () -> executor.execute("remark 1 r/Second"));
+        assertEquals(savedOnce, displayed);
         assertEquals(displayed, storage.readAddressBook().orElseThrow().getPersonList());
     }
 
@@ -144,6 +148,10 @@ public class DisplayedCommandExecutorTest {
             throw new AssertionError("Injected FXML load failure");
         }
         displayed = List.copyOf(model.getFilteredPersonList());
+    }
+
+    private static Person withRemark(Person person, String remark) {
+        return new PersonBuilder(person).withRemark(remark).build();
     }
 
     private static class FailingStorage extends JsonAddressBookStorage {

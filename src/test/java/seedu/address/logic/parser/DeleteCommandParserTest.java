@@ -1,32 +1,39 @@
 package seedu.address.logic.parser;
 
-import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static seedu.address.logic.parser.CommandParserTestUtil.assertParseSuccess;
-import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.DeleteCommand;
+import seedu.address.model.person.Email;
 
 /**
- * As we are only doing white-box testing, our test cases do not cover path variations
- * outside of the DeleteCommand code. For example, inputs "1" and "1 abc" take the
- * same path through the DeleteCommand, and therefore we test only one of them.
- * The path variation for those two cases occurs inside the ParserUtil, and
- * therefore should be covered by the ParserUtilTest.
+ * Checks the deletion preview's own messages. The shared argument boundaries are covered by
+ * {@code ParserUtilTest#parseSoleEmail}.
  */
 public class DeleteCommandParserTest {
-
-    private DeleteCommandParser parser = new DeleteCommandParser();
+    private final DeleteCommandParser parser = new DeleteCommandParser();
 
     @Test
-    public void parse_validArgs_returnsDeleteCommand() {
-        assertParseSuccess(parser, "1", new DeleteCommand(INDEX_FIRST_PERSON));
+    public void parse_missingEmail_throwsDeleteUsage() {
+        assertParseFailure(parser, " \t", "NUS email is required. Usage: delete EMAIL");
     }
 
     @Test
-    public void parse_invalidArgs_throwsParseException() {
-        assertParseFailure(parser, "a", String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE));
+    public void parse_extraArgument_throwsDeleteUsageBeforeEmailValidation() {
+        for (String args : new String[] {" e9000001@u.nus.edu extra", " 1 2"}) {
+            assertParseFailure(parser, args, "Delete accepts one NUS email only. Usage: delete EMAIL");
+        }
+    }
+
+    @Test
+    public void parse_index_rejectedWithEmailRule() {
+        assertParseFailure(parser, " 1", Email.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_paddedMixedCaseEmail_returnsCanonicalPreview() {
+        assertParseSuccess(parser, " \tE9000001@U.NUS.EDU\t", new DeleteCommand(new Email("e9000001@u.nus.edu")));
     }
 }

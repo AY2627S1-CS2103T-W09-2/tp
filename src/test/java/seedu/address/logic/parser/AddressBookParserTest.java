@@ -2,7 +2,7 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static seedu.address.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static seedu.address.logic.Messages.MESSAGE_ENTER_COMMAND;
 import static seedu.address.logic.Messages.MESSAGE_SINGLE_LINE;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.ClearCommand;
+import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.FindCommand;
@@ -49,9 +50,22 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_delete() throws Exception {
-        DeleteCommand command = (DeleteCommand) parser.parseCommand(
-                DeleteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased());
-        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
+        Email email = new Email("e9000001@u.nus.edu");
+        assertEquals(new DeleteCommand(email), parser.parseCommand("delete E9000001@U.NUS.EDU"));
+        assertEquals(new DeleteCommand(email), parser.parseCommand(" \tdelete\te9000001@u.nus.edu\t"));
+        assertThrows(ParseException.class, DeleteCommand.MESSAGE_MISSING_EMAIL, () -> parser.parseCommand("delete"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () ->
+                parser.parseCommand("DELETE e9000001@u.nus.edu"));
+    }
+
+    @Test
+    public void parseCommand_confirmDelete() throws Exception {
+        assertEquals(new ConfirmDeleteCommand(new Email("e9000001@u.nus.edu")),
+                parser.parseCommand("confirm-delete E9000001@U.NUS.EDU"));
+        assertThrows(ParseException.class, ConfirmDeleteCommand.MESSAGE_MISSING_EMAIL, () ->
+                parser.parseCommand("confirm-delete"));
+        assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () ->
+                parser.parseCommand("confirm-delete e9000001@u.nus.edu\n"));
     }
 
 
@@ -115,9 +129,10 @@ public class AddressBookParserTest {
     }
 
     @Test
-    public void parseCommand_unrecognisedInput_throwsParseException() {
-        assertThrows(ParseException.class, String.format(MESSAGE_INVALID_COMMAND_FORMAT, HelpCommand.MESSAGE_USAGE), ()
-            -> parser.parseCommand(""));
+    public void parseCommand_blankInput_throwsEnterCommand() {
+        for (String blank : new String[] {"", " ", " \t "}) {
+            assertThrows(ParseException.class, MESSAGE_ENTER_COMMAND, () -> parser.parseCommand(blank));
+        }
     }
 
     @Test

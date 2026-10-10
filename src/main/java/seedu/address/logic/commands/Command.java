@@ -26,6 +26,13 @@ public abstract class Command {
     }
 
     /**
+     * Returns whether this command answers a pending deletion. Submitting any other command cancels that deletion.
+     */
+    public boolean isDeletionConfirmation() {
+        return false;
+    }
+
+    /**
      * Executes the command and returns the result message.
      *
      * @param model {@code Model} which the command should operate on.

@@ -73,13 +73,21 @@ class EnrolmentRecoveryTest {
         LogicManager logic = new LogicManager(model, storage);
         logic.execute("find Amy");
         for (String command : new String[] {"edit /email e9000001@u.nus.edu /github Changed",
-            "remark 1 r/Changed", "delete 1", "clear"}) {
+            "remark 1 r/Changed", "clear"}) {
             assertThrows(CommandException.class, () -> logic.execute(command));
             assertEquals(original, model.getAddressBook());
             assertEquals(original.getPersonList(), model.getFilteredPersonList());
             assertArrayEquals(saved, Files.readAllBytes(target));
             assertEquals(original, initialStorage.readAddressBook().orElseThrow());
         }
+
+        // Deleting the enrolled student takes a preview, which does not save, and then a confirmation.
+        logic.execute("delete e9000001@u.nus.edu");
+        assertThrows(CommandException.class, () -> logic.execute("confirm-delete e9000001@u.nus.edu"));
+        assertEquals(original, model.getAddressBook());
+        assertEquals(original.getPersonList(), model.getFilteredPersonList());
+        assertArrayEquals(saved, Files.readAllBytes(target));
+        assertEquals(original, initialStorage.readAddressBook().orElseThrow());
     }
 
     private AddressBook roster() {

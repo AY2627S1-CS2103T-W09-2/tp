@@ -23,20 +23,25 @@ public class CommandResult {
     private final boolean updateSelection;
     private final Person selectionTarget;
 
+    /** The refreshed results must be shown with no selected profile, even if only one remains. */
+    private final boolean clearSelection;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, false, null);
+        this(feedbackToUser, showHelp, exit, false, null, false);
     }
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean updateSelection,
-            Person selectionTarget) {
+            Person selectionTarget, boolean clearSelection) {
+        assert !clearSelection || updateSelection && selectionTarget == null;
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.updateSelection = updateSelection;
         this.selectionTarget = selectionTarget;
+        this.clearSelection = clearSelection;
     }
 
     /**
@@ -51,7 +56,7 @@ public class CommandResult {
      * Returns a search result that selects the sole displayed match, or clears selection otherwise.
      */
     public static CommandResult forSearch(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, true, null);
+        return new CommandResult(feedbackToUser, false, false, true, null, false);
     }
 
     /**
@@ -63,11 +68,32 @@ public class CommandResult {
 
     /** Requests selection of an explicit profile, even in a multi-row roster. */
     public static CommandResult forTarget(String feedback, Person target) {
-        return new CommandResult(feedback, false, false, true, requireNonNull(target));
+        return new CommandResult(feedback, false, false, true, requireNonNull(target), false);
+    }
+
+    /**
+     * Returns a result that presents the refreshed results with no selected profile, even if exactly one remains.
+     * Like other selection updates, it is presented before the change is saved.
+     */
+    public static CommandResult forClearedSelection(String feedback) {
+        return new CommandResult(feedback, false, false, true, null, true);
+    }
+
+    /**
+     * Returns a copy whose feedback starts with {@code notice} on its own line. Every other field is kept.
+     */
+    public CommandResult withNotice(String notice) {
+        requireNonNull(notice);
+        return new CommandResult(notice + "\n" + feedbackToUser, showHelp, exit, updateSelection, selectionTarget,
+                clearSelection);
     }
 
     public Person getSelectionTarget() {
         return selectionTarget;
+    }
+
+    public boolean isClearSelection() {
+        return clearSelection;
     }
 
     public String getFeedbackToUser() {
@@ -97,12 +123,13 @@ public class CommandResult {
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
                 && updateSelection == otherCommandResult.updateSelection
-                && Objects.equals(selectionTarget, otherCommandResult.selectionTarget);
+                && Objects.equals(selectionTarget, otherCommandResult.selectionTarget)
+                && clearSelection == otherCommandResult.clearSelection;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, updateSelection, selectionTarget);
+        return Objects.hash(feedbackToUser, showHelp, exit, updateSelection, selectionTarget, clearSelection);
     }
 
     @Override
@@ -112,6 +139,7 @@ public class CommandResult {
                 .add("showHelp", showHelp)
                 .add("exit", exit)
                 .add("updateSelection", updateSelection)
+                .add("clearSelection", clearSelection)
                 .toString();
     }
 
