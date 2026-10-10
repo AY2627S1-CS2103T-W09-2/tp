@@ -29,10 +29,15 @@ public class JarSandboxTest {
         Path jar = Files.copy(Path.of("build", "libs", "addressbook.jar"), home.resolve("addressbook.jar"));
         Path helpers = Path.of(SandboxPathsProbe.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+        Path arguments = folder.resolve("sandbox.args");
         for (String phase : new String[] {"seed", "restart"}) {
             Path output = home.resolve(phase + ".log");
-            Process process = new ProcessBuilder(java, "-cp", helpers + File.pathSeparator + jar,
-                    SandboxPathsProbe.class.getName(), phase).directory(external.toFile())
+            // The Windows launcher can lose Unicode in direct command-line classpaths.
+            // A UTF-8 argument file preserves the real JAR path without weakening the path test.
+            String classpath = (helpers + File.pathSeparator + jar).replace('\\', '/');
+            Files.writeString(arguments, "-cp\n\"" + classpath + "\"\n"
+                    + SandboxPathsProbe.class.getName() + "\n" + phase + "\n");
+            Process process = new ProcessBuilder(java, "@" + arguments).directory(external.toFile())
                     .redirectErrorStream(true).redirectOutput(output.toFile()).start();
             boolean finished = process.waitFor(30, TimeUnit.SECONDS);
             if (!finished) {
