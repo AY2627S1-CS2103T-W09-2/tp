@@ -3,12 +3,14 @@ package seedu.address;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -29,15 +31,19 @@ public class JarSandboxTest {
         Path jar = Files.copy(Path.of("build", "libs", "addressbook.jar"), home.resolve("addressbook.jar"));
         Path helpers = Path.of(SandboxPathsProbe.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        Path arguments = folder.resolve("sandbox.args");
+        Manifest manifest = new Manifest();
+        var attributes = manifest.getMainAttributes();
+        attributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        attributes.put(Attributes.Name.MAIN_CLASS, SandboxPathsProbe.class.getName());
+        attributes.put(Attributes.Name.CLASS_PATH, helpers.toUri().toASCIIString() + " " + jar.toUri().toASCIIString());
+        Path launcher = folder.resolve("sandbox-probe.jar");
+        try (var archive = new JarOutputStream(Files.newOutputStream(launcher), manifest)) {
+            // Manifest URLs keep Unicode paths out of platform-dependent launcher argument encoding.
+        }
         for (String phase : new String[] {"seed", "restart"}) {
             Path output = home.resolve(phase + ".log");
-            // The Windows launcher can lose Unicode in direct command-line classpaths.
-            // A UTF-8 argument file preserves the real JAR path without weakening the path test.
-            String classpath = (helpers + File.pathSeparator + jar).replace('\\', '/');
-            Files.writeString(arguments, "-cp\n\"" + classpath + "\"\n"
-                    + SandboxPathsProbe.class.getName() + "\n" + phase + "\n");
-            Process process = new ProcessBuilder(java, "@" + arguments).directory(external.toFile())
+            Process process = new ProcessBuilder(java, "-jar", launcher.toString(), phase)
+                    .directory(external.toFile())
                     .redirectErrorStream(true).redirectOutput(output.toFile()).start();
             boolean finished = process.waitFor(30, TimeUnit.SECONDS);
             if (!finished) {

@@ -10,11 +10,6 @@ public final class SandboxPathsProbe {
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Classpath: " + System.getProperty("java.class.path"));
-        for (String entry : System.getProperty("java.class.path").split(java.io.File.pathSeparator)) {
-            var path = java.nio.file.Path.of(entry);
-            System.out.println("Classpath entry exists: " + Files.exists(path) + " " + path);
-        }
         AppPaths.configureRuntimeDirectories();
         MainApp app = new MainApp();
         app.init();
