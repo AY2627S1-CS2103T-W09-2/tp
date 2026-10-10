@@ -8,17 +8,41 @@ Participant ":Logic" as logic LOGIC_COLOR
 Participant ":Model" as model MODEL_COLOR
 Participant ":Storage" as storage STORAGE_COLOR
 
-user -[USER_COLOR]> ui : "delete 1"
+note over user, ui
+Prerequisite: "delete e9000001@u.nus.edu"
+succeeded, so that email is pending.
+end note
+
+user -[USER_COLOR]> ui : "confirm-delete e9000001@u.nus.edu"
 activate ui UI_COLOR
 
-ui -[UI_COLOR]> logic : execute("delete 1")
+ui -[UI_COLOR]> logic : execute("confirm-delete e9000001@u.nus.edu", presentSearch)
 activate logic LOGIC_COLOR
+
+logic -[LOGIC_COLOR]> model : getPendingDeletion()
+activate model MODEL_COLOR
+model -[MODEL_COLOR]-> logic : pending email
+deactivate model
+
+logic -[LOGIC_COLOR]> model : clearPendingDeletion()
+activate model MODEL_COLOR
+model -[MODEL_COLOR]-> logic
+deactivate model
 
 logic -[LOGIC_COLOR]> model : deletePerson(p)
 activate model MODEL_COLOR
-
 model -[MODEL_COLOR]-> logic
 deactivate model
+
+logic -[LOGIC_COLOR]> model : updateFilteredPersonList(all, BY_NAME_THEN_EMAIL)
+activate model MODEL_COLOR
+model -[MODEL_COLOR]-> logic
+deactivate model
+
+logic -[LOGIC_COLOR]> ui : presentSearch(r)
+activate ui UI_COLOR_T1
+ui -[UI_COLOR]-> logic
+deactivate ui
 
 logic -[LOGIC_COLOR]> storage : saveAddressBook(addressBook)
 activate storage STORAGE_COLOR
@@ -31,7 +55,7 @@ deactivate storage
 storage --[STORAGE_COLOR]> logic
 deactivate storage
 
-logic --[LOGIC_COLOR]> ui
+logic --[LOGIC_COLOR]> ui : r
 deactivate logic
 
 ui--[UI_COLOR]> user

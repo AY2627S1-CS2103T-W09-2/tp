@@ -6,7 +6,9 @@ box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":AddressBookParser" as AddressBookParser LOGIC_COLOR
 participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
+participant "<<class>>\nParserUtil" as ParserUtil LOGIC_COLOR
 participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
+participant "<<class>>\nCommandResult" as CommandResultClass LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
@@ -14,10 +16,10 @@ box Model MODEL_COLOR_T1
 participant "m:Model" as Model MODEL_COLOR
 end box
 
-[-> LogicManager : execute("delete 1")
+[-> LogicManager : execute("delete e9000001@u.nus.edu", ...)
 activate LogicManager
 
-LogicManager -> AddressBookParser : parseCommand("delete 1")
+LogicManager -> AddressBookParser : parseCommand("delete e9000001@u.nus.edu")
 activate AddressBookParser
 
 create DeleteCommandParser
@@ -27,14 +29,20 @@ activate DeleteCommandParser
 DeleteCommandParser --> AddressBookParser
 deactivate DeleteCommandParser
 
-AddressBookParser -> DeleteCommandParser : parse("1")
+AddressBookParser -> DeleteCommandParser : parse(" e9000001@u.nus.edu")
 activate DeleteCommandParser
 
+DeleteCommandParser -> ParserUtil : parseSoleEmail(...)
+activate ParserUtil
+
+ParserUtil --> DeleteCommandParser : email
+deactivate ParserUtil
+
 create DeleteCommand
-DeleteCommandParser -> DeleteCommand
+DeleteCommandParser -> DeleteCommand : DeleteCommand(email)
 activate DeleteCommand
 
-DeleteCommand --> DeleteCommandParser :
+DeleteCommand --> DeleteCommandParser
 deactivate DeleteCommand
 
 DeleteCommandParser --> AddressBookParser : d
@@ -49,22 +57,48 @@ deactivate AddressBookParser
 LogicManager -> DeleteCommand : execute(m)
 activate DeleteCommand
 
-DeleteCommand -> Model : deletePerson(1)
+DeleteCommand -> Model : getAddressBook()
+activate Model
+
+Model --> DeleteCommand : complete roster
+deactivate Model
+note right of DeleteCommand : finds p by canonical email
+
+opt p is not displayed
+    DeleteCommand -> Model : updateFilteredPersonList(...)
+    activate Model
+    Model --> DeleteCommand
+    deactivate Model
+end
+
+DeleteCommand -> Model : setPendingDeletion(email)
 activate Model
 
 Model --> DeleteCommand
 deactivate Model
 
+DeleteCommand -> CommandResultClass : forTarget(preview, p)
+activate CommandResultClass
+
 create CommandResult
-DeleteCommand -> CommandResult
+CommandResultClass -> CommandResult : CommandResult(...)
 activate CommandResult
 
-CommandResult --> DeleteCommand
+CommandResult --> CommandResultClass
 deactivate CommandResult
+
+CommandResultClass --> DeleteCommand : r
+deactivate CommandResultClass
 
 DeleteCommand --> LogicManager : r
 deactivate DeleteCommand
 
-[<--LogicManager
+[<- LogicManager : presentSearch(r)
+note right of LogicManager
+Roster data is unchanged,
+so nothing is removed or saved.
+end note
+
+[<--LogicManager : r
 deactivate LogicManager
 @enduml
