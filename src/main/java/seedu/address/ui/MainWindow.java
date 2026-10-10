@@ -44,6 +44,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private PersonDetailsPanel personDetailsPanel;
     private ResultDisplay resultDisplay;
+    private StatusBarFooter statusBarFooter;
     private HelpWindow helpWindow;
 
     @FXML
@@ -143,7 +144,7 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(Messages.MESSAGE_EMPTY_ROSTER);
         }
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.isReadOnly());
+        statusBarFooter = new StatusBarFooter(dataFilePath, logic.isReadOnly());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
@@ -322,6 +323,9 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
+        } finally {
+            // Every submission, including one rejected before it runs, may start, consume or cancel a deletion.
+            statusBarFooter.setDeletionPending(logic.hasPendingDeletion());
         }
     }
 }

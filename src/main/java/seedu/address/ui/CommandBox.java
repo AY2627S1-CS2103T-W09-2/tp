@@ -32,15 +32,12 @@ public class CommandBox extends UiPart<Region> {
     }
 
     /**
-     * Handles the Enter button pressed event.
+     * Handles the Enter button pressed event. Blank input is submitted too, so that it is reported and cancels
+     * any pending deletion.
      */
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.equals("")) {
-            return;
-        }
-
         try {
             commandExecutor.execute(commandText);
             commandTextField.setText("");

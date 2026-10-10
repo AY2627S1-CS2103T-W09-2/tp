@@ -4,6 +4,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import seedu.address.logic.Logic;
+import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -33,9 +34,15 @@ class DisplayedCommandExecutor {
 
     CommandResult execute(String commandText) throws CommandException, ParseException {
         if (!isDisplayCurrent.getAsBoolean()) {
-            refreshIfChanged();
+            // A rejected submission still counts as the next command, so it cancels any pending deletion first.
+            boolean isDeletionCancelled = logic.cancelPendingDeletion();
+            try {
+                refreshIfChanged();
+            } catch (CommandException displayFailure) {
+                throw withCancellationNotice(isDeletionCancelled, displayFailure);
+            }
             // The submitted index refers to the old display. Never execute it against newly refreshed rows.
-            throw new CommandException(MESSAGE_DISPLAY_CHANGED);
+            throw withCancellationNotice(isDeletionCancelled, new CommandException(MESSAGE_DISPLAY_CHANGED));
         }
 
         CommandResult result;
@@ -51,6 +58,13 @@ class DisplayedCommandExecutor {
         }
         refreshIfChanged();
         return result;
+    }
+
+    private static CommandException withCancellationNotice(boolean isDeletionCancelled, CommandException e) {
+        if (!isDeletionCancelled) {
+            return e;
+        }
+        return new CommandException(Messages.MESSAGE_PENDING_DELETION_CANCELLED + "\n" + e.getMessage(), e);
     }
 
     private void refreshIfChanged() throws CommandException {

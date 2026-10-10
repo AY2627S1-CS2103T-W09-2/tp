@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.ClearSamplesCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -251,6 +252,62 @@ public class DeletionWorkflowTest {
         assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
                 logic.execute(CONFIRM_SAMPLE));
         assertNothingSaved();
+    }
+
+    @Test
+    public void pendingDeletionFacade_cancelsSessionStateWithoutSavingOrChangingResults() throws Exception {
+        assertFalse(logic.hasPendingDeletion());
+        assertFalse(logic.cancelPendingDeletion());
+
+        logic.execute("find Alex");
+        List<Person> results = List.copyOf(model.getFilteredPersonList());
+        logic.execute(PREVIEW_SAMPLE);
+        assertTrue(logic.hasPendingDeletion());
+        assertTrue(logic.cancelPendingDeletion());
+        assertFalse(logic.hasPendingDeletion());
+        assertTrue(model.getPendingDeletion().isEmpty()); // the model remains the only source of truth
+        assertEquals(results, model.getFilteredPersonList());
+        assertEquals(List.of(mei, realAlex, sampleAlex), model.getAddressBook().getPersonList());
+        assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
+                logic.execute(CONFIRM_SAMPLE));
+        assertNothingSaved();
+    }
+
+    @Test
+    public void hasPendingDeletion_followsPreviewConfirmationCancellationAndFailure() throws Exception {
+        logic.execute(PREVIEW_REAL);
+        assertTrue(logic.hasPendingDeletion());
+        logic.execute("list");
+        assertFalse(logic.hasPendingDeletion());
+
+        logic.execute(PREVIEW_REAL);
+        assertThrows(CommandException.class, () -> logic.execute(CONFIRM_SAMPLE));
+        assertFalse(logic.hasPendingDeletion());
+
+        logic.execute(PREVIEW_REAL);
+        logic.execute(CONFIRM_REAL);
+        assertFalse(logic.hasPendingDeletion());
+    }
+
+    @Test
+    public void execute_sampleClearWhilePending_cancelsAndRemovesOnlyClassifiedSamples() throws Exception {
+        logic.execute(PREVIEW_REAL);
+        AtomicReference<CommandResult> presented = new AtomicReference<>();
+
+        CommandResult result = logic.execute("sample clear", presented::set);
+
+        // Two classified samples (sample Alex Tan and Mei Lim) owning 2 + 1 enrolments are removed.
+        assertEquals(CommandResult.forSurvivingSelection(String.format(ClearSamplesCommand.MESSAGE_SUCCESS, 2, 3))
+                .withNotice(CANCELLED), result);
+        assertTrue(result.isPreserveSurvivingSelection());
+        assertFalse(result.isClearSelection());
+        assertTrue(presented.get().isPreserveSurvivingSelection());
+        assertFalse(logic.hasPendingDeletion());
+        assertEquals(List.of(realAlex), model.getAddressBook().getPersonList());
+        assertRestartedRosterIs(List.of(realAlex));
+        assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
+                logic.execute(CONFIRM_REAL));
+        assertTrue(model.hasPerson(realAlex));
     }
 
     @Test

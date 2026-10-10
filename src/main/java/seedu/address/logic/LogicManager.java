@@ -180,6 +180,20 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public boolean hasPendingDeletion() {
+        return model.getPendingDeletion().isPresent();
+    }
+
+    @Override
+    public boolean cancelPendingDeletion() {
+        boolean isCancelled = model.clearPendingDeletion();
+        if (isCancelled) {
+            logger.info("Pending deletion cancelled without running a command.");
+        }
+        return isCancelled;
+    }
+
+    @Override
     public ObservableList<Person> getFilteredPersonList() {
         return model.getFilteredPersonList();
     }

@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
+import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.ModelManager;
@@ -28,6 +30,8 @@ import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 public class DisplayedCommandExecutorTest {
+    private static final String CANCELLED = Messages.MESSAGE_PENDING_DELETION_CANCELLED;
+
     @TempDir
     public Path temporaryFolder;
 
@@ -36,6 +40,7 @@ public class DisplayedCommandExecutorTest {
     private final Person carl = new PersonBuilder().withName("Carl").withEmail("carl@u.nus.edu").build();
     private ModelManager model;
     private FailingStorage storage;
+    private LogicManager logic;
     private DisplayedCommandExecutor executor;
     private List<Person> displayed;
     private byte[] savedBytes;
@@ -51,7 +56,7 @@ public class DisplayedCommandExecutorTest {
         storage.saveAddressBook(model.getAddressBook());
         savedBytes = Files.readAllBytes(storage.getAddressBookFilePath());
         displayed = List.copyOf(model.getFilteredPersonList());
-        LogicManager logic = new LogicManager(model, new StorageManager(storage,
+        logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
         executor = new DisplayedCommandExecutor(logic, () -> displayed.equals(model.getFilteredPersonList()),
                 result -> refreshDisplay(), this::refreshDisplay);
@@ -140,6 +145,72 @@ public class DisplayedCommandExecutorTest {
         assertEquals(displayed, model.getFilteredPersonList());
         assertThrows(ParseException.class, () -> executor.execute("find"));
         assertSame(previous, displayed);
+        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void execute_staleDisplayWithPendingDeletion_cancelsRefreshesAndNeverRunsCommand() throws Exception {
+        executor.execute("delete alice@u.nus.edu");
+        assertTrue(logic.hasPendingDeletion());
+        model.updateFilteredPersonList(bob::equals); // the display no longer matches the model
+
+        CommandException rejection = assertThrows(CommandException.class, () ->
+                executor.execute("confirm-delete alice@u.nus.edu"));
+
+        assertEquals(CANCELLED + "\n" + DisplayedCommandExecutor.MESSAGE_DISPLAY_CHANGED, rejection.getMessage());
+        assertFalse(logic.hasPendingDeletion());
+        assertEquals(List.of(bob), displayed);
+        assertTrue(model.hasPerson(alice)); // the rejected confirmation never ran
+        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+
+        // Resubmitting against the refreshed display runs normally and finds nothing pending.
+        CommandException retry = assertThrows(CommandException.class, () ->
+                executor.execute("confirm-delete alice@u.nus.edu"));
+        assertEquals(ConfirmDeleteCommand.MESSAGE_NO_PENDING, retry.getMessage());
+        assertTrue(model.hasPerson(alice));
+    }
+
+    @Test
+    public void execute_staleDisplayRefreshFailureWithPendingDeletion_stillCancels() throws Exception {
+        executor.execute("delete alice@u.nus.edu");
+        List<Person> previous = displayed;
+        model.updateFilteredPersonList(bob::equals);
+        isDisplayFailing = true;
+
+        CommandException rejection = assertThrows(CommandException.class, () ->
+                executor.execute("remark 1 r/Rejected"));
+
+        assertEquals(CANCELLED + "\n" + DisplayedCommandExecutor.MESSAGE_DISPLAY_FAILURE, rejection.getMessage());
+        assertFalse(logic.hasPendingDeletion());
+        assertSame(previous, displayed);
+        assertEquals(List.of(alice, bob, carl), model.getAddressBook().getPersonList()); // the remark never ran
+        assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
+    }
+
+    @Test
+    public void execute_staleDisplayWithoutPendingDeletion_keepsPlainGuardMessage() {
+        model.updateFilteredPersonList(bob::equals);
+
+        CommandException rejection = assertThrows(CommandException.class, () ->
+                executor.execute("remark 1 r/Rejected"));
+
+        assertEquals(DisplayedCommandExecutor.MESSAGE_DISPLAY_CHANGED, rejection.getMessage());
+        assertEquals(List.of(bob), displayed);
+        assertEquals(List.of(alice, bob, carl), model.getAddressBook().getPersonList());
+    }
+
+    @Test
+    public void execute_blankSubmission_reachesLogicAndCancelsOnlyWhenPending() throws Exception {
+        for (String blank : new String[] {"", " \t "}) {
+            ParseException plain = assertThrows(ParseException.class, () -> executor.execute(blank));
+            assertEquals(Messages.MESSAGE_ENTER_COMMAND, plain.getMessage());
+
+            executor.execute("delete alice@u.nus.edu");
+            ParseException cancelling = assertThrows(ParseException.class, () -> executor.execute(blank));
+            assertEquals(CANCELLED + "\n" + Messages.MESSAGE_ENTER_COMMAND, cancelling.getMessage());
+            assertFalse(logic.hasPendingDeletion());
+        }
+        assertEquals(List.of(alice, bob, carl), model.getAddressBook().getPersonList());
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
     }
 

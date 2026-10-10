@@ -44,4 +44,13 @@ public interface Logic {
 
     /** Returns whether data changes are disabled after a failed load. */
     boolean isReadOnly();
+
+    /** Returns whether a deletion preview is awaiting confirmation in this session. */
+    boolean hasPendingDeletion();
+
+    /**
+     * Discards any deletion awaiting confirmation and returns whether one existed.
+     * Nothing is saved, and the roster, results and selection are unchanged.
+     */
+    boolean cancelPendingDeletion();
 }
