@@ -39,10 +39,21 @@ public class CommandResultTest {
     public void searchResult_requestsSelectionOnlyForSearch() {
         CommandResult search = CommandResult.forSearch("feedback");
         assertTrue(search.isUpdateSelection());
+        assertFalse(search.isPreserveSurvivingSelection());
         assertFalse(new CommandResult("feedback").isUpdateSelection());
         assertNotEquals(search, new CommandResult("feedback"));
         assertEquals(search, CommandResult.forSearch("feedback"));
         assertEquals(search.hashCode(), CommandResult.forSearch("feedback").hashCode());
+    }
+
+    @Test
+    public void survivingSelectionResult_requestsRefreshAndPreservation() {
+        CommandResult result = CommandResult.forSurvivingSelection("feedback");
+
+        assertTrue(result.isUpdateSelection());
+        assertTrue(result.isPreserveSurvivingSelection());
+        assertNotEquals(result, CommandResult.forSearch("feedback"));
+        assertEquals(result, CommandResult.forSurvivingSelection("feedback"));
     }
 
     @Test
@@ -67,7 +78,8 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
-                + ", exit=" + commandResult.isExit() + ", updateSelection=" + commandResult.isUpdateSelection() + "}";
+                + ", exit=" + commandResult.isExit() + ", updateSelection=" + commandResult.isUpdateSelection()
+                + ", preserveSurvivingSelection=" + commandResult.isPreserveSurvivingSelection() + "}";
         assertEquals(expected, commandResult.toString());
     }
 }

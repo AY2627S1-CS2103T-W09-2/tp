@@ -22,21 +22,23 @@ public class CommandResult {
 
     private final boolean updateSelection;
     private final Person selectionTarget;
+    private final boolean preserveSurvivingSelection;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, false, null);
+        this(feedbackToUser, showHelp, exit, false, null, false);
     }
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean updateSelection,
-            Person selectionTarget) {
+            Person selectionTarget, boolean preserveSurvivingSelection) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.updateSelection = updateSelection;
         this.selectionTarget = selectionTarget;
+        this.preserveSurvivingSelection = preserveSurvivingSelection;
     }
 
     /**
@@ -51,7 +53,7 @@ public class CommandResult {
      * Returns a search result that selects the sole displayed match, or clears selection otherwise.
      */
     public static CommandResult forSearch(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, true, null);
+        return new CommandResult(feedbackToUser, false, false, true, null, false);
     }
 
     /**
@@ -63,11 +65,20 @@ public class CommandResult {
 
     /** Requests selection of an explicit profile, even in a multi-row roster. */
     public static CommandResult forTarget(String feedback, Person target) {
-        return new CommandResult(feedback, false, false, true, requireNonNull(target));
+        return new CommandResult(feedback, false, false, true, requireNonNull(target), false);
+    }
+
+    /** Requests a refreshed roster that keeps the selected profile only if it still exists. */
+    public static CommandResult forSurvivingSelection(String feedback) {
+        return new CommandResult(feedback, false, false, true, null, true);
     }
 
     public Person getSelectionTarget() {
         return selectionTarget;
+    }
+
+    public boolean isPreserveSurvivingSelection() {
+        return preserveSurvivingSelection;
     }
 
     public String getFeedbackToUser() {
@@ -97,12 +108,14 @@ public class CommandResult {
                 && showHelp == otherCommandResult.showHelp
                 && exit == otherCommandResult.exit
                 && updateSelection == otherCommandResult.updateSelection
-                && Objects.equals(selectionTarget, otherCommandResult.selectionTarget);
+                && Objects.equals(selectionTarget, otherCommandResult.selectionTarget)
+                && preserveSurvivingSelection == otherCommandResult.preserveSurvivingSelection;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit, updateSelection, selectionTarget);
+        return Objects.hash(feedbackToUser, showHelp, exit, updateSelection, selectionTarget,
+                preserveSurvivingSelection);
     }
 
     @Override
@@ -112,6 +125,7 @@ public class CommandResult {
                 .add("showHelp", showHelp)
                 .add("exit", exit)
                 .add("updateSelection", updateSelection)
+                .add("preserveSurvivingSelection", preserveSurvivingSelection)
                 .toString();
     }
 

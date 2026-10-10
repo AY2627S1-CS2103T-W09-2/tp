@@ -35,6 +35,8 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
    * `sample load` : Loads five fictional student profiles into an empty roster.
 
+   * `sample clear` : Removes all profiles that are classified as fictional samples.
+
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
    * `clear` : Deletes all contacts.
@@ -58,7 +60,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 * Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
-  `sample load` is an exception. It rejects all extra parameters.
+  `sample load` and `sample clear` are exceptions. They reject all extra parameters.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -93,7 +95,25 @@ A successful command shows `Loaded 5 fictional student profiles and 5 enrolments
 
 If the roster is not empty, SoCdex shows `Sample data can only be loaded into an empty roster. Existing data was not changed.` It does not add, merge, or replace any profile. If the fixed fixture is invalid, SoCdex shows `Sample data is invalid. No data was changed.` If saving fails, it shows `Sample data could not be saved. No data was changed.` These failures keep the previous roster and saved file unchanged. A read-only recovery session rejects the command with the existing recovery message.
 
-SoCdex does not load samples at startup. `sample clear` is planned for v1.3 and is not available in v1.2. The existing `clear` command deletes the whole roster, including real profiles, so it is not a safe selective replacement for `sample clear` in a mixed roster.
+SoCdex does not load samples at startup.
+
+### Removing fictional sample profiles: `sample clear`
+
+Removes every profile that is classified as fictional sample data. It also removes every enrolment owned by those profiles.
+
+Format: `sample clear`
+
+The command accepts extra spaces or tabs around and between `sample` and `clear`. It does not accept parameters, selectors, or other text. The command is lowercase and must be on one line. For example, `sample clear 1` is rejected with `Sample clear does not accept parameters. Usage: sample clear`.
+
+SoCdex uses the stored fictional-sample classification. It does not guess from a student's name, email, contacts, tags, remark, or enrolments. An edited or hidden sample profile is still removed. A real profile is kept even if its details resemble the fixed fixture.
+
+For example, suppose the roster contains the five loaded sample profiles and a real student also named Alex Tan. `sample clear` removes the five classified samples and keeps the real Alex Tan. A successful command reports the actual totals, such as `Removed 5 fictional sample profiles and 5 enrolments. Your non-sample records were not changed.` The remaining roster is shown in name-and-email order. A selected real profile stays selected. A selected sample profile is cleared because it no longer exists.
+
+If no students remain, SoCdex clears the selection and shows `No students in the roster. Add a student or load fictional samples.` If there are no sample profiles, the command succeeds without saving and shows `No fictional sample profiles were found.` The current results and selection do not change. Running the command again therefore cannot remove a real profile.
+
+If saving fails, SoCdex shows `Sample profiles could not be removed. No data was changed.` It restores all profiles, enrolments, results, and the selected profile. A read-only recovery session blocks the command.
+
+The command does not ask for confirmation and it is not selective. The inherited `clear` command is different because it deletes the whole roster, including real profiles.
 
 
 ### Adding a student: `student add`
@@ -280,7 +300,7 @@ An otherwise valid older profile without an `enrolments` property loads with no 
 
 ### Stored contacts and sample classification
 
-`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
+`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. `sample clear` removes records based only on that stored classification. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
 
 Each result card and the profile panel show a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
 
@@ -338,4 +358,5 @@ Action | Format, Examples
 **List** | `list`
 **Help** | `help`
 **Sample load** | `sample load`
+**Sample clear** | `sample clear`
 **View** | `view EMAIL`<br> e.g., `view e9000001@u.nus.edu`

@@ -204,14 +204,23 @@ public class MainWindow extends UiPart<Stage> {
         return new PersonDetailsPanel(person);
     }
 
+    /** Creates the recovery guidance shown after every fictional profile is removed. */
+    PersonDetailsPanel createEmptyRosterDetailsPanel() {
+        return new PersonDetailsPanel(null, Messages.MESSAGE_EMPTY_ROSTER);
+    }
+
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
-        if (result.getSelectionTarget() == null) {
+        boolean showEmptyRosterGuidance = false;
+        if (result.isPreserveSurvivingSelection()) {
+            replacement.restoreSelection(personListPanel.getSelectedPerson());
+            showEmptyRosterGuidance = logic.getFilteredPersonList().isEmpty();
+        } else if (result.getSelectionTarget() == null) {
             replacement.selectOnlyResult();
         } else {
             replacement.selectTarget(result.getSelectionTarget());
         }
-        prepareAndReplaceDisplay(replacement);
+        prepareAndReplaceDisplay(replacement, showEmptyRosterGuidance);
     }
 
     private boolean isPersonListCurrent() {
@@ -229,7 +238,13 @@ public class MainWindow extends UiPart<Stage> {
      * Any failure keeps the previous complete list and profile.
      */
     private void prepareAndReplaceDisplay(PersonListPanel replacement) {
-        PersonDetailsPanel details = createPersonDetailsPanel(replacement.getSelectedPerson());
+        prepareAndReplaceDisplay(replacement, false);
+    }
+
+    private void prepareAndReplaceDisplay(PersonListPanel replacement, boolean showEmptyRosterGuidance) {
+        PersonDetailsPanel details = showEmptyRosterGuidance
+                ? createEmptyRosterDetailsPanel()
+                : createPersonDetailsPanel(replacement.getSelectedPerson());
         prepare(replacement.getRoot(), personListPanelPlaceholder);
         prepare(details.getRoot(), personDetailsPanelPlaceholder);
         PersonListPanel previousList = personListPanel;
