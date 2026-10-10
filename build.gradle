@@ -45,6 +45,11 @@ task coverage(type: JacocoReport) {
     }
 }
 
+configurations {
+    macIntelNatives
+    macArmNatives
+}
+
 dependencies {
     String jUnitVersion = '5.14.4'
     String javaFxVersion = '17.0.7'
@@ -62,6 +67,10 @@ dependencies {
     implementation "org.openjfx:javafx-graphics:${javaFxVersion}:mac"
     implementation "org.openjfx:javafx-graphics:${javaFxVersion}:linux"
 
+    // Keep both macOS architectures in one JAR without overwriting identically named native resources.
+    macIntelNatives("org.openjfx:javafx-graphics:${javaFxVersion}:mac") { transitive = false }
+    macArmNatives("org.openjfx:javafx-graphics:${javaFxVersion}:mac-aarch64") { transitive = false }
+
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.7.0'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.7.4'
 
@@ -71,7 +80,67 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }
 
+// A Mach-O universal binary wraps the original, unmodified Intel and Apple Silicon slices.
+// Construct its standard FAT header in Java so Windows/Linux builds do not require Apple's lipo tool.
+def universalMacDirectory = layout.buildDirectory.dir('generated/universal-mac-natives')
+def universalMacNatives = tasks.register('universalMacNatives') {
+    inputs.files(configurations.macIntelNatives, configurations.macArmNatives)
+    outputs.dir(universalMacDirectory)
+    doLast {
+        def intel = zipTree(configurations.macIntelNatives.singleFile).matching { include '*.dylib' }
+        def arm = zipTree(configurations.macArmNatives.singleFile).matching { include '*.dylib' }
+        def intelFiles = intel.files.collectEntries { [(it.name): it] }
+        def armFiles = arm.files.collectEntries { [(it.name): it] }
+        if (intelFiles.keySet() != armFiles.keySet() || intelFiles.isEmpty()) {
+            throw new GradleException('JavaFX macOS native-library sets do not match')
+        }
+        def destination = universalMacDirectory.get().asFile
+        delete(destination)
+        destination.mkdirs()
+        intelFiles.each { name, intelFile ->
+            def slices = [intelFile.bytes, armFiles[name].bytes]
+            def headers = slices.collect { bytes ->
+                def header = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                if (header.getInt(0) != (0xfeedfacf as int)) {
+                    throw new GradleException("Expected thin 64-bit Mach-O library: ${name}")
+                }
+                [cpu: header.getInt(4), subtype: header.getInt(8)]
+            }
+            if (headers[0].cpu != 0x01000007 || headers[1].cpu != 0x0100000c) {
+                throw new GradleException("Expected Intel and arm64 slices: ${name}")
+            }
+            int alignment = 16384
+            int intelOffset = alignment
+            int armOffset = ((intelOffset + slices[0].length + alignment - 1).intdiv(alignment)) * alignment
+            new File(destination, name).withOutputStream { raw ->
+                def out = new DataOutputStream(raw)
+                out.writeInt(0xcafebabe as int)
+                out.writeInt(2)
+                [intelOffset, armOffset].eachWithIndex { offset, index ->
+                    out.writeInt(headers[index].cpu)
+                    out.writeInt(headers[index].subtype)
+                    out.writeInt(offset)
+                    out.writeInt(slices[index].length)
+                    out.writeInt(14)
+                }
+                out.write(new byte[intelOffset - 48])
+                out.write(slices[0])
+                out.write(new byte[armOffset - intelOffset - slices[0].length])
+                out.write(slices[1])
+            }
+        }
+    }
+}
+
 shadowJar {
+    dependsOn universalMacNatives
+    from(universalMacDirectory)
+    eachFile { detail ->
+        if (detail.name.endsWith('.dylib')
+                && !detail.file.toPath().startsWith(universalMacDirectory.get().asFile.toPath())) {
+            detail.exclude()
+        }
+    }
     archiveFileName = 'addressbook.jar'
 }
 
