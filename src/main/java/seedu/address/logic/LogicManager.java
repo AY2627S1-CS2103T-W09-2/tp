@@ -1,7 +1,10 @@
 package seedu.address.logic;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -16,6 +19,7 @@ import seedu.address.logic.parser.AddressBookParser;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
+import seedu.address.model.person.Email;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.PersonOrder;
 import seedu.address.storage.Storage;
@@ -191,6 +195,16 @@ public class LogicManager implements Logic {
             logger.info("Pending deletion cancelled without running a command.");
         }
         return isCancelled;
+    }
+
+    @Override
+    public boolean cancelPendingDeletionUnlessTarget(Person selected) {
+        requireNonNull(selected);
+        Optional<Email> target = model.getPendingDeletion();
+        if (target.isEmpty() || target.get().equals(selected.getEmail())) {
+            return false;
+        }
+        return cancelPendingDeletion();
     }
 
     @Override

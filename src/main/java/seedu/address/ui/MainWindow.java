@@ -275,24 +275,43 @@ public class MainWindow extends UiPart<Stage> {
         preparationScene.setRoot(new StackPane());
     }
 
-    /** Shows the complete profile when the tutor selects another row directly in the list. */
+    /** Follows selection changes on {@code panel} while it is the displayed list. */
     private void followSelection(PersonListPanel panel) {
         panel.selectedPersonProperty().addListener((observable, previous, selected) -> {
-            if (panel != personListPanel || selected == personDetailsPanel.getPerson()) {
-                return;
-            }
-            try {
-                PersonDetailsPanel details = createPersonDetailsPanel(selected);
-                prepare(details.getRoot(), personDetailsPanelPlaceholder);
-                personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
-                personDetailsPanel = details;
-            } catch (RuntimeException | AssertionError e) {
-                logger.warning("Profile could not be displayed: " + e);
-                resultDisplay.setFeedbackToUser(Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
-                // Keep the row selection consistent with the complete profile that is still shown.
-                Platform.runLater(() -> panel.restoreSelection(personDetailsPanel.getPerson()));
+            if (panel == personListPanel) {
+                handleSelectionChange(panel, selected);
             }
         });
+    }
+
+    /**
+     * Shows the complete profile of the selected student. A different student selected by the user, rather than by
+     * the application, cancels any pending deletion.
+     */
+    private void handleSelectionChange(PersonListPanel panel, Person selected) {
+        boolean isDeletionCancelled = panel.isUserSelectionChange() && selected != null
+                && logic.cancelPendingDeletionUnlessTarget(selected);
+        if (isDeletionCancelled) {
+            statusBarFooter.setDeletionPending(logic.hasPendingDeletion());
+            resultDisplay.setFeedbackToUser(Messages.MESSAGE_PENDING_DELETION_CANCELLED);
+        }
+        if (selected == personDetailsPanel.getPerson()) {
+            return;
+        }
+        try {
+            PersonDetailsPanel details = createPersonDetailsPanel(selected);
+            prepare(details.getRoot(), personDetailsPanelPlaceholder);
+            personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+            personDetailsPanel = details;
+        } catch (RuntimeException | AssertionError e) {
+            logger.warning("Profile could not be displayed: " + e);
+            resultDisplay.setFeedbackToUser(isDeletionCancelled
+                    ? Messages.MESSAGE_PENDING_DELETION_CANCELLED + "\n" + Messages.MESSAGE_PROFILE_DISPLAY_FAILURE
+                    : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
+            // Keep the row selection consistent with the complete profile that is still shown. This restoration is
+            // made by the application, so it never cancels or restores a pending deletion.
+            Platform.runLater(() -> panel.restoreSelection(personDetailsPanel.getPerson()));
+        }
     }
 
     /**

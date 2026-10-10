@@ -53,4 +53,10 @@ public interface Logic {
      * Nothing is saved, and the roster, results and selection are unchanged.
      */
     boolean cancelPendingDeletion();
+
+    /**
+     * Cancels the pending deletion unless {@code selected} is its target, comparing canonical emails, and returns
+     * whether a deletion was cancelled. Nothing is saved.
+     */
+    boolean cancelPendingDeletionUnlessTarget(Person selected);
 }

@@ -23,6 +23,9 @@ public class PersonListPanel extends UiPart<Region> {
     @FXML
     private ListView<Person> personListView;
 
+    /** Set while the application, rather than the user, is changing the selection. */
+    private boolean isApplyingSelection;
+
     /**
      * Creates every result card before the panel can replace the previous complete display.
      */
@@ -55,14 +58,24 @@ public class PersonListPanel extends UiPart<Region> {
         return personListView.getSelectionModel().getSelectedItem();
     }
 
+    /**
+     * Returns whether the selection change being reported to a listener was made by the user, with the mouse or
+     * keyboard, rather than by one of this panel's selection methods.
+     */
+    public boolean isUserSelectionChange() {
+        return !isApplyingSelection;
+    }
+
     /** Restores a surviving selection when another command refreshes the displayed results. */
     public void restoreSelection(Person person) {
         int index = person == null ? -1 : personListView.getItems().indexOf(person);
-        if (index < 0) {
-            personListView.getSelectionModel().clearSelection();
-        } else {
-            personListView.getSelectionModel().clearAndSelect(index);
-        }
+        applySelection(() -> {
+            if (index < 0) {
+                personListView.getSelectionModel().clearSelection();
+            } else {
+                personListView.getSelectionModel().clearAndSelect(index);
+            }
+        });
     }
 
     /** Selects and scrolls to a requested target in the prepared roster. */
@@ -71,18 +84,33 @@ public class PersonListPanel extends UiPart<Region> {
         if (index < 0) {
             throw new IllegalArgumentException("The selection target must be displayed.");
         }
-        personListView.getSelectionModel().clearAndSelect(index);
-        personListView.scrollTo(index);
+        applySelection(() -> {
+            personListView.getSelectionModel().clearAndSelect(index);
+            personListView.scrollTo(index);
+        });
     }
 
     /**
      * Selects and reveals the sole search result, or clears selection for an ambiguous or empty result.
      */
     public void selectOnlyResult() {
-        personListView.getSelectionModel().clearSelection();
-        if (personListView.getItems().size() == 1) {
-            personListView.getSelectionModel().selectFirst();
-            personListView.scrollTo(0);
+        applySelection(() -> {
+            personListView.getSelectionModel().clearSelection();
+            if (personListView.getItems().size() == 1) {
+                personListView.getSelectionModel().selectFirst();
+                personListView.scrollTo(0);
+            }
+        });
+    }
+
+    /** Runs an application-made selection change, so that its listeners do not treat it as the user's choice. */
+    private void applySelection(Runnable selectionChange) {
+        boolean wasApplyingSelection = isApplyingSelection;
+        isApplyingSelection = true;
+        try {
+            selectionChange.run();
+        } finally {
+            isApplyingSelection = wasApplyingSelection;
         }
     }
 

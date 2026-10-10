@@ -274,6 +274,33 @@ public class DeletionWorkflowTest {
     }
 
     @Test
+    public void cancelPendingDeletionUnlessTarget_comparesCanonicalEmailOnly() throws Exception {
+        assertFalse(logic.cancelPendingDeletionUnlessTarget(sampleAlex)); // nothing pending
+
+        logic.execute("find Alex");
+        List<Person> results = List.copyOf(model.getFilteredPersonList());
+        logic.execute(PREVIEW_REAL);
+        // The same student, even as a differently edited record, keeps the deletion pending.
+        Person editedTarget = new PersonBuilder(realAlex).withRemark("Edited elsewhere").withTags().build();
+        assertFalse(logic.cancelPendingDeletionUnlessTarget(realAlex));
+        assertFalse(logic.cancelPendingDeletionUnlessTarget(editedTarget));
+        assertTrue(logic.hasPendingDeletion());
+
+        // A same-name student with another email is a different student.
+        assertTrue(logic.cancelPendingDeletionUnlessTarget(sampleAlex));
+        assertFalse(logic.hasPendingDeletion());
+        assertFalse(logic.cancelPendingDeletionUnlessTarget(mei)); // later selection events change nothing
+
+        // Returning to the original student does not recreate the deletion.
+        assertFalse(logic.cancelPendingDeletionUnlessTarget(realAlex));
+        assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
+                logic.execute(CONFIRM_REAL));
+        assertEquals(results, model.getFilteredPersonList());
+        assertEquals(List.of(mei, realAlex, sampleAlex), model.getAddressBook().getPersonList());
+        assertNothingSaved();
+    }
+
+    @Test
     public void hasPendingDeletion_followsPreviewConfirmationCancellationAndFailure() throws Exception {
         logic.execute(PREVIEW_REAL);
         assertTrue(logic.hasPendingDeletion());

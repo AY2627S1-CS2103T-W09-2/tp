@@ -3,6 +3,8 @@ package seedu.address.ui;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -12,13 +14,18 @@ import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventType;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -27,6 +34,7 @@ import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
+import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
@@ -42,8 +50,8 @@ import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Opt-in real-window acceptance for blank submissions, stale-display cancellation and the pending-deletion
- * status; uses fictional files under build/reports/deletion-status.
+ * Opt-in real-window acceptance for blank submissions, stale-display and user-selection cancellation and the
+ * pending-deletion status; uses fictional files under build/reports/deletion-status.
  */
 public final class DeletionStatusAcceptance {
     private static final String CANCELLED = Messages.MESSAGE_PENDING_DELETION_CANCELLED;
@@ -53,10 +61,13 @@ public final class DeletionStatusAcceptance {
     private final Person target = new PersonBuilder().withName("Alex Tan").withEmail(TARGET)
             .withEnrolments(new Enrolment(new ModuleCode("CS2103T"), new Semester("AY26/27 S1"))).build();
     private final Person survivor = new PersonBuilder().withName("Mei Lim").withEmail("e9000003@u.nus.edu").build();
+    // Same name as the target; only the canonical email distinguishes them.
+    private final Person sameName = new PersonBuilder().withName("Alex Tan").withEmail("e9000002@u.nus.edu").build();
     private Stage stage;
     private MainWindow window;
     private ModelManager model;
     private CountingLogic logic;
+    private Person failingProfile;
     private int assertions;
 
     private DeletionStatusAcceptance() {
@@ -75,6 +86,8 @@ public final class DeletionStatusAcceptance {
                 acceptance.verifyIndicatorBlankSubmissionsAndNonSubmissions();
                 acceptance.verifyStaleDisplayRejectionCancels();
                 acceptance.verifyRecoveryStatusIsPreserved();
+                acceptance.verifyUserSelectionCancelsButAppSelectionDoesNot();
+                acceptance.verifyDisplayFailureRestorationDoesNotRecreateDeletion();
                 System.out.println("PASS Deletion status JavaFX assertions: " + acceptance.assertions);
                 System.out.println("Runtime: " + System.getProperty("java.runtime.version") + "; JavaFX "
                         + System.getProperty("javafx.runtime.version") + "; " + System.getProperty("os.name") + " "
@@ -173,17 +186,99 @@ public final class DeletionStatusAcceptance {
         stage.close();
     }
 
-    private Path open(boolean isReadOnly, String filename) throws Exception {
+    private void verifyUserSelectionCancelsButAppSelectionDoesNot() throws Exception {
+        Path file = open(false, "selection.json", sameName);
+        byte[] saved = Files.readAllBytes(file);
+        submit("delete " + TARGET);
+        String preview = feedback();
+        check(target.equals(selected()), "preview selects the target");
+
+        clickRow(target, true);
+        check(selected() == null && logic.hasPendingDeletion(), "user deselection alone keeps the deletion pending");
+        clickRow(target, false);
+        check(logic.hasPendingDeletion() && target.equals(selected()), "mouse re-selection of the target keeps it");
+        check(feedback().equals(preview), "re-selecting the target shows no cancellation");
+
+        PersonListPanel panel = window.getPersonListPanel();
+        panel.restoreSelection(survivor);
+        panel.selectTarget(sameName);
+        panel.selectOnlyResult();
+        panel.restoreSelection(null);
+        panel.selectTarget(target);
+        check(logic.hasPendingDeletion(), "app-made selections on the current panel never cancel");
+        check(deletionStatus().equals(StatusBarFooter.DELETION_PENDING), "indicator kept after app-made selection");
+        check(feedback().equals(preview), "app-made selections show no cancellation");
+
+        clickRow(sameName);
+        check(sameName.equals(selected()), "mouse selects the same-name student with another email");
+        check(!logic.hasPendingDeletion(), "mouse selection of a different student cancels");
+        check(feedback().equals(CANCELLED), "mouse cancellation is reported");
+        check(deletionStatus().isEmpty(), "indicator removed after mouse cancellation");
+        check(detailTexts().equals(expectedDetails(sameName)), "newly selected profile fully displayed");
+
+        clickRow(target);
+        check(target.equals(selected()) && !logic.hasPendingDeletion(), "returning to the target does not recreate");
+        submit("confirm-delete " + TARGET);
+        check(feedback().equals(ConfirmDeleteCommand.MESSAGE_NO_PENDING), "confirmation finds nothing pending");
+
+        submit("delete " + TARGET);
+        Object nextRow = personList().getItems().get(personList().getItems().indexOf(target) + 1);
+        pressKey(KeyCode.DOWN);
+        check(nextRow.equals(selected()) && !target.equals(selected()), "keyboard moves to the next student");
+        check(!logic.hasPendingDeletion(), "keyboard selection of a different student cancels");
+        check(feedback().equals(CANCELLED), "keyboard cancellation is reported");
+        check(deletionStatus().isEmpty(), "indicator removed after keyboard cancellation");
+
+        check(model.getAddressBook().getPersonList().equals(List.of(target, survivor, sameName)), "roster unchanged");
+        check(Arrays.equals(saved, Files.readAllBytes(file)), "selection never saves");
+        stage.close();
+    }
+
+    private void verifyDisplayFailureRestorationDoesNotRecreateDeletion() throws Exception {
+        failingProfile = survivor;
+        open(false, "display-failure.json", sameName);
+        failingProfile = null;
+        submit("delete " + TARGET);
+
+        clickRow(survivor);
+        String expectedFailure = CANCELLED + "\n" + Messages.MESSAGE_PROFILE_DISPLAY_FAILURE;
+        check(feedback().equals(expectedFailure), "display failure keeps its text after the cancellation notice");
+        check(!logic.hasPendingDeletion(), "user selection cancelled before the display failed");
+        check(deletionStatus().isEmpty(), "indicator removed despite the display failure");
+
+        runPendingFxTasks();
+        check(target.equals(selected()), "the application restores the row of the profile still displayed");
+        check(detailTexts().equals(expectedDetails(target)), "previous complete profile still displayed");
+        check(feedback().equals(expectedFailure), "restoration reports no second cancellation");
+        check(!logic.hasPendingDeletion(), "restoration does not recreate the pending deletion");
+        submit("confirm-delete " + TARGET);
+        check(feedback().equals(ConfirmDeleteCommand.MESSAGE_NO_PENDING), "a fresh preview is required");
+        stage.close();
+    }
+
+    private Path open(boolean isReadOnly, String filename, Person... others) throws Exception {
         Path file = output.resolve(filename);
         AddressBook roster = new AddressBook();
         roster.addPerson(target);
         roster.addPerson(survivor);
+        for (Person other : others) {
+            roster.addPerson(other);
+        }
         Files.deleteIfExists(file);
         new JsonAddressBookStorage(file).saveAddressBook(roster);
         model = new ModelManager(roster, new UserPrefs(), isReadOnly);
         logic = new CountingLogic(new LogicManager(model, new StorageManager(new JsonAddressBookStorage(file),
                 new JsonUserPrefsStorage(output.resolve("prefs.json")))));
-        window = new MainWindow(stage, logic, file);
+        Person failing = failingProfile;
+        window = new MainWindow(stage, logic, file) {
+            @Override
+            PersonDetailsPanel createPersonDetailsPanel(Person person) {
+                if (person != null && person.equals(failing)) {
+                    throw new IllegalStateException("Injected profile display failure");
+                }
+                return super.createPersonDetailsPanel(person);
+            }
+        };
         window.fillInnerParts();
         window.show();
         stage.setWidth(900);
@@ -194,6 +289,59 @@ public final class DeletionStatusAcceptance {
 
     private Person selected() {
         return window.getPersonListPanel().getSelectedPerson();
+    }
+
+    private ListView<?> personList() {
+        return (ListView<?>) stage.getScene().lookup("#personListView");
+    }
+
+    private void clickRow(Person person) {
+        clickRow(person, false);
+    }
+
+    /**
+     * Presses and releases the primary mouse button on the row showing {@code person}, as the list receives it.
+     * With {@code isControlDown}, clicking a selected row deselects it.
+     */
+    private void clickRow(Person person, boolean isControlDown) {
+        int index = personList().getItems().indexOf(person);
+        ListCell<?> cell = personList().lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(node -> (ListCell<?>) node)
+                .filter(candidate -> candidate.getIndex() == index && !candidate.isEmpty())
+                .findFirst()
+                .orElseThrow();
+        // Mouse events carry scene and screen coordinates; the cell's handler ignores a press outside the cell.
+        Point2D scene = cell.localToScene(cell.getWidth() / 2, cell.getHeight() / 2);
+        Point2D screen = cell.localToScreen(cell.getWidth() / 2, cell.getHeight() / 2);
+        for (EventType<MouseEvent> type : List.of(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED,
+                MouseEvent.MOUSE_CLICKED)) {
+            cell.fireEvent(new MouseEvent(type, scene.getX(), scene.getY(), screen.getX(), screen.getY(),
+                    MouseButton.PRIMARY, 1, false, isControlDown, false, false, type == MouseEvent.MOUSE_PRESSED, false,
+                    false, false, false, true, null));
+        }
+        layout();
+    }
+
+    /** Sends a key press to the focused student list, as its own keyboard handlers receive it. */
+    private void pressKey(KeyCode key) {
+        personList().requestFocus();
+        personList().fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key, false, false, false, false));
+        layout();
+    }
+
+    /** Runs the tasks already queued for the JavaFX thread, such as a deferred selection restoration. */
+    private void runPendingFxTasks() {
+        Object key = new Object();
+        Platform.runLater(() -> Platform.exitNestedEventLoop(key, null));
+        Platform.enterNestedEventLoop(key);
+        layout();
+    }
+
+    private static List<String> expectedDetails(Person person) {
+        List<String> expected = new ArrayList<>(List.of(person.getName().fullName));
+        expected.addAll(PersonDetailsPanel.profileLines(person));
+        return expected;
     }
 
     private TextField commandField() {
@@ -290,6 +438,11 @@ public final class DeletionStatusAcceptance {
         @Override
         public boolean cancelPendingDeletion() {
             return delegate.cancelPendingDeletion();
+        }
+
+        @Override
+        public boolean cancelPendingDeletionUnlessTarget(Person selected) {
+            return delegate.cancelPendingDeletionUnlessTarget(selected);
         }
     }
 }
