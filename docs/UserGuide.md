@@ -37,11 +37,13 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
    * `sample clear` : Removes all profiles that are classified as fictional samples.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete e9000001@u.nus.edu` : Previews the deletion of the student with that NUS email. Nothing is removed yet.
+
+   * `confirm-delete e9000001@u.nus.edu` : Deletes the previewed student, when submitted as the next command.
 
    * `clear` : Deletes all contacts.
 
-   * `exit` : Exits the app.
+   * `bye` : Exits the app.
 
 1. Refer to the [Features](#features) section below for details of each command.
 
@@ -58,9 +60,11 @@ SoCdex is based on AddressBook Level 3 (AB3).
 * For `student add` and `edit`, prefixes may appear in any order, but only once each. Separate each prefix from its value with a space or tab. Unknown prefixes, repeated prefixes, empty supplied values, malformed slash tokens and text before the first prefix are rejected with usage guidance.
 * A prefix starts at a space/tab boundary with `/` and a letter, followed by letters or hyphens. Values end at the next prefix. An embedded slash such as the one in `AY26/27` is not a prefix.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `clear`, are ignored.<br>
   For example, `help 123` is interpreted as `help`.
-  `sample load` and `sample clear` are exceptions. They reject all extra parameters.
+  `sample load`, `sample clear`, `bye`, and `exit` are exceptions. They reject all extra parameters.
+
+* Pressing Enter when the command box is empty, or contains only spaces or tabs, shows `Enter a command.`
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </div>
@@ -242,19 +246,80 @@ Examples using the fictional sample profiles:
 * `view e9000001@u.nus.edu` shows the first Alex Tan with both enrolments; `view e9000002@u.nus.edu` shows the other Alex Tan.
 * `view e9000005@u.nus.edu` shows Nur Aisyah with `Not provided` contacts and `Enrolments: none`.
 
-### Deleting a person: `delete`
+### Deleting a student: `delete` and `confirm-delete`
 
-Deletes the specified person from the address book.
+Removes one student profile and every enrolment it owns. Deletion takes two commands: a preview, then a confirmation for the same NUS email as the next command you submit. Submit each command separately.
 
-Format: `delete INDEX`
+Format: `delete EMAIL`, then `confirm-delete EMAIL`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
-* The index **must be a positive integer** 1, 2, 3, …​
+**Previewing the deletion**
 
-Examples:
-* `list` followed by `delete 2` deletes the 2nd person in the address book.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `delete EMAIL` finds the student by NUS email in the complete roster, including students hidden by a search. Letter case and surrounding spaces or tabs are ignored, so `delete E9000001@U.NUS.EDU` targets `e9000001@u.nus.edu`. Names and list indexes are not accepted: `delete 1` shows the NUS email rules from `student add`. Students with the same name are told apart by their emails.
+* A successful preview selects the student, scrolls to them and shows their complete profile with every enrolment. If the student is already in the displayed results, those results are kept. Otherwise the full roster is shown, sorted by name then email. The result area shows, for example:
+
+  ```
+  Delete this student?
+  Alex Tan
+  NUS email: e9000001@u.nus.edu
+  Enrolments to remove: 2
+  Type: confirm-delete e9000001@u.nus.edu
+  Any other command will cancel this deletion.
+  ```
+
+  Scroll the result area if it does not show every line. The enrolment count is the student's actual number of stored enrolments. A fictional sample keeps its `Fictional sample` label and still needs confirmation.
+* While the preview awaits confirmation, the status bar shows `Deletion pending`.
+* A preview changes no roster data and does not save. Only one deletion can be pending at a time, and it is never saved: after a restart, nothing is pending.
+
+**Confirming the deletion**
+
+* Submit `confirm-delete EMAIL` with the same NUS email as the next command after the preview. Letter case and surrounding spaces or tabs are ignored.
+* SoCdex removes the student and all of their enrolments, saves the roster, and only then shows `Deleted student: NAME. NUS email: EMAIL. Enrolments removed: N.` Every other student and enrolment is kept, including another student with the same name.
+* The full remaining roster is shown, sorted by name then email, with no student selected, even if only one student remains. The profile panel shows `Select a student to view their profile.`, or `No students in the roster. Add a student or load fictional samples.` if no students remain. `Deletion pending` disappears from the status bar.
+* Deletion is permanent. SoCdex has no undo command or recycle bin, so check the preview before confirming.
+
+**Every confirmation attempt ends the pending deletion**
+
+A confirmation attempt uses up the pending deletion, whether or not it succeeds. To try again, start with a new `delete EMAIL`.
+
+* A different valid email shows `Deletion was cancelled because the confirmation did not match the selected student.` Neither student is deleted.
+* `confirm-delete EMAIL` without a preview, or a second confirmation after a deletion, shows `There is no pending deletion. Use delete EMAIL first.`
+* If the previewed student no longer exists, SoCdex shows `The pending student no longer exists. No data was changed.`
+* A malformed confirmation, such as `confirm-delete` alone or `confirm-delete yes`, shows `Pending deletion cancelled.` with the specific input error on the next line.
+
+**What cancels a pending deletion**
+
+Each of the following cancels the pending deletion. The cancellation itself removes no roster data. A separately submitted command, such as `clear` or `sample clear`, still removes records according to its own behaviour after cancelling the pending deletion. You need a fresh `delete EMAIL` before confirming another deletion:
+
+* Submitting any other command, whether it is valid or not, such as `find`, `view`, `list`, `help`, an unknown command or a command with an error. SoCdex shows `Pending deletion cancelled.` on its own line above that command's own result or error. Another `delete EMAIL` cancels the earlier preview and creates a new pending deletion only if the student exists and the new preview succeeds.
+* Pressing Enter when the command box is empty or contains only spaces or tabs. SoCdex shows `Pending deletion cancelled.` followed by `Enter a command.`
+* Selecting a different student in the list with the mouse or keyboard. SoCdex shows `Pending deletion cancelled.` Selecting the previewed student again, or clearing the selection, keeps the deletion pending. Selecting the original student again after a cancellation does not restore it.
+* Submitting a command when the student list needs to be refreshed. SoCdex refreshes the list instead of running the command, and its message starts with `Pending deletion cancelled.`
+* Exiting with `bye` or `exit`, closing the window, or choosing **File > Exit**. The pending deletion is discarded, never confirmed.
+
+Typing in the command box without pressing Enter, scrolling, resizing the window, and opening help with `F1` or **Help > Help** do not cancel a pending deletion.
+
+**Other errors**
+
+These messages leave the roster unchanged:
+
+* `delete` alone shows `NUS email is required. Usage: delete EMAIL`. `confirm-delete` alone shows `NUS email is required. Usage: confirm-delete EMAIL`.
+* More than one value, such as `delete e9000001@u.nus.edu e9000002@u.nus.edu`, shows `Delete accepts one NUS email only. Usage: delete EMAIL`. For a confirmation, the message is `Confirm-delete accepts one NUS email only. Usage: confirm-delete EMAIL`.
+* A name, index or non-NUS email shows the NUS email rules from `student add`.
+* `delete EMAIL` with an email that belongs to no student shows `No student found with NUS email: EMAIL.` A confirmation does not look the email up this way; it uses the pending-deletion and mismatch checks described above.
+* If the preview cannot be displayed, SoCdex shows `Student could not be displayed. No data was changed. Try again.` and no deletion is pending.
+* A read-only recovery session rejects both commands with `Data changes are disabled because stored data could not be loaded. Restore a valid data file and restart SoCdex.`
+
+**If the deletion cannot be saved**
+
+If saving the deletion fails, or the remaining roster cannot be displayed, SoCdex shows `The student could not be deleted. No data was changed. Use delete EMAIL to start again.` The student, their enrolments, the saved file, the displayed results and the selected profile are restored. The pending deletion has ended, so correct the storage problem and then start again with `delete EMAIL`.
+
+Examples using the fictional sample profiles, after `sample load`:
+
+* `delete e9000001@u.nus.edu` previews the first Alex Tan with `Enrolments to remove: 2`. Then `confirm-delete e9000001@u.nus.edu` deletes that student and both enrolments. The other Alex Tan, `e9000002@u.nus.edu`, is kept.
+* `delete e9000003@u.nus.edu`, then `find Alex`, then `confirm-delete e9000003@u.nus.edu`: the search result starts with `Pending deletion cancelled.`, and the confirmation shows `There is no pending deletion. Use delete EMAIL first.` Mei Lim is kept.
+* `delete e9000003@u.nus.edu`, then `confirm-delete e9000004@u.nus.edu`: the mismatch message is shown, and both Mei Lim and Ravi Kumar are kept.
+
+To remove every fictional sample at once, use `sample clear`. The inherited `clear` command deletes the whole roster without a preview.
 
 ### Clearing all entries: `clear`
 
@@ -262,15 +327,20 @@ Clears all entries from the address book.
 
 Format: `clear`
 
-### Exiting the program: `exit`
+### Exiting the program: `bye`
 
-Exits the program.
+Closes SoCdex.
 
-Format: `exit`
+Format: `bye`
+
+* `exit` is an alias that behaves the same way.
+* Spaces or tabs around the command are allowed, but parameters are not. For example, `bye now` or `exit 3` shows `Bye does not accept parameters. Usage: bye`, and SoCdex stays open.
+* Exiting discards any pending deletion without deleting anything. Closing the window or choosing **File > Exit** has the same effect.
+* Exiting does not save the roster; each roster change is already saved when its command succeeds. The window size and position are kept for the next launch. In a read-only recovery session, exiting leaves the preserved data file unchanged.
 
 ### Saving the data
 
-SoCdex saves roster changes before reporting success. You do not need to save manually. Read-only commands (`find`, `view`, `list`, `help`, and `exit`), rejected commands, and changes that leave all stored values unchanged do not rewrite the roster file.
+SoCdex saves roster changes before reporting success. You do not need to save manually. Read-only commands (`find`, `view`, `list`, `help`, and `bye` or `exit`), deletion previews, rejected commands, and changes that leave all stored values unchanged do not rewrite the roster file.
 
 If saving fails, the app reports that no data was changed and restores the previous roster, result list, and selected profile. Correct the file or folder permissions, or free disk space, then retry. A failed first save does not create a partial roster file. If the filesystem cannot safely replace the file, saving fails instead of overwriting it in place; use a local filesystem that supports atomic file replacement.
 
@@ -352,7 +422,8 @@ Action | Format, Examples
 **Enrol** | `enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION] [/team TEAM]`
 **Student add** | `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
 **Clear** | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete EMAIL`, then `confirm-delete EMAIL` as the next command<br> e.g., `delete e9000001@u.nus.edu`, then `confirm-delete e9000001@u.nus.edu`
+**Exit** | `bye` (alias: `exit`)
 **Edit** | `edit /email EMAIL [/telegram HANDLE\|clear] [/github USERNAME\|clear]`
 **Find** | `find QUERY`<br> e.g., `find Alex Tan`
 **List** | `list`

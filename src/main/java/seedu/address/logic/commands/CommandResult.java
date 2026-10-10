@@ -24,21 +24,27 @@ public class CommandResult {
     private final Person selectionTarget;
     private final boolean preserveSurvivingSelection;
 
+    /** The refreshed results must be shown with no selected profile, even if only one remains. */
+    private final boolean clearSelection;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
-        this(feedbackToUser, showHelp, exit, false, null, false);
+        this(feedbackToUser, showHelp, exit, false, null, false, false);
     }
 
     private CommandResult(String feedbackToUser, boolean showHelp, boolean exit, boolean updateSelection,
-            Person selectionTarget, boolean preserveSurvivingSelection) {
+            Person selectionTarget, boolean preserveSurvivingSelection, boolean clearSelection) {
+        assert !(preserveSurvivingSelection && clearSelection);
+        assert !(preserveSurvivingSelection || clearSelection) || updateSelection && selectionTarget == null;
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.showHelp = showHelp;
         this.exit = exit;
         this.updateSelection = updateSelection;
         this.selectionTarget = selectionTarget;
         this.preserveSurvivingSelection = preserveSurvivingSelection;
+        this.clearSelection = clearSelection;
     }
 
     /**
@@ -53,7 +59,7 @@ public class CommandResult {
      * Returns a search result that selects the sole displayed match, or clears selection otherwise.
      */
     public static CommandResult forSearch(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, true, null, false);
+        return new CommandResult(feedbackToUser, false, false, true, null, false, false);
     }
 
     /**
@@ -65,12 +71,29 @@ public class CommandResult {
 
     /** Requests selection of an explicit profile, even in a multi-row roster. */
     public static CommandResult forTarget(String feedback, Person target) {
-        return new CommandResult(feedback, false, false, true, requireNonNull(target), false);
+        return new CommandResult(feedback, false, false, true, requireNonNull(target), false, false);
     }
 
     /** Requests a refreshed roster that keeps the selected profile only if it still exists. */
     public static CommandResult forSurvivingSelection(String feedback) {
-        return new CommandResult(feedback, false, false, true, null, true);
+        return new CommandResult(feedback, false, false, true, null, true, false);
+    }
+
+    /**
+     * Returns a result that presents the refreshed results with no selected profile, even if exactly one remains.
+     * Like other selection updates, it is presented before the change is saved.
+     */
+    public static CommandResult forClearedSelection(String feedback) {
+        return new CommandResult(feedback, false, false, true, null, false, true);
+    }
+
+    /**
+     * Returns a copy whose feedback starts with {@code notice} on its own line. Every other field is kept.
+     */
+    public CommandResult withNotice(String notice) {
+        requireNonNull(notice);
+        return new CommandResult(notice + "\n" + feedbackToUser, showHelp, exit, updateSelection, selectionTarget,
+                preserveSurvivingSelection, clearSelection);
     }
 
     public Person getSelectionTarget() {
@@ -79,6 +102,10 @@ public class CommandResult {
 
     public boolean isPreserveSurvivingSelection() {
         return preserveSurvivingSelection;
+    }
+
+    public boolean isClearSelection() {
+        return clearSelection;
     }
 
     public String getFeedbackToUser() {
@@ -109,13 +136,14 @@ public class CommandResult {
                 && exit == otherCommandResult.exit
                 && updateSelection == otherCommandResult.updateSelection
                 && Objects.equals(selectionTarget, otherCommandResult.selectionTarget)
-                && preserveSurvivingSelection == otherCommandResult.preserveSurvivingSelection;
+                && preserveSurvivingSelection == otherCommandResult.preserveSurvivingSelection
+                && clearSelection == otherCommandResult.clearSelection;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(feedbackToUser, showHelp, exit, updateSelection, selectionTarget,
-                preserveSurvivingSelection);
+                preserveSurvivingSelection, clearSelection);
     }
 
     @Override
@@ -126,6 +154,7 @@ public class CommandResult {
                 .add("exit", exit)
                 .add("updateSelection", updateSelection)
                 .add("preserveSurvivingSelection", preserveSurvivingSelection)
+                .add("clearSelection", clearSelection)
                 .toString();
     }
 

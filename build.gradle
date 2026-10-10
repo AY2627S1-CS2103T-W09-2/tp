@@ -67,6 +67,11 @@ dependencies {
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jUnitVersion}"
 
+    // The opt-in UI acceptance drivers save screenshots with javafx.embed.swing; the application does not use it.
+    testImplementation "org.openjfx:javafx-swing:${javaFxVersion}:win"
+    testImplementation "org.openjfx:javafx-swing:${javaFxVersion}:mac"
+    testImplementation "org.openjfx:javafx-swing:${javaFxVersion}:linux"
+
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${jUnitVersion}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 }

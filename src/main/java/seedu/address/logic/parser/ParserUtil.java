@@ -91,6 +91,28 @@ public class ParserUtil {
     }
 
     /**
+     * Parses command arguments that must be exactly one NUS email into a canonical {@code Email}.
+     * The argument count is checked before the email is validated.
+     *
+     * @param missingMessage the error message when no email is given.
+     * @param extraMessage the error message when more than one argument is given.
+     * @throws ParseException if the arguments are not exactly one valid email.
+     */
+    public static Email parseSoleEmail(String args, String missingMessage, String extraMessage)
+            throws ParseException {
+        requireNonNull(args);
+        requireSingleLine(args);
+        String trimmed = args.replaceAll("^[ \t]+|[ \t]+$", "");
+        if (trimmed.isEmpty()) {
+            throw new ParseException(missingMessage);
+        }
+        if (trimmed.split("[ \t]+").length > 1) {
+            throw new ParseException(extraMessage);
+        }
+        return parseEmail(trimmed);
+    }
+
+    /**
      * Parses a {@code String email} into a canonical {@code Email}.
      * Leading and trailing spaces and tabs are ignored by the shared {@link Email} rule; other characters are not
      * removed.

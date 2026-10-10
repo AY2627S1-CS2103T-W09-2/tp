@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static seedu.address.commons.util.CollectionUtil.requireAllNonNull;
 
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
@@ -12,6 +13,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.commons.core.LogsCenter;
+import seedu.address.model.person.Email;
 import seedu.address.model.person.Person;
 
 /**
@@ -25,6 +27,8 @@ public class ModelManager implements Model {
     private final FilteredList<Person> filteredPersons;
     private final boolean isReadOnly;
     private final SortedList<Person> displayedPersons;
+    // Session-only state: kept outside the address book so it is never saved, compared or restored.
+    private Email pendingDeletion;
 
     /**
      * Initializes a ModelManager with the given addressBook and userPrefs.
@@ -152,6 +156,26 @@ public class ModelManager implements Model {
             filteredPersons.setPredicate(previousFilter);
             displayedPersons.setComparator(previousOrder);
         };
+    }
+
+    //=========== Pending deletion ===========================================================================
+
+    @Override
+    public void setPendingDeletion(Email email) {
+        requireNonNull(email);
+        pendingDeletion = email;
+    }
+
+    @Override
+    public Optional<Email> getPendingDeletion() {
+        return Optional.ofNullable(pendingDeletion);
+    }
+
+    @Override
+    public boolean clearPendingDeletion() {
+        boolean hadPendingDeletion = pendingDeletion != null;
+        pendingDeletion = null;
+        return hadPendingDeletion;
     }
 
     @Override

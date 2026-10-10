@@ -13,6 +13,7 @@ import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.Remark;
 import seedu.address.testutil.PersonBuilder;
 
 /**
@@ -104,7 +105,7 @@ public class FindCommandTest {
     }
 
     @Test
-    public void execute_sortedResults_deleteUsesDisplayedIndex() throws Exception {
+    public void execute_sortedResults_indexCommandUsesDisplayedOrder() throws Exception {
         Model model = new ModelManager();
         Person mei = createPerson("Mei Tan", "e9000003@u.nus.edu");
         Person alex = createPerson("Alex Tan", "e9000001@u.nus.edu");
@@ -112,8 +113,9 @@ public class FindCommandTest {
         model.addPerson(alex);
         new FindCommand("Tan").execute(model);
         assertEquals(List.of(alex, mei), model.getFilteredPersonList());
-        new DeleteCommand(Index.fromOneBased(1)).execute(model);
-        assertEquals(List.of(mei), model.getAddressBook().getPersonList());
+        new RemarkCommand(Index.fromOneBased(1), new Remark("Displayed first")).execute(model);
+        assertEquals(List.of(mei, new PersonBuilder(alex).withRemark("Displayed first").build()),
+                model.getAddressBook().getPersonList());
     }
 
     @Test

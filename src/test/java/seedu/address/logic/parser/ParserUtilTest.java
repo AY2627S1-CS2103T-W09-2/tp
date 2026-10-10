@@ -2,6 +2,7 @@ package seedu.address.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static seedu.address.logic.Messages.MESSAGE_SINGLE_LINE;
 import static seedu.address.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -219,5 +220,39 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseSoleEmail_missingEmail_throwsMissingMessage() {
+        for (String args : new String[] {"", " ", " \t \t"}) {
+            assertThrows(ParseException.class, "missing", () -> ParserUtil.parseSoleEmail(args, "missing", "extra"));
+        }
+    }
+
+    @Test
+    public void parseSoleEmail_extraTokens_throwsExtraMessageBeforeEmailValidation() {
+        for (String args : new String[] {" rachel@u.nus.edu rachel@u.nus.edu", " rachel@u.nus.edu\textra",
+            " /email rachel@u.nus.edu", " not-an-email also-bad", " 1 2"}) {
+            assertThrows(ParseException.class, "extra", () -> ParserUtil.parseSoleEmail(args, "missing", "extra"));
+        }
+    }
+
+    @Test
+    public void parseSoleEmail_invalidSingleToken_throwsEmailRule() {
+        for (String args : new String[] {" 1", " Rachel", " rachel@gmail.com", " a..b@u.nus.edu", " @rachel"}) {
+            assertThrows(ParseException.class, Email.MESSAGE_CONSTRAINTS, () ->
+                    ParserUtil.parseSoleEmail(args, "missing", "extra"));
+        }
+    }
+
+    @Test
+    public void parseSoleEmail_lineBreak_throwsSingleLineMessage() {
+        assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () ->
+                ParserUtil.parseSoleEmail(" " + VALID_EMAIL + "\n", "missing", "extra"));
+    }
+
+    @Test
+    public void parseSoleEmail_paddedMixedCaseEmail_returnsCanonicalEmail() throws Exception {
+        assertEquals(new Email(VALID_EMAIL), ParserUtil.parseSoleEmail(" \tRACHEL@U.NUS.EDU\t ", "missing", "extra"));
     }
 }

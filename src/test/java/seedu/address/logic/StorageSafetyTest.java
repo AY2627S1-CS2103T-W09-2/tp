@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
@@ -37,7 +38,7 @@ public class StorageSafetyTest {
     public void execute_failedMutations_restoreRosterAndFilter() throws Exception {
         for (IOException failure : new IOException[] {new IOException("replacement failed"),
             new AccessDeniedException("read-only file")}) {
-            for (String command : new String[] {"delete 1", "clear", "edit /email alice@u.nus.edu /github Changed",
+            for (String command : new String[] {"clear", "edit /email alice@u.nus.edu /github Changed",
                 "remark 1 r/Changed",
                 "student add /name Fictional Student /email demo@u.nus.edu"}) {
                 ModelManager model = createModel();
@@ -58,7 +59,7 @@ public class StorageSafetyTest {
 
     @Test
     public void execute_failedMutation_restoresSearchOrderAndLiveFilter() throws Exception {
-        for (String command : new String[] {"delete 1", "clear", "edit /email alice@u.nus.edu /github Changed",
+        for (String command : new String[] {"clear", "edit /email alice@u.nus.edu /github Changed",
             "remark 1 r/Changed",
             "student add /name Fictional Student /email demo@u.nus.edu"}) {
             ModelManager model = createModel();
@@ -81,6 +82,30 @@ public class StorageSafetyTest {
     }
 
     @Test
+    public void execute_failedConfirmedDeletion_restoresRosterSearchOrderAndRequiresFreshPreview() throws Exception {
+        for (IOException failure : new IOException[] {new IOException("replacement failed"),
+            new AccessDeniedException("read-only file")}) {
+            ModelManager model = createModel();
+            model.updateFilteredPersonList(person -> person.equals(ALICE) || person.equals(BENSON),
+                    Comparator.comparing((Person person) -> person.getName().fullName).reversed());
+            AddressBook original = new AddressBook(model.getAddressBook());
+            Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")) {
+                @Override
+                public void saveAddressBook(ReadOnlyAddressBook addressBook) throws IOException {
+                    throw failure;
+                }
+            });
+            logic.execute("delete alice@u.nus.edu");
+            assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_FAILURE, () ->
+                    logic.execute("confirm-delete alice@u.nus.edu"));
+            assertEquals(original, model.getAddressBook());
+            assertEquals(List.of(BENSON, ALICE), model.getFilteredPersonList());
+            assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
+                    logic.execute("confirm-delete alice@u.nus.edu"));
+        }
+    }
+
+    @Test
     public void execute_readOnlyInvalidAndUnchangedCommands_doNotSave() throws Exception {
         ModelManager model = createModel();
         Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")) {
@@ -91,11 +116,11 @@ public class StorageSafetyTest {
         });
         AddressBook original = new AddressBook(model.getAddressBook());
         for (String command : new String[] {"list", "find Alice", "help", "exit",
-            "edit /email alice@u.nus.edu /github clear"}) {
+            "edit /email alice@u.nus.edu /github clear", "delete alice@u.nus.edu"}) {
             logic.execute(command);
         }
         assertThrows(ParseException.class, () -> logic.execute("invalid"));
-        assertThrows(CommandException.class, () -> logic.execute("delete 999"));
+        assertThrows(CommandException.class, () -> logic.execute("delete missing@u.nus.edu"));
         assertEquals(original, model.getAddressBook());
     }
 
@@ -104,7 +129,8 @@ public class StorageSafetyTest {
         ModelManager model = createModel();
         JsonAddressBookStorage storage = new JsonAddressBookStorage(folder.resolve("roster.json"));
         Logic logic = createLogic(model, storage);
-        logic.execute("delete 1");
+        logic.execute("delete alice@u.nus.edu");
+        logic.execute("confirm-delete alice@u.nus.edu");
         assertEquals(List.of(BENSON), storage.readAddressBook().orElseThrow().getPersonList());
         assertEquals(model.getAddressBook(), storage.readAddressBook().orElseThrow());
     }
@@ -113,8 +139,8 @@ public class StorageSafetyTest {
     public void execute_recoveryRejectsAllMutationCommands() {
         ModelManager model = new ModelManager(new AddressBook(), new UserPrefs(), true);
         Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")));
-        for (String command : new String[] {"clear", "delete 1", "edit /email alice@u.nus.edu /github Fictional",
-            "remark 1 r/Test"}) {
+        for (String command : new String[] {"clear", "delete alice@u.nus.edu", "confirm-delete alice@u.nus.edu",
+            "edit /email alice@u.nus.edu /github Fictional", "remark 1 r/Test"}) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> logic.execute(command));
         }
     }

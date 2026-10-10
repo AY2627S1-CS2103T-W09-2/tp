@@ -44,6 +44,7 @@ public class MainWindow extends UiPart<Stage> {
     private PersonListPanel personListPanel;
     private PersonDetailsPanel personDetailsPanel;
     private ResultDisplay resultDisplay;
+    private StatusBarFooter statusBarFooter;
     private HelpWindow helpWindow;
 
     @FXML
@@ -143,7 +144,7 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setFeedbackToUser(Messages.MESSAGE_EMPTY_ROSTER);
         }
 
-        StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath, logic.isReadOnly());
+        statusBarFooter = new StatusBarFooter(dataFilePath, logic.isReadOnly());
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
         CommandBox commandBox = new CommandBox(this::executeCommand);
@@ -179,10 +180,12 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Closes the application.
+     * Closes the application. The {@code bye} command, the window's close request and the menu all end here.
      */
     @FXML
     private void handleExit() {
+        // Closing never confirms a deletion: any preview awaiting confirmation is discarded and nothing is saved.
+        logic.cancelPendingDeletion();
         GuiSettings guiSettings = new GuiSettings(primaryStage.getWidth(), primaryStage.getHeight(),
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
@@ -204,23 +207,26 @@ public class MainWindow extends UiPart<Stage> {
         return new PersonDetailsPanel(person);
     }
 
-    /** Creates the recovery guidance shown after every fictional profile is removed. */
+    /** Creates the guidance shown when a removal leaves the roster empty. */
     PersonDetailsPanel createEmptyRosterDetailsPanel() {
         return new PersonDetailsPanel(null, Messages.MESSAGE_EMPTY_ROSTER);
     }
 
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
-        boolean showEmptyRosterGuidance = false;
-        if (result.isPreserveSurvivingSelection()) {
+        if (result.isClearSelection()) {
+            // No profile stays selected, even when exactly one result remains.
+            replacement.restoreSelection(null);
+        } else if (result.isPreserveSurvivingSelection()) {
             replacement.restoreSelection(personListPanel.getSelectedPerson());
-            showEmptyRosterGuidance = logic.getFilteredPersonList().isEmpty();
         } else if (result.getSelectionTarget() == null) {
             replacement.selectOnlyResult();
         } else {
             replacement.selectTarget(result.getSelectionTarget());
         }
-        prepareAndReplaceDisplay(replacement, showEmptyRosterGuidance);
+        // A removal that leaves no students shows the empty-roster guidance instead of the selection prompt.
+        boolean isRemovalRefresh = result.isClearSelection() || result.isPreserveSurvivingSelection();
+        prepareAndReplaceDisplay(replacement, isRemovalRefresh && logic.getFilteredPersonList().isEmpty());
     }
 
     private boolean isPersonListCurrent() {
@@ -271,24 +277,43 @@ public class MainWindow extends UiPart<Stage> {
         preparationScene.setRoot(new StackPane());
     }
 
-    /** Shows the complete profile when the tutor selects another row directly in the list. */
+    /** Follows selection changes on {@code panel} while it is the displayed list. */
     private void followSelection(PersonListPanel panel) {
         panel.selectedPersonProperty().addListener((observable, previous, selected) -> {
-            if (panel != personListPanel || selected == personDetailsPanel.getPerson()) {
-                return;
-            }
-            try {
-                PersonDetailsPanel details = createPersonDetailsPanel(selected);
-                prepare(details.getRoot(), personDetailsPanelPlaceholder);
-                personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
-                personDetailsPanel = details;
-            } catch (RuntimeException | AssertionError e) {
-                logger.warning("Profile could not be displayed: " + e);
-                resultDisplay.setFeedbackToUser(Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
-                // Keep the row selection consistent with the complete profile that is still shown.
-                Platform.runLater(() -> panel.restoreSelection(personDetailsPanel.getPerson()));
+            if (panel == personListPanel) {
+                handleSelectionChange(panel, selected);
             }
         });
+    }
+
+    /**
+     * Shows the complete profile of the selected student. A different student selected by the user, rather than by
+     * the application, cancels any pending deletion.
+     */
+    private void handleSelectionChange(PersonListPanel panel, Person selected) {
+        boolean isDeletionCancelled = panel.isUserSelectionChange() && selected != null
+                && logic.cancelPendingDeletionUnlessTarget(selected);
+        if (isDeletionCancelled) {
+            statusBarFooter.setDeletionPending(logic.hasPendingDeletion());
+            resultDisplay.setFeedbackToUser(Messages.MESSAGE_PENDING_DELETION_CANCELLED);
+        }
+        if (selected == personDetailsPanel.getPerson()) {
+            return;
+        }
+        try {
+            PersonDetailsPanel details = createPersonDetailsPanel(selected);
+            prepare(details.getRoot(), personDetailsPanelPlaceholder);
+            personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+            personDetailsPanel = details;
+        } catch (RuntimeException | AssertionError e) {
+            logger.warning("Profile could not be displayed: " + e);
+            resultDisplay.setFeedbackToUser(isDeletionCancelled
+                    ? Messages.MESSAGE_PENDING_DELETION_CANCELLED + "\n" + Messages.MESSAGE_PROFILE_DISPLAY_FAILURE
+                    : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
+            // Keep the row selection consistent with the complete profile that is still shown. This restoration is
+            // made by the application, so it never cancels or restores a pending deletion.
+            Platform.runLater(() -> panel.restoreSelection(personDetailsPanel.getPerson()));
+        }
     }
 
     /**
@@ -319,6 +344,9 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
+        } finally {
+            // Every submission, including one rejected before it runs, may start, consume or cancel a deletion.
+            statusBarFooter.setDeletionPending(logic.hasPendingDeletion());
         }
     }
 }

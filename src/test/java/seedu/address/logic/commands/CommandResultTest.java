@@ -3,9 +3,16 @@ package seedu.address.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.Test;
+
+import seedu.address.model.person.Person;
+import seedu.address.testutil.PersonBuilder;
 
 public class CommandResultTest {
     @Test
@@ -47,6 +54,35 @@ public class CommandResultTest {
     }
 
     @Test
+    public void clearedSelectionResult_requestsRefreshWithoutAnySelection() {
+        CommandResult cleared = CommandResult.forClearedSelection("feedback");
+        assertTrue(cleared.isUpdateSelection());
+        assertTrue(cleared.isClearSelection());
+        assertNull(cleared.getSelectionTarget());
+        assertFalse(CommandResult.forSearch("feedback").isClearSelection());
+        assertNotEquals(CommandResult.forSearch("feedback"), cleared);
+        assertNotEquals(CommandResult.forSearch("feedback").hashCode(), cleared.hashCode());
+        assertEquals(cleared, CommandResult.forClearedSelection("feedback"));
+    }
+
+    @Test
+    public void withNotice_prefixesFeedbackAndKeepsEveryOtherField() {
+        Person target = new PersonBuilder().build();
+        List<Function<String, CommandResult>> factories = List.of(CommandResult::new,
+                feedback -> new CommandResult(feedback, true, false),
+                feedback -> new CommandResult(feedback, false, true),
+                CommandResult::forSearch,
+                feedback -> CommandResult.forTarget(feedback, target),
+                CommandResult::forSurvivingSelection,
+                CommandResult::forClearedSelection);
+        for (Function<String, CommandResult> factory : factories) {
+            CommandResult original = factory.apply("feedback");
+            assertEquals(factory.apply("Notice.\nfeedback"), original.withNotice("Notice."));
+            assertEquals(factory.apply("feedback"), original);
+        }
+    }
+
+    @Test
     public void survivingSelectionResult_requestsRefreshAndPreservation() {
         CommandResult result = CommandResult.forSurvivingSelection("feedback");
 
@@ -54,6 +90,27 @@ public class CommandResultTest {
         assertTrue(result.isPreserveSurvivingSelection());
         assertNotEquals(result, CommandResult.forSearch("feedback"));
         assertEquals(result, CommandResult.forSurvivingSelection("feedback"));
+    }
+
+    @Test
+    public void selectionModes_survivingAndClearedRemainDistinctAfterNotice() {
+        CommandResult surviving = CommandResult.forSurvivingSelection("feedback").withNotice("Notice.");
+        CommandResult cleared = CommandResult.forClearedSelection("feedback").withNotice("Notice.");
+
+        assertTrue(surviving.isPreserveSurvivingSelection());
+        assertFalse(surviving.isClearSelection());
+        assertTrue(cleared.isClearSelection());
+        assertFalse(cleared.isPreserveSurvivingSelection());
+        for (CommandResult result : List.of(surviving, cleared)) {
+            assertTrue(result.isUpdateSelection());
+            assertNull(result.getSelectionTarget());
+            assertFalse(result.isShowHelp());
+            assertFalse(result.isExit());
+        }
+        assertNotEquals(surviving, cleared);
+        assertNotEquals(surviving.hashCode(), cleared.hashCode());
+        assertFalse(CommandResult.forSearch("feedback").isPreserveSurvivingSelection());
+        assertFalse(CommandResult.forSearch("feedback").isClearSelection());
     }
 
     @Test
@@ -79,7 +136,8 @@ public class CommandResultTest {
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.isShowHelp()
                 + ", exit=" + commandResult.isExit() + ", updateSelection=" + commandResult.isUpdateSelection()
-                + ", preserveSurvivingSelection=" + commandResult.isPreserveSurvivingSelection() + "}";
+                + ", preserveSurvivingSelection=" + commandResult.isPreserveSurvivingSelection()
+                + ", clearSelection=" + commandResult.isClearSelection() + "}";
         assertEquals(expected, commandResult.toString());
     }
 }

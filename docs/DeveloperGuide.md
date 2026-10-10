@@ -51,9 +51,9 @@ The bulk of the app's work is done by the following four components:
 
 **How the architecture components interact with each other**
 
-The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user issues the command `delete 1`.
+The *Sequence Diagram* below shows how the components interact with each other for the scenario where the user confirms a deletion with `confirm-delete e9000001@u.nus.edu`, after a successful `delete e9000001@u.nus.edu` preview. `Logic` consumes the pending target, removes the student and asks the `UI` to present the result before `Storage` saves the roster. The successful result is returned only after the save.
 
-<img src="images/ArchitectureSequenceDiagram.png" width="574" />
+<img src="images/ArchitectureSequenceDiagram.png" width="800" />
 
 Each of the four main components (also shown in the diagram above),
 
@@ -91,9 +91,9 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <img src="images/LogicClassDiagram.png" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below illustrates the interactions within the `Logic` component, taking the deletion preview `execute("delete e9000001@u.nus.edu", ...)` as an example. `DeleteCommand` finds the student by canonical email in the complete roster, records the pending target and returns a result that selects the student. The preview removes no data, so `LogicManager` does not save.
 
-![Interactions Inside the Logic Component for the `delete 1` Command](images/DeleteSequenceDiagram.png)
+![Interactions Inside the Logic Component for the `delete e9000001@u.nus.edu` Command](images/DeleteSequenceDiagram.png)
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
 </div>
@@ -199,7 +199,7 @@ On Windows use `;` instead of `:` in the classpath. The utility drives the actua
 
 The shared command contract is:
 
-* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `exit` commands do so. `sample load`, `sample clear`, and profile mutations retain the default, so the recovery gate applies before execution.
+* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `bye` (with its `exit` alias) commands do so. `sample load`, `sample clear`, and profile mutations retain the default, so the recovery gate applies before execution.
 * Commands validate and change the model through `execute(Model)`; they must not save directly. `LogicManager` owns persistence and returns the successful `CommandResult` only after storage succeeds.
 * `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
 * `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
@@ -257,89 +257,40 @@ java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.Pro
 
 On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
 
-### \[Proposed\] Undo/redo feature
+### Confirmed deletion (v1.3)
 
-#### Proposed Implementation
+`DeleteCommandParser` and `ConfirmDeleteCommandParser` share `ParserUtil.parseSoleEmail`, which applies the single-line check, trims spaces and tabs, and reports a missing email, then extra tokens, before validating the one remaining token with the NUS email rule. An index such as `1` therefore fails the email rule. Blank input reaches `AddressBookParser`, which reports `Messages.MESSAGE_ENTER_COMMAND`; `CommandBox` submits empty input too.
 
-The proposed undo/redo mechanism is facilitated by `VersionedAddressBook`. It extends `AddressBook` with an undo/redo history, stored internally as an `addressBookStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+The pending target is session-only state in `ModelManager`: one canonical `Email`, set, read and cleared through `Model#setPendingDeletion`, `Model#getPendingDeletion` and `Model#clearPendingDeletion`. It is not part of `AddressBook`, so it is never saved, never compared by the no-op check, and never captured or restored by `Model#createRestorePoint()`. It survives only a fully successful preview. The UI reads and cancels it only through `Logic` (`hasPendingDeletion`, `cancelPendingDeletion` and `cancelPendingDeletionUnlessTarget`); it keeps no copy.
 
-* `VersionedAddressBook#commit()` — Saves the current address book state in its history.
-* `VersionedAddressBook#undo()` — Restores the previous address book state from its history.
-* `VersionedAddressBook#redo()` — Restores a previously undone address book state from its history.
+* `DeleteCommand` finds the target by canonical email in the complete roster, keeps the current results if the target is displayed and otherwise shows all students with `PersonOrder.BY_NAME_THEN_EMAIL`, records the pending target, and returns `CommandResult.forTarget` with the preview text. Its enrolment count comes from the stored record. It changes no roster data, so `LogicManager` does not save. `isReadOnly()` stays `false`, so read-only recovery rejects it.
+* `ConfirmDeleteCommand#isDeletionConfirmation()` returns `true`. Execution reads and clears the pending target before any check, so every confirmation attempt consumes it. It then reports a missing target, a different email, or a target that no longer exists. Otherwise it removes the `Person`, whose enrolments are stored inside it, so one atomic save covers both. It shows all students with `PersonOrder.BY_NAME_THEN_EMAIL` and returns `CommandResult.forClearedSelection`. Both `getSaveFailureMessage` and `getDisplayFailureMessage` return the fresh-preview failure message.
 
-These operations are exposed in the `Model` interface as `Model#commitAddressBook()`, `Model#undoAddressBook()` and `Model#redoAddressBook()` respectively.
+`LogicManager#execute` applies the cancellation rule to every submission that reaches it. A parse failure, such as blank input or a malformed confirmation, clears the pending target and, if one existed, rethrows the `ParseException` with `Messages.MESSAGE_PENDING_DELETION_CANCELLED` on its own first line. Any other parsed command that is not a deletion confirmation clears the target before the recovery gate and execution. Its result gets the same first line through `CommandResult#withNotice`, which keeps every other field, including the help, exit and selection flags. Errors keep their exception type; a `DuplicateStudentException` keeps its revealed profile. Whenever execution fails, a `finally` block clears the target again, so a failed replacement preview leaves nothing pending.
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+`CommandResult.forClearedSelection` requests a selection update, so `LogicManager` presents it through the existing callback before saving. `MainWindow#presentSearch` prepares the full roster with no selection, even with one survivor, and shows the empty-roster guidance shared with `CommandResult.forSurvivingSelection` when no students remain. A presentation or save failure takes the existing restore path: the roster, filter and order are restored, and the destination file is unchanged because the atomic save never replaced it. The target was already consumed, so a fresh preview is required.
 
-Step 1. The user launches the application for the first time. The `VersionedAddressBook` will be initialized with the initial address book state, and the `currentStatePointer` pointing to that single address book state.
+Submissions that never reach `LogicManager` also end the deletion:
 
-![UndoRedoState0](images/UndoRedoState0.png)
+* When the displayed list is stale, `DisplayedCommandExecutor` calls `Logic#cancelPendingDeletion()` before refreshing, even if the refresh then fails. It adds the cancellation line to its existing message and never runs or retries the rejected command.
+* `MainWindow#handleExit` is the single exit path for `bye`/`exit`, the window's close request and **File > Exit**. It discards the pending target before recording GUI preferences. `MainApp#stop` saves preferences only, so closing never rewrites the roster or a file preserved by read-only recovery.
+* After every submission, successful or not, `MainWindow` updates the `Deletion pending` text in `StatusBarFooter`.
 
-Step 2. The user executes `delete 5` command to delete the 5th person in the address book. The `delete` command calls `Model#commitAddressBook()`, causing the modified state of the address book after the `delete 5` command executes to be saved in the `addressBookStateList`, and the `currentStatePointer` is shifted to the newly inserted address book state.
+Selecting a different student cancels the deletion only when the user made the selection. `PersonListPanel` runs its own selection changes (`restoreSelection`, `selectTarget` and `selectOnlyResult`) inside a guard that is restored in `finally`, and `isUserSelectionChange()` reports whether the guard is inactive. `MainWindow` ignores callbacks from panels that are no longer displayed. For a user selection of a non-null student, it calls `Logic#cancelPendingDeletionUnlessTarget`, which compares canonical emails, so selecting the target again, or a deselection, keeps the deletion pending. Preview selection, refresh, surviving-selection restoration, cleared-selection results and failure restoration are app-made and never cancel. If the newly selected profile cannot be displayed, the result shows the cancellation line above `Messages.MESSAGE_PROFILE_DISPLAY_FAILURE`. The deferred row restoration that follows is app-made, so it neither cancels again nor brings back the deletion.
 
-![UndoRedoState1](images/UndoRedoState1.png)
+`DeleteCommandTest`, `ConfirmDeleteCommandTest`, the parser tests and `DeletionWorkflowTest` cover these rules with real JSON storage and deterministic failures injected at the temporary-file write and the atomic replacement. `DisplayedCommandExecutorTest` covers stale-display cancellation without starting JavaFX. For an opt-in real-window check using fictional data, build with `./gradlew testClasses shadowJar`, then run:
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitAddressBook()`, causing another modified address book state to be saved into the `addressBookStateList`.
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.DeletionStatusAcceptance
+```
 
-![UndoRedoState2](images/UndoRedoState2.png)
+On Windows use `;` instead of `:` in the classpath. The driver submits commands through the real command box and sends mouse and keyboard events through the list's own handlers. It also uses the window close request and the **File > Exit** menu item. It writes fictional files under `build/reports/deletion-status`. This is programmatic UI evidence, not manual or packaged-app acceptance; record the tested commit and runtime separately.
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If a command fails its execution, it will not call `Model#commitAddressBook()`, so the address book state will not be saved into the `addressBookStateList`.
+### No undo for confirmed deletion
 
-</div>
+SoCdex has no undo command, version history or recycle bin. A deletion that has been confirmed and saved is permanent. The preview and matching confirmation described in [Confirmed deletion (v1.3)](#confirmed-deletion-v13) are the safeguard against deleting the wrong student.
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoAddressBook()`, which will shift the `currentStatePointer` once to the left, pointing it to the previous address book state, and restores the address book to that state.
-
-![UndoRedoState3](images/UndoRedoState3.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index 0, pointing to the initial AddressBook state, then there are no previous AddressBook states to restore. The `undo` command uses `Model#canUndoAddressBook()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-
-</div>
-
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Logic.png)
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-
-</div>
-
-Similarly, how an undo operation goes through the `Model` component is shown below:
-
-![UndoSequenceDiagram](images/UndoSequenceDiagram-Model.png)
-
-The `redo` command does the opposite — it calls `Model#redoAddressBook()`, which shifts the `currentStatePointer` once to the right, pointing to the previously undone state, and restores the address book to that state.
-
-<div markdown="span" class="alert alert-info">:information_source: **Note:** If the `currentStatePointer` is at index `addressBookStateList.size() - 1`, pointing to the latest address book state, then there are no undone AddressBook states to restore. The `redo` command uses `Model#canRedoAddressBook()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-
-</div>
-
-Step 5. The user then decides to execute the command `list`. Commands that do not modify the address book, such as `list`, will usually not call `Model#commitAddressBook()`, `Model#undoAddressBook()` or `Model#redoAddressBook()`. Thus, the `addressBookStateList` remains unchanged.
-
-![UndoRedoState4](images/UndoRedoState4.png)
-
-Step 6. The user executes `clear`, which calls `Model#commitAddressBook()`. Since the `currentStatePointer` is not pointing at the end of the `addressBookStateList`, all address book states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …​` command. This is the behavior that most modern desktop applications follow.
-
-![UndoRedoState5](images/UndoRedoState5.png)
-
-The following activity diagram summarizes what happens when a user executes a new command:
-
-<img src="images/CommitActivityDiagram.png" width="250" />
-
-#### Design considerations:
-
-**Aspect: How undo & redo execute:**
-
-* **Alternative 1 (current choice):** Saves the entire address book.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
-
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
+Rollback is different from undo. If a command fails before its change is saved, for example because saving or presenting the result fails, `LogicManager` restores the roster, filter and order captured by `Model#createRestorePoint()`, and the atomic save leaves the previous file in place. Rollback only reverses an operation that did not complete; it never reverses a deletion that was saved successfully.
 
 ### \[Proposed\] Data archiving
 
@@ -804,7 +755,17 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases …​ }_
+1. Exiting
+
+   1. Test cases: `bye`, then relaunch and use ` exit ` with surrounding spaces.<br>
+      Expected: The app closes each time. The roster file is not rewritten.
+
+   1. Test cases: `bye now` and `exit 3`.<br>
+      Expected: `Bye does not accept parameters. Usage: bye`. The app stays open.
+
+   1. Prerequisites: Load the samples with `sample load` and preview a deletion with `delete e9000001@u.nus.edu`.<br>
+      Test cases: `bye`; closing the window; **File > Exit** (relaunch and preview again between cases).<br>
+      Expected: The app closes without deleting the student. After relaunch, Alex Tan `e9000001@u.nus.edu` is still present, the status bar does not show `Deletion pending`, and `confirm-delete e9000001@u.nus.edu` shows `There is no pending deletion. Use delete EMAIL first.`
 
 ### Loading fictional samples
 
@@ -870,29 +831,63 @@ testers are expected to do more *exploratory* testing.
    1. Test cases: `view`, `view e9000001@u.nus.edu e9000002@u.nus.edu`, `view Alex`, and `view e9000009@u.nus.edu`.<br>
       Expected: The missing-email, extra-argument, email-rule and not-found messages respectively. The previous results, selection and profile remain, and the data file is not rewritten.
 
-### Deleting a person
+### Deleting a student
 
-1. Deleting a person while all persons are being shown
+Scenarios that confirm a deletion change the roster, so start each such scenario in a new disposable test folder: copy only the JAR into it, launch the JAR there, and run `sample load`. Run the commands within a scenario in order, without restarting or reloading between a preview and its confirmation. `sample load` works only on an empty roster, so it cannot restore a partially deleted sample roster; use another new folder instead.
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+1. Previewing and confirming a deletion
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+   1. Prerequisites: A new test folder with `sample load` run, then `find Mei` so that the first Alex Tan is hidden.
 
-   1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+   1. Test case: `delete E9000001@U.NUS.EDU`<br>
+      Expected: The full sorted roster is shown, the first Alex Tan is selected with both enrolments in the profile panel, the preview reports `Enrolments to remove: 2`, and the status bar shows `Deletion pending`. The data file is not rewritten.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Test case: `confirm-delete e9000001@u.nus.edu`<br>
+      Expected: `Deleted student: Alex Tan. NUS email: e9000001@u.nus.edu. Enrolments removed: 2.` The other Alex Tan remains, no student is selected, the profile panel shows `Select a student to view their profile.`, and `Deletion pending` disappears.
 
-1. _{ more test cases …​ }_
+   1. Restart the JAR in the same folder.<br>
+      Expected: The deleted student does not return, and every other profile and enrolment does.
+
+1. Cancelling a pending deletion
+
+   1. Prerequisites: A roster loaded with `sample load`. Preview a deletion with `delete e9000003@u.nus.edu` before each case. These cases delete nothing, so they can share one folder.
+
+   1. Test cases: `find Alex`; `unknowncommand`; pressing Enter with an empty command box; clicking or arrow-keying to a different student.<br>
+      Expected: Each case shows `Pending deletion cancelled.`, followed by the case's own result or error, if any, and `Deletion pending` disappears. A following `confirm-delete e9000003@u.nus.edu` shows `There is no pending deletion. Use delete EMAIL first.` Mei Lim remains.
+
+   1. Test case: `delete e9000004@u.nus.edu`, then `confirm-delete e9000003@u.nus.edu`.<br>
+      Expected: The first command shows `Pending deletion cancelled.` above a new preview of Ravi Kumar. The confirmation shows `Deletion was cancelled because the confirmation did not match the selected student.` Mei Lim and Ravi Kumar both remain.
+
+1. Keeping a pending deletion
+
+   1. Prerequisites: A new test folder with `sample load` run, then `delete e9000003@u.nus.edu`.
+
+   1. Test cases, in order: type text without pressing Enter, then clear it; scroll the list; resize the window; press `F1` and close the help window; select Mei Lim again.<br>
+      Expected: `Deletion pending` remains after each step. Finally, `confirm-delete e9000003@u.nus.edu` deletes Mei Lim.
+
+1. Rejected input
+
+   1. Prerequisites: A roster loaded with `sample load`, with no deletion pending. These cases delete nothing.
+
+   1. Test cases: `delete`, `delete e9000001@u.nus.edu extra`, `delete 1`, `delete e9000009@u.nus.edu`, and `confirm-delete e9000001@u.nus.edu` without a preview.<br>
+      Expected: The missing-email, extra-argument, email-rule, not-found and no-pending messages respectively. No data changes and nothing is pending.
+
+1. Save failure
+
+   1. Prerequisites: A new test folder with `sample load` run, then `delete e9000003@u.nus.edu`. Without submitting another command, remove write permission from the `data` folder and confirm that a new file cannot be created in it, so the failure condition is known to be active.
+
+   1. Test case: `confirm-delete e9000003@u.nus.edu`<br>
+      Expected: `The student could not be deleted. No data was changed. Use delete EMAIL to start again.` Mei Lim remains, the data file bytes are unchanged, and nothing is pending. Record the actual failure condition and result.
+
+   1. Restore write access, then run `delete e9000003@u.nus.edu` and `confirm-delete e9000003@u.nus.edu`.<br>
+      Expected: A fresh preview is needed, and the deletion then succeeds.
 
 ### Saving data
 
 1. Dealing with missing/corrupted data files
 
    1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` and restart; the saved contact returns.
-   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, and `delete` are rejected. Exit and verify the malformed file's bytes are unchanged.
+   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, `delete EMAIL`, and `confirm-delete EMAIL` are rejected. Exit and verify the malformed file's bytes are unchanged.
    1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
 
 1. _{ more test cases …​ }_
