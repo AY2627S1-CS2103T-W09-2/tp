@@ -69,16 +69,6 @@ Any warnings or errors will be printed out to the console.
 
 --------------------------------------------------------------------------------------------------------------------
 
-## Making a release
-
-Here are the steps to create a new release.
-
-1. Update the version number in [`MainApp.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java).
-1. Generate a fat JAR file using Gradle (i.e., `./gradlew shadowJar`).
-1. Tag the repo with the version number. e.g. `v0.1`
-1. [Create a new release using GitHub](https://help.github.com/articles/creating-releases/). Upload the JAR file you created.
-
-
 ### Required external-working-directory sandbox acceptance
 
 Before #79/#80 sign-off, build the reviewed candidate and copy its JAR into a clean disposable application folder. Create a separate external working directory containing fictional sentinel `preferences.json` and `data/addressbook.json` files. Retain hashes and a recursive listing of that external directory before testing. Use paths containing spaces/Unicode; include a percent sign in the JAR folder to exercise file-logging pattern escaping.
@@ -93,3 +83,13 @@ java -cp /ABSOLUTE/CHECKOUT/build/classes/java/test:/ABSOLUTE/APPLICATION/FOLDER
 ```
 
 Quote the entire classpath when paths contain spaces; on Windows use `;` instead of `:`. The driver calls production `Main.main`, waits for the real window, submits fictional creation/enrolment/search commands and exits through the real command box. It refuses a pre-existing roster in seed mode. The driver supplies only test code; production paths are derived from the copied JAR, not the driver's classes directory. The external sentinel/tree comparison is a separate harness check. Record source SHA, JAR checksum, platform/runtime, command results and limitations. This utility is programmatic UI acceptance with a real process restart; it is not manual keyboard entry. The packaging fix for Apple Silicon (#86) and sandbox fix (#88) must both be integrated before the final artifact is accepted.
+
+
+## Making a release
+
+Here are the steps to create a new release.
+
+1. Update the version number in [`MainApp.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java).
+1. Generate a fat JAR file using Gradle (i.e., `./gradlew shadowJar`).
+1. Tag the repo with the version number. e.g. `v0.1`
+1. [Create a new release using GitHub](https://help.github.com/articles/creating-releases/). Upload the JAR file you created.
