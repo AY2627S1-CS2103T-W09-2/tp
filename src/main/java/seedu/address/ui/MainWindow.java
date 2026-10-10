@@ -204,17 +204,26 @@ public class MainWindow extends UiPart<Stage> {
         return new PersonDetailsPanel(person);
     }
 
+    /** Creates the guidance shown when a removal leaves the roster empty. */
+    PersonDetailsPanel createEmptyRosterDetailsPanel() {
+        return new PersonDetailsPanel(null, Messages.MESSAGE_EMPTY_ROSTER);
+    }
+
     private void presentSearch(CommandResult result) {
         PersonListPanel replacement = createPersonListPanel(logic.getFilteredPersonList());
         if (result.isClearSelection()) {
             // No profile stays selected, even when exactly one result remains.
             replacement.restoreSelection(null);
+        } else if (result.isPreserveSurvivingSelection()) {
+            replacement.restoreSelection(personListPanel.getSelectedPerson());
         } else if (result.getSelectionTarget() == null) {
             replacement.selectOnlyResult();
         } else {
             replacement.selectTarget(result.getSelectionTarget());
         }
-        prepareAndReplaceDisplay(replacement);
+        // A removal that leaves no students shows the empty-roster guidance instead of the selection prompt.
+        boolean isRemovalRefresh = result.isClearSelection() || result.isPreserveSurvivingSelection();
+        prepareAndReplaceDisplay(replacement, isRemovalRefresh && logic.getFilteredPersonList().isEmpty());
     }
 
     private boolean isPersonListCurrent() {
@@ -232,7 +241,13 @@ public class MainWindow extends UiPart<Stage> {
      * Any failure keeps the previous complete list and profile.
      */
     private void prepareAndReplaceDisplay(PersonListPanel replacement) {
-        PersonDetailsPanel details = createPersonDetailsPanel(replacement.getSelectedPerson());
+        prepareAndReplaceDisplay(replacement, false);
+    }
+
+    private void prepareAndReplaceDisplay(PersonListPanel replacement, boolean showEmptyRosterGuidance) {
+        PersonDetailsPanel details = showEmptyRosterGuidance
+                ? createEmptyRosterDetailsPanel()
+                : createPersonDetailsPanel(replacement.getSelectedPerson());
         prepare(replacement.getRoot(), personListPanelPlaceholder);
         prepare(details.getRoot(), personDetailsPanelPlaceholder);
         PersonListPanel previousList = personListPanel;

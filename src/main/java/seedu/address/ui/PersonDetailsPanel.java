@@ -27,10 +27,15 @@ public class PersonDetailsPanel extends UiPart<Region> {
 
     /** Creates the complete display for {@code person}, or the selection prompt if it is null. */
     public PersonDetailsPanel(Person person) {
+        this(person, SELECTION_PROMPT);
+    }
+
+    /** Creates the complete display, using {@code emptyPrompt} when no profile is selected. */
+    PersonDetailsPanel(Person person, String emptyPrompt) {
         super(FXML);
         this.person = person;
         if (person == null) {
-            name.setText(SELECTION_PROMPT);
+            name.setText(emptyPrompt);
             return;
         }
         name.setText(person.getName().fullName);
