@@ -27,6 +27,9 @@ checkstyle {
 test {
     dependsOn tasks.named('shadowJar')
     useJUnitPlatform()
+    testLogging {
+        exceptionFormat = 'full'
+    }
     finalizedBy jacocoTestReport
 }
 
