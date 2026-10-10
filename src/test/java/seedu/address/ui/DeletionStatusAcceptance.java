@@ -356,9 +356,13 @@ public final class DeletionStatusAcceptance {
 
     /**
      * Presses and releases the primary mouse button on the row showing {@code person}, as the list receives it.
-     * With {@code isControlDown}, clicking a selected row deselects it.
+     * With {@code isShortcutClick}, the platform shortcut modifier is held (Control on Windows and Linux, Command
+     * on macOS), so clicking a selected row deselects it.
      */
-    private void clickRow(Person person, boolean isControlDown) {
+    private void clickRow(Person person, boolean isShortcutClick) {
+        boolean isMetaShortcut = isMetaShortcut();
+        boolean isControlDown = isShortcutClick && !isMetaShortcut;
+        boolean isMetaDown = isShortcutClick && isMetaShortcut;
         int index = personList().getItems().indexOf(person);
         ListCell<?> cell = personList().lookupAll(".list-cell").stream()
                 .filter(ListCell.class::isInstance)
@@ -372,10 +376,17 @@ public final class DeletionStatusAcceptance {
         for (EventType<MouseEvent> type : List.of(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED,
                 MouseEvent.MOUSE_CLICKED)) {
             cell.fireEvent(new MouseEvent(type, scene.getX(), scene.getY(), screen.getX(), screen.getY(),
-                    MouseButton.PRIMARY, 1, false, isControlDown, false, false, type == MouseEvent.MOUSE_PRESSED, false,
-                    false, false, false, true, null));
+                    MouseButton.PRIMARY, 1, false, isControlDown, false, isMetaDown,
+                    type == MouseEvent.MOUSE_PRESSED, false, false, false, false, true, null));
         }
         layout();
+    }
+
+    /** Returns whether JavaFX treats Meta (Command on macOS), rather than Control, as this platform's shortcut. */
+    private static boolean isMetaShortcut() {
+        MouseEvent metaOnly = new MouseEvent(MouseEvent.MOUSE_PRESSED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, true, false, false, false, false, false, true, null);
+        return metaOnly.isShortcutDown();
     }
 
     /** Sends a key press to the focused student list, as its own keyboard handlers receive it. */
