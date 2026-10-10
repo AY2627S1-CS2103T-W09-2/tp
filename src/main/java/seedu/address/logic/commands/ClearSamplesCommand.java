@@ -44,6 +44,11 @@ public class ClearSamplesCommand extends Command {
     }
 
     @Override
+    public String getDisplayFailureMessage(String defaultMessage) {
+        return MESSAGE_SAVE_FAILURE;
+    }
+
+    @Override
     public boolean equals(Object other) {
         return other == this || other instanceof ClearSamplesCommand;
     }

@@ -233,16 +233,19 @@ public class SampleWorkflowTest {
 
     @Test
     public void execute_clearPresentationFailure_restoresRosterAndDoesNotSave() throws Exception {
-        prepareAndSaveMixedRoster();
+        Person realAlex = prepareAndSaveMixedRoster();
+        logic.execute("find real.alex");
         AddressBook before = new AddressBook(model.getAddressBook());
         byte[] savedBytes = Files.readAllBytes(storage.getAddressBookFilePath());
         int attemptsBeforeClear = storage.attempts;
 
-        assertThrows(CommandException.class, () -> logic.execute("sample clear", result -> {
+        CommandException error = assertThrows(CommandException.class, () -> logic.execute("sample clear", result -> {
             throw new IllegalStateException("Injected presentation failure");
         }));
 
+        assertEquals(ClearSamplesCommand.MESSAGE_SAVE_FAILURE, error.getMessage());
         assertEquals(before, model.getAddressBook());
+        assertEquals(List.of(realAlex), model.getFilteredPersonList());
         assertEquals(attemptsBeforeClear, storage.attempts);
         assertArrayEquals(savedBytes, Files.readAllBytes(storage.getAddressBookFilePath()));
     }
