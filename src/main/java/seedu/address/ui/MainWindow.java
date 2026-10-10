@@ -180,10 +180,12 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
-     * Closes the application.
+     * Closes the application. The {@code bye} command, the window's close request and the menu all end here.
      */
     @FXML
     private void handleExit() {
+        // Closing never confirms a deletion: any preview awaiting confirmation is discarded and nothing is saved.
+        logic.cancelPendingDeletion();
         GuiSettings guiSettings = new GuiSettings(primaryStage.getWidth(), primaryStage.getHeight(),
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);

@@ -71,8 +71,20 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_exit() throws Exception {
-        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD) instanceof ExitCommand);
-        assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + " 3") instanceof ExitCommand);
+        for (String word : new String[] {"bye", "exit"}) {
+            for (String input : new String[] {word, " \t" + word + "\t ", word + "   "}) {
+                assertTrue(parser.parseCommand(input) instanceof ExitCommand, input);
+            }
+            for (String extra : new String[] {" 3", " now", "\tnow", " \t 3 \t"}) {
+                assertThrows(ParseException.class, "Bye does not accept parameters. Usage: bye", () ->
+                        parser.parseCommand(word + extra));
+            }
+            for (String control : new String[] {"\n", "\r", "\0", "\u2028"}) {
+                assertThrows(ParseException.class, MESSAGE_SINGLE_LINE, () -> parser.parseCommand(word + control));
+            }
+            assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () ->
+                    parser.parseCommand(word.toUpperCase()));
+        }
     }
 
     @Test

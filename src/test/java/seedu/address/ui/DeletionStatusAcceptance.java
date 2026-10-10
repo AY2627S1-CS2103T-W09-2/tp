@@ -19,6 +19,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -29,12 +30,14 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import seedu.address.commons.core.GuiSettings;
 import seedu.address.logic.Logic;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
+import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
@@ -50,8 +53,8 @@ import seedu.address.storage.StorageManager;
 import seedu.address.testutil.PersonBuilder;
 
 /**
- * Opt-in real-window acceptance for blank submissions, stale-display and user-selection cancellation and the
- * pending-deletion status; uses fictional files under build/reports/deletion-status.
+ * Opt-in real-window acceptance for blank submissions, stale-display and user-selection cancellation, exit paths and
+ * the pending-deletion status; uses fictional files under build/reports/deletion-status.
  */
 public final class DeletionStatusAcceptance {
     private static final String CANCELLED = Messages.MESSAGE_PENDING_DELETION_CANCELLED;
@@ -88,6 +91,7 @@ public final class DeletionStatusAcceptance {
                 acceptance.verifyRecoveryStatusIsPreserved();
                 acceptance.verifyUserSelectionCancelsButAppSelectionDoesNot();
                 acceptance.verifyDisplayFailureRestorationDoesNotRecreateDeletion();
+                acceptance.verifyEveryExitPathDiscardsPendingDeletion();
                 System.out.println("PASS Deletion status JavaFX assertions: " + acceptance.assertions);
                 System.out.println("Runtime: " + System.getProperty("java.runtime.version") + "; JavaFX "
                         + System.getProperty("javafx.runtime.version") + "; " + System.getProperty("os.name") + " "
@@ -256,6 +260,47 @@ public final class DeletionStatusAcceptance {
         stage.close();
     }
 
+    private void verifyEveryExitPathDiscardsPendingDeletion() throws Exception {
+        Path file = open(false, "exit-command.json");
+        byte[] saved = Files.readAllBytes(file);
+        submit("delete " + TARGET);
+        submit("bye now");
+        check(feedback().equals(CANCELLED + "\n" + ExitCommand.MESSAGE_USAGE), "invalid bye cancels and reports usage");
+        check(stage.isShowing() && !logic.hasPendingDeletion(), "invalid bye does not close");
+        submit("delete " + TARGET);
+        submit("bye");
+        check(feedback().equals(CANCELLED + "\n" + ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT), "bye reports both");
+        checkClosedWithoutDeleting(file, saved, "bye command");
+
+        file = open(false, "exit-window.json");
+        saved = Files.readAllBytes(file);
+        submit("delete " + TARGET);
+        stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
+        checkClosedWithoutDeleting(file, saved, "window close request");
+
+        file = open(false, "exit-menu.json");
+        saved = Files.readAllBytes(file);
+        submit("delete " + TARGET);
+        MenuBar menuBar = (MenuBar) stage.getScene().lookup(".menu-bar");
+        menuBar.getMenus().stream().flatMap(menu -> menu.getItems().stream())
+                .filter(item -> "Exit".equals(item.getText())).findFirst().orElseThrow().fire();
+        checkClosedWithoutDeleting(file, saved, "Exit menu item");
+    }
+
+    private void checkClosedWithoutDeleting(Path file, byte[] saved, String path) throws Exception {
+        check(!stage.isShowing(), path + " closes the window");
+        check(!logic.hasPendingDeletion(), path + " discards the pending deletion");
+        check(logic.getGuiSettings().getWindowWidth() == 900, path + " records window preferences");
+        check(model.hasPerson(target), path + " deletes nothing");
+        check(Arrays.equals(saved, Files.readAllBytes(file)), path + " leaves the roster file unchanged");
+
+        reopen(file);
+        check(!logic.hasPendingDeletion() && model.hasPerson(target), path + ": restart has the student, none pending");
+        submit("confirm-delete " + TARGET);
+        check(feedback().equals(ConfirmDeleteCommand.MESSAGE_NO_PENDING), path + ": restart needs a fresh preview");
+        stage.close();
+    }
+
     private Path open(boolean isReadOnly, String filename, Person... others) throws Exception {
         Path file = output.resolve(filename);
         AddressBook roster = new AddressBook();
@@ -266,7 +311,18 @@ public final class DeletionStatusAcceptance {
         }
         Files.deleteIfExists(file);
         new JsonAddressBookStorage(file).saveAddressBook(roster);
-        model = new ModelManager(roster, new UserPrefs(), isReadOnly);
+        show(new ModelManager(roster, new UserPrefs(), isReadOnly), file);
+        return file;
+    }
+
+    /** Opens a new session on the saved file, as a restart would, with a fresh model and logic. */
+    private void reopen(Path file) throws Exception {
+        AddressBook roster = new AddressBook(new JsonAddressBookStorage(file).readAddressBook().orElseThrow());
+        show(new ModelManager(roster, new UserPrefs()), file);
+    }
+
+    private void show(ModelManager sessionModel, Path file) {
+        model = sessionModel;
         logic = new CountingLogic(new LogicManager(model, new StorageManager(new JsonAddressBookStorage(file),
                 new JsonUserPrefsStorage(output.resolve("prefs.json")))));
         Person failing = failingProfile;
@@ -284,7 +340,6 @@ public final class DeletionStatusAcceptance {
         stage.setWidth(900);
         stage.setHeight(800);
         layout();
-        return file;
     }
 
     private Person selected() {

@@ -49,6 +49,7 @@ class EnrolmentRecoveryTest {
         app.logic.execute("find Nobody");
         app.logic.execute("list");
         assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute("clear"));
+        app.logic.execute("bye");
         app.logic.execute("exit");
         app.stop();
         assertArrayEquals(original, Files.readAllBytes(target));

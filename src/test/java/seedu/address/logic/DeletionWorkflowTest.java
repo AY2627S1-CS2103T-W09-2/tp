@@ -24,8 +24,10 @@ import org.junit.jupiter.api.io.TempDir;
 import seedu.address.logic.commands.ClearSamplesCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
+import seedu.address.logic.commands.ExitCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.commands.exceptions.DuplicateStudentException;
+import seedu.address.logic.parser.exceptions.ParseException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.ModelManager;
 import seedu.address.model.ReadOnlyAddressBook;
@@ -297,6 +299,48 @@ public class DeletionWorkflowTest {
                 logic.execute(CONFIRM_REAL));
         assertEquals(results, model.getFilteredPersonList());
         assertEquals(List.of(mei, realAlex, sampleAlex), model.getAddressBook().getPersonList());
+        assertNothingSaved();
+    }
+
+    @Test
+    public void execute_exitWhilePending_discardsDeletionAndKeepsExitFlag() throws Exception {
+        for (String exit : new String[] {"bye", " \texit\t "}) {
+            logic.execute(PREVIEW_REAL);
+
+            CommandResult result = logic.execute(exit);
+
+            assertEquals(CANCELLED + "\n" + ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, result.getFeedbackToUser());
+            assertTrue(result.isExit());
+            assertFalse(logic.hasPendingDeletion());
+            assertEquals(List.of(mei, realAlex, sampleAlex), model.getAddressBook().getPersonList());
+        }
+        assertNothingSaved();
+    }
+
+    @Test
+    public void execute_exitWithParametersWhilePending_cancelsAndReportsUsageWithoutClosing() throws Exception {
+        for (String exit : new String[] {"bye now", "exit 3", "bye\tnow"}) {
+            logic.execute(PREVIEW_REAL);
+
+            assertThrows(ParseException.class, CANCELLED + "\n" + ExitCommand.MESSAGE_USAGE, () ->
+                    logic.execute(exit));
+
+            assertFalse(logic.hasPendingDeletion());
+            assertThrows(CommandException.class, ConfirmDeleteCommand.MESSAGE_NO_PENDING, () ->
+                    logic.execute(CONFIRM_REAL));
+            assertEquals(List.of(mei, realAlex, sampleAlex), model.getAddressBook().getPersonList());
+        }
+        assertNothingSaved();
+    }
+
+    @Test
+    public void execute_exitInRecoverySession_succeedsWithoutTouchingTheFile() throws Exception {
+        Logic recoveryLogic = createLogic(createModel(true), storage);
+        for (String exit : new String[] {"bye", "exit"}) {
+            CommandResult result = recoveryLogic.execute(exit);
+            assertEquals(ExitCommand.MESSAGE_EXIT_ACKNOWLEDGEMENT, result.getFeedbackToUser());
+            assertTrue(result.isExit());
+        }
         assertNothingSaved();
     }
 

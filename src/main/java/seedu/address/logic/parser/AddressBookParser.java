@@ -71,7 +71,7 @@ public class AddressBookParser {
             case SampleCommand.COMMAND_WORD -> parseSample(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
-            case ExitCommand.COMMAND_WORD -> new ExitCommand();
+            case ExitCommand.COMMAND_WORD, ExitCommand.COMMAND_WORD_ALIAS -> parseExit(arguments);
             case HelpCommand.COMMAND_WORD -> new HelpCommand();
             default -> {
                 logger.finer("This user input caused a ParseException: " + userInput);
@@ -86,6 +86,14 @@ public class AddressBookParser {
             throw new ParseException("Usage: " + AddCommand.MESSAGE_USAGE);
         }
         return new AddCommandParser().parse(stripped.substring(3));
+    }
+
+    /** Accepts {@code bye} or {@code exit} only without parameters; surrounding spaces and tabs are already removed. */
+    private Command parseExit(String args) throws ParseException {
+        if (!args.trim().isEmpty()) {
+            throw new ParseException(ExitCommand.MESSAGE_USAGE);
+        }
+        return new ExitCommand();
     }
 
     private Command parseSample(String args) throws ParseException {
