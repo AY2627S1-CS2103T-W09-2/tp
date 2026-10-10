@@ -292,6 +292,22 @@ To recover:
 1. Restore a known-valid roster to the displayed data-file location, or correct invalid records and file permissions while the app is closed.
 1. Restart SoCdex. Confirm that the expected records load and the status says **Storage available** before making changes.
 
+### Application folder and data locations
+
+The application folder is the folder containing the running JAR. SoCdex resolves its location from the JAR itself, so launching `java -jar /path/to/SoCdex/addressbook.jar` from another terminal folder still uses the data beside that JAR.
+
+| File or folder | Location inside the application folder |
+| --- | --- |
+| Saved roster | `data/addressbook.json` |
+| Window preferences | `preferences.json` |
+| Rotating logs and logging lock files | `logs/` |
+| Bundled JavaFX native cache | `.javafx-cache/` |
+| Application-controlled temporary directory | `.tmp/` |
+
+Roster saves use temporary files inside `data/` and remove them after the atomic replacement. SoCdex does not load preferences or roster files from the terminal's working directory and does not automatically migrate older files stored there. To keep an older roster, close SoCdex, retain a backup, and manually copy the valid roster into the JAR folder's `data/` subfolder before restarting. Copy `preferences.json` beside the JAR if you also want to keep window settings.
+
+Use a writable application folder. SoCdex does not fall back to another folder when a managed location is unwritable or redirected through a symbolic link. An unsafe roster location uses read-only recovery; preferences or log failures leave defaults or console logging. If the native-cache or temporary directory cannot be prepared safely, startup stops. Correct the folder or move the JAR and its data together to a writable folder. Symbolic links for managed data are unsupported; use ordinary files and directories.
+
 ### Stored enrolments
 
 Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Use `enrol` to add a context to an existing student. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. Existing commands that edit a profile or its remark preserve its stored enrolments.
@@ -308,7 +324,7 @@ Each result card and the profile panel show a `Telegram:` line and a `GitHub:` l
 
 **Schema compatibility:** files containing the retired `phone` or `address` properties are rejected, even when those properties are null. No data is silently dropped. Keep an external copy of the original file, close the app, and manually migrate only after retaining any phone/address information you need elsewhere. Remove the retired properties, explicitly classify each record with a boolean `sample`, and verify all fields against the rules below before restarting. The app never guesses classification or automatically migrates a file. An otherwise valid record that omits optional contacts or enrolments loads with those values absent or empty.
 
-Roster data is saved automatically as a JSON file `[JAR file location]/data/addressbook.json`. Advanced users are welcome to update data directly by editing that data file.
+Roster data is saved automatically as `[folder containing the running JAR]/data/addressbook.json`, independently of the terminal working directory. Advanced users are welcome to update data directly by editing that data file.
 
 Names in the data file must already have ordinary spaces and tabs normalised: no surrounding ordinary spaces or tabs, no tabs within the name, and no repeated ordinary spaces. Letter case and other permitted Unicode characters, including non-breaking spaces, are preserved. Commands normalise ordinary spaces and tabs, but the app rejects a stored name that needs this normalisation instead of correcting it.
 

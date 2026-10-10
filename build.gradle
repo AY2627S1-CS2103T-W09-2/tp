@@ -25,6 +25,7 @@ checkstyle {
 }
 
 test {
+    dependsOn tasks.named('shadowJar')
     useJUnitPlatform()
     finalizedBy jacocoTestReport
 }

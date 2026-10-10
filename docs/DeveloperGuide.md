@@ -193,6 +193,18 @@ java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.Enr
 
 On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` remains optional planned work and unavailable despite its mention in the specified duplicate message.
 
+### Application data sandbox (v1.3 release requirement)
+
+[Constraint-Data-Sandbox](https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html#constraint-data-sandbox) confines application file access to the folder containing the running JAR and its subfolders. This is a release gate, including packaged-runtime acceptance in #79 and #80.
+
+`AppPaths` derives home from its production class's protection-domain code-source URI, decodes spaces/Unicode, and resolves the physical code location. Packaged execution uses the containing JAR directory; development execution from unpacked classes uses that classes directory as home. It never uses `user.dir` or an external working-directory fallback. A JAR launched through a symbolic link uses the physical JAR's folder. Home discovery failure stops startup.
+
+`MainApp` supplies absolute home-relative preferences and roster paths and the home boundary to both JSON storage implementations. Production storage checks every read/write, including overloads, for normalised path escapes and symbolic-link components. Fixture constructors retain explicit test paths. Invalid/unreadable roster paths retain the existing read-only recovery contract; failed saves retain rollback. Preferences failures retain defaults and report write failures.
+
+`LogsCenter` uses `home/logs`, checks existing redirected entries, and escapes literal percent characters before constructing `FileHandler` patterns. Rotation and lock files remain there. If file logging is unavailable, the already-initialised console logger reports the failure without using another file location. Before JavaFX startup, `Main` configures process-local `javafx.cachedir` and `java.io.tmpdir` under home and validates/prepares those directories. This changes no OS configuration. Unsafe/unwritable runtime directories stop startup rather than permitting JavaFX's external-cache fallback. Atomic roster temporary files already use the roster's parent directory.
+
+Verification must use a packaged JAR and an unrelated working directory containing sentinel preferences and roster files. Confirm the production entry point ignores those files, creates logs/preferences/roster/runtime directories inside JAR home, persists and reloads a fictional teaching context across JVM restart, and leaves the external directory tree and bytes unchanged. `DataSandboxAcceptance` is an opt-in observer of the actual `Main.main` production window and command box; run `seed` and `restart` in separate processes. Redirect acceptance logs inside the JAR folder. It is programmatic UI input, not manual keyboard testing. Also launch directly using `java -jar` from the external folder and record the Java/runtime and artifact source. Test paths with spaces, Unicode and percent signs and rejected symbolic-link redirects. Existing external data is never automatically imported.
+
 ### Storage safety (v1.2)
 
 `MainApp.initModelManager` loads the whole roster before creating a writable model. A missing file produces an empty writable roster without creating sample records. A failed load produces an empty `ModelManager` with `isReadOnly()` fixed to `true` for that session. The initial recovery explanation and persistent status-bar warning distinguish this view from a genuinely empty saved roster. Recovery requires a valid file and a restart; no in-session switch enables writes.
@@ -744,6 +756,8 @@ A student profile contains identity and contact details; each enrolment records 
       Use case resumes at step 1.
 
 ### Non-Functional Requirements
+
+**Mandatory data sandbox:** all application-managed data and file operations stay inside the running JAR folder or its subfolders, independently of launch working directory. No external-directory fallback or OS-level configuration changes are permitted.
 
 These requirements are acceptance targets for the planned SoCdex product. They do not describe verified properties of the current application, which is still being evolved from AddressBook-Level3.
 
