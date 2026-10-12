@@ -77,3 +77,33 @@ Here are the steps to create a new release.
 1. Generate a fat JAR file using Gradle (i.e., `./gradlew shadowJar`).
 1. Tag the repo with the version number. e.g. `v0.1`
 1. [Create a new release using GitHub](https://help.github.com/articles/creating-releases/). Upload the JAR file you created.
+
+
+### v1.3 candidate packaging and smoke evidence
+
+Build one reviewed, feature-complete master commit with Java 25:
+
+```text
+./gradlew check coverage shadowJar
+```
+
+`MainApp.VERSION` identifies v1.3. This metadata does not mean a release has been published. `shadowJar` produces `build/libs/addressbook.jar`; do not change its bytes after testing. Record the full source SHA (`git rev-parse HEAD`), Java version (`java -version`), filename, byte size and SHA-256. The JAR must stay below 100 MB. Record dry runs separately from final-candidate sign-off in #79.
+
+The JAR retains Windows and Linux JavaFX libraries and packages macOS libraries as universal Mach-O binaries containing both Intel and Apple Silicon slices. `universalMacNatives` combines the existing JavaFX 17.0.7 vendor binaries without changing their slices or upgrading dependencies. It runs on all build hosts and needs no Apple tools. Native resource names collide between the two macOS classifiers, so the task replaces the Intel-only root resources with the combined files. On macOS, `file build/generated/universal-mac-natives/*.dylib` provides an independent architecture check. Native inspection and unit-test CI are not GUI launch evidence.
+
+Copy the same JAR into a new disposable folder on Windows, macOS and Linux. Use a plain JDK 25 without preinstalled JavaFX where possible, so an external JavaFX runtime does not mask missing packaged libraries. Record the operator, OS/architecture, Java vendor/version, source SHA and artifact checksum for each run. On macOS/Linux use `shasum -a 256 addressbook.jar` and `wc -c addressbook.jar`; on Windows use `Get-FileHash addressbook.jar -Algorithm SHA256` and `(Get-Item addressbook.jar).Length` in PowerShell.
+
+1. Run `java -jar addressbook.jar`. Confirm the production window opens and the roster starts empty. Do not seed the test with an existing preferences or roster file.
+1. Enter `student add /name Alex Demo /email E9000001@U.NUS.EDU /telegram @Alex_Demo /github alex-demo`. Expect `Added student: Alex Demo.` and the selected canonical email `e9000001@u.nus.edu`.
+1. Enter `find e9000001`. Expect one selected result. In the final feature-complete candidate, also run #80's enrol/view/delete scenario against this same artifact.
+1. Enter `exit`, confirm normal process termination, then run the identical launch command again. Verify the complete saved profile and contacts return. Search again and exit; keep logs and a screenshot. Record any failure rather than marking the platform as passed.
+1. Hand the accepted artifact and checksum to Jingchun for #81, with Yujie's #79 review and #80 evidence. Rebuild and rerun affected checks if the candidate source changes. Publication is separate: download the uploaded JAR and compare its checksum.
+
+An optional reproducible programmatic smoke utility exercises production `MainApp` startup and stop and the actual command box. Build test classes using `./gradlew testClasses shadowJar`. From a new disposable working directory, copy the tested JAR and run these as **two separate JVM invocations**, using the absolute path to this checkout's test classes:
+
+```text
+java -cp /ABSOLUTE/CHECKOUT/build/classes/java/test:addressbook.jar seedu.address.release.PackagedJarSmoke seed
+java -cp /ABSOLUTE/CHECKOUT/build/classes/java/test:addressbook.jar seedu.address.release.PackagedJarSmoke restart
+```
+
+On Windows, replace the classpath separator `:` with `;`. The seed refuses an existing roster. The utility writes fictional roster/preferences files and `smoke-seed.png` / `smoke-restart.png`, verifies byte preservation through search and shutdown, and prints actual results. Production classes and JavaFX come from the tested JAR; the extra classpath supplies only the test driver. This is programmatic UI acceptance and a real JVM restart, not manual keyboard interaction or a substitute for the direct `java -jar` launch check. Run and record each platform separately; three CI unit-test jobs do not certify three packaged GUI launches.
