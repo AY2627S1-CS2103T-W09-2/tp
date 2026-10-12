@@ -304,6 +304,36 @@ SoCdex has no undo command, version history or recycle bin. A deletion that has 
 
 Rollback is different from undo. If a command fails before its change is saved, for example because saving or presenting the result fails, `LogicManager` restores the roster, filter and order captured by `Model#createRestorePoint()`, and the atomic save leaves the previous file in place. Rollback only reverses an operation that did not complete; it never reverses a deletion that was saved successfully.
 
+### Integrated MVP acceptance (v1.3)
+
+Release acceptance (#80) runs the MVP features as one sequence on one roster file, so each step starts from the state the previous step saved. For the real-window part, build with `./gradlew clean testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.MvpAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. Each session opens the file as `MainApp#initModelManager` does: empty if absent, read-only recovery if invalid. A restart in this driver is simulated: it is a new window with a fresh model and logic on the saved file, not a new process. In order, the driver checks:
+
+1. **First use:** the empty-roster guidance with no file created, then `sample load`. `find Alex Tan` shows both Alex Tan rows, each with its full email, contacts, sample label and enrolments, and makes no automatic choice. A unique Telegram match and `view` show the complete profile.
+2. **A non-sample student:** `student add`, two `enrol` contexts, an optional-contact `edit`, then `find` by name, NUS email, Telegram and GitHub. After `bye` and a restart, the same records return.
+3. **Deletion:** each cancellation class saves nothing. The classes are another command, blank input, an unknown command, a malformed or mismatched confirmation, a replacement preview, a stale display and keyboard selection of another student. Then a preview and a confirmed deletion.
+4. **Selective removal:** `sample clear` with a search hiding the samples reports the actual remaining counts and keeps the non-sample student selected. A repeated clear saves nothing, and a restart returns only the real record.
+5. **Guards:** duplicate email and enrolment guards, a no-op `edit`, `sample load` into a non-empty roster and an invalid email are rejected without a save.
+6. **Injected failures:** save failures for `edit`, `enrol`, `student add` and `confirm-delete`, and display failures for `view`, `student add` and `find`. Each must keep every record, the file bytes, the displayed results, the selection and the complete profile. Once storage recovers, the same `edit` is saved; once the display recovers, the same `find` shows its result.
+7. **Invalid files:** truncated JSON and a file with an invalid stored email each open an empty read-only session. That session shows the preservation message and the recovery status, rejects every data change and still searches. Closing it by `bye` or by the window close request leaves the file bytes unchanged. After a valid file is restored, the next start loads its records normally.
+
+Commands are submitted by setting the command box text and firing its action, and the list receives key events through its own handlers. This is programmatic UI evidence, not manual keyboard operation. Every rejected command must stay in the command box with the error style, and focus must stay in the command box after each result. Initial window focus depends on the OS, so the driver records it in the transcript rather than asserting it. The commands, results, assertion count and runtime are written to `build/reports/mvp-acceptance/transcript.txt`.
+
+`MvpAcceptance` covers the in-window workflow only. Release acceptance also needs these, run against the same candidate JAR:
+
+* `DataSandboxAcceptance` `seed` and `restart`, a real restart through the production entry point (see [Application data sandbox](#application-data-sandbox-v13-release-requirement)).
+* `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
+* `ContactSearchAcceptance` for the 500-profile, 1,000-enrolment timing.
+* `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
+* Manual keyboard testing on the reference platforms.
+
+Record the candidate commit, the JAR checksum, the runtime and the hardware with the results. Start from `clean`: running the tests or the application from the build directory writes logs under `build/classes/java/main`, and a later `shadowJar` without `clean` packages them, so the checksum no longer matches the candidate.
+
 ### \[Proposed\] Data archiving
 
 _{Explain here how the data archiving feature will be implemented}_
