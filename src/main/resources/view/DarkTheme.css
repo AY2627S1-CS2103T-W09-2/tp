@@ -91,6 +91,13 @@
     -fx-background-insets: 0;
     -fx-padding: 0;
     -fx-background-color: derive(#1d1d1d, 20%);
+    /* Reserves the focus border's space so keyboard focus never shifts the layout. */
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+}
+
+.list-view:focused, .result-display:focused {
+    -fx-border-color: #e2e2e2;
 }
 
 .list-cell {
@@ -151,6 +158,8 @@
     -fx-font-family: "Segoe UI Light";
     -fx-font-size: 13pt;
     -fx-text-fill: white;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
 }
 
 .result-display .label {
