@@ -308,6 +308,40 @@ SoCdex has no undo command, version history or recycle bin. A deletion that has 
 
 Rollback is different from undo. If a command fails before its change is saved, for example because saving or presenting the result fails, `LogicManager` restores the roster, filter and order captured by `Model#createRestorePoint()`, and the atomic save leaves the previous file in place. Rollback only reverses an operation that did not complete; it never reverses a deletion that was saved successfully.
 
+### Integrated MVP acceptance (v1.3)
+
+`MvpAcceptance` runs the MVP features as one sequence on one roster file, so each step starts from the state that the previous step saved. To verify the driver against a local build, run `./gradlew clean testClasses shadowJar`, then run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.MvpAcceptance
+```
+
+On Windows use `;` instead of `:` in the classpath. This local run verifies the driver and the locally built code. It is not acceptance evidence for the release candidate.
+
+For exact release acceptance, download the candidate JAR and verify its SHA-256 checksum against the release. Check out the candidate commit and run `./gradlew clean testClasses` to compile the matching driver. Run the command above with `build/libs/addressbook.jar` replaced by the path to the downloaded JAR. Do not put `build/classes/java/main` on the classpath. Record the candidate commit, checksum, runtime and hardware with the result.
+
+Each session opens the file as `MainApp#initModelManager` does: empty if absent, read-only recovery if invalid. A restart in this driver is simulated. It creates a new window with a fresh model and logic on the saved file, not a new process. In order, the driver checks:
+
+1. **First use:** the empty-roster guidance with no file created, then `sample load`. `find Alex Tan` shows both Alex Tan rows, each with its full email, contacts, sample label and enrolments, and makes no automatic choice. A unique Telegram match and `view` show the complete profile.
+2. **A non-sample student:** `student add`, two `enrol` contexts, an optional-contact `edit`, then `find` by name, NUS email, Telegram and GitHub. After `bye` and a restart, the same records return.
+3. **Deletion:** each cancellation class saves nothing. The classes are another command, blank input, an unknown command, a malformed or mismatched confirmation, a replacement preview, a stale display and keyboard selection of another student. Then a preview and a confirmed deletion.
+4. **Selective removal:** `sample clear` with a search hiding the samples reports the actual counts removed and keeps the non-sample student selected. A repeated clear saves nothing, and a restart returns only the real record.
+5. **Guards:** duplicate email and enrolment guards, a no-op `edit`, `sample load` into a non-empty roster and an invalid email are rejected without a save.
+6. **Injected failures:** save failures for `edit`, `enrol`, `student add` and `confirm-delete`, and display failures for `view`, `student add` and `find`. Each must keep every record, the file bytes, the displayed results, the selection and the complete profile. Once storage recovers, the same `edit` is saved; once the display recovers, the same `find` shows its result.
+7. **Invalid files:** truncated JSON and a file with an invalid stored email each open an empty read-only session. That session shows the preservation message and the recovery status, rejects five representative data-changing commands and still searches. Closing it by `bye` or by the window close request leaves the file bytes unchanged. After a valid file is restored, the next start loads its records normally.
+
+Commands are submitted by setting the command box text and firing its action, and the list receives key events through its own handlers. This is programmatic UI evidence, not manual keyboard operation. At the selected rejection checkpoints, the driver checks that the rejected command stays in the command box with the error style and command-box focus. It also checks command-box focus after the success and profile-display checkpoints that call the shared focus assertions. Initial window focus depends on the OS, so the driver records it in the transcript rather than asserting it. The commands, results, assertion count and runtime are written to `build/reports/mvp-acceptance/transcript.txt`.
+
+`MvpAcceptance` covers the in-window workflow only. Release acceptance also needs these, run against the same candidate JAR:
+
+* `DataSandboxAcceptance` `seed` and `restart`, a real restart through the production entry point (see [Application data sandbox](#application-data-sandbox-v13-release-requirement)).
+* `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
+* `ContactSearchAcceptance` for the 500-profile, 1,000-enrolment timing.
+* `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
+* Manual keyboard testing on the reference platforms.
+
+Start local builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`, and a later `shadowJar` without `clean` can package those stale files. A clean build prevents that local contamination. It does not prove that separate checkouts or platforms produce a byte-identical JAR. Build reproducibility is tracked separately in #79.
+
 ### NUS email identity (v1.2)
 
 `Email` contains the single validation and canonicalisation rule used by both commands and storage. `Email#isValidEmail(String)` ignores only surrounding spaces and tabs and rejects any non-ASCII character before lowercasing, so a character such as the Kelvin sign cannot become an ASCII letter. It then lowercases the value with `Locale.ROOT` and requires a local part of 1 to 64 ASCII letters, ASCII digits, `.`, `_`, `+`, or `-` that starts and ends with an ASCII letter or digit and contains no consecutive dots, followed by exactly `@u.nus.edu`. The constructor stores this canonical value, so `Email#equals` and `Email#hashCode` compare canonical emails. Dots and plus suffixes remain significant, no aliases are inferred, and no network check is made: the rule is a local syntax check, not account verification.
