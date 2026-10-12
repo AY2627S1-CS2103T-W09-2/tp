@@ -69,6 +69,22 @@ Any warnings or errors will be printed out to the console.
 
 --------------------------------------------------------------------------------------------------------------------
 
+### Required external-working-directory sandbox acceptance
+
+Before #79/#80 sign-off, build the reviewed candidate and copy its JAR into a clean disposable application folder. Create a separate external working directory containing fictional sentinel `preferences.json` and `data/addressbook.json` files. Retain hashes and a recursive listing of that external directory before testing. Use paths containing spaces/Unicode; include a percent sign in the JAR folder to exercise file-logging pattern escaping.
+
+From the external directory run `java -jar /ABSOLUTE/APPLICATION/FOLDER/addressbook.jar`. Confirm the empty production window opens without using the sentinel data. Create a fictional profile and enrolment, exit normally and relaunch from that same external directory. Verify the complete record returns and preferences, roster, logs/locks and JavaFX native extraction appear only inside the application folder. Compare the external tree and sentinel hashes; no external file or directory may be created, changed or removed. Record actual native-cache observations with a plain JDK; a JavaFX-enabled JDK can mask extraction behaviour.
+
+For reproducible programmatic entry-point acceptance, first build with `./gradlew testClasses shadowJar`. Run these from the external working directory as distinct JVM processes, redirecting logs **inside the application folder**:
+
+```text
+java -cp /ABSOLUTE/CHECKOUT/build/classes/java/test:/ABSOLUTE/APPLICATION/FOLDER/addressbook.jar seedu.address.DataSandboxAcceptance seed
+java -cp /ABSOLUTE/CHECKOUT/build/classes/java/test:/ABSOLUTE/APPLICATION/FOLDER/addressbook.jar seedu.address.DataSandboxAcceptance restart
+```
+
+Quote the entire classpath when paths contain spaces; on Windows use `;` instead of `:`. The driver calls production `Main.main`, waits for the real window, submits fictional creation/enrolment/search commands and exits through the real command box. It refuses a pre-existing roster in seed mode. The driver supplies only test code; production paths are derived from the copied JAR, not the driver's classes directory. The external sentinel/tree comparison is a separate harness check. Record source SHA, JAR checksum, platform/runtime, command results and limitations. This utility is programmatic UI acceptance with a real process restart; it is not manual keyboard entry. The packaging fix for Apple Silicon (#86) and sandbox fix (#88) must both be integrated before the final artifact is accepted.
+
+
 ## Making a release
 
 Here are the steps to create a new release.

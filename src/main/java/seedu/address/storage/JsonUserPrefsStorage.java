@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import seedu.address.commons.exceptions.DataLoadingException;
+import seedu.address.commons.util.AppPaths;
 import seedu.address.commons.util.JsonUtil;
 import seedu.address.model.ReadOnlyUserPrefs;
 import seedu.address.model.UserPrefs;
@@ -15,9 +16,22 @@ import seedu.address.model.UserPrefs;
 public class JsonUserPrefsStorage {
 
     private Path filePath;
+    private final Path homeDirectory;
 
     public JsonUserPrefsStorage(Path filePath) {
+        this(filePath, null);
+    }
+
+    /** Confines production storage to home; the one-argument constructor supports isolated test fixtures. */
+    public JsonUserPrefsStorage(Path filePath, Path homeDirectory) {
         this.filePath = filePath;
+        this.homeDirectory = homeDirectory;
+    }
+
+    private void checkPath(Path path) throws IOException {
+        if (homeDirectory != null) {
+            AppPaths.requireInside(homeDirectory, path);
+        }
     }
 
     public Path getUserPrefsFilePath() {
@@ -40,6 +54,11 @@ public class JsonUserPrefsStorage {
      * @throws DataLoadingException if the file format is not as expected.
      */
     public Optional<UserPrefs> readUserPrefs(Path prefsFilePath) throws DataLoadingException {
+        try {
+            checkPath(prefsFilePath);
+        } catch (IOException e) {
+            throw new DataLoadingException(e);
+        }
         return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class);
     }
 
@@ -49,6 +68,7 @@ public class JsonUserPrefsStorage {
      * @throws IOException if there was any problem writing to the file.
      */
     public void saveUserPrefs(ReadOnlyUserPrefs userPrefs) throws IOException {
+        checkPath(filePath);
         JsonUtil.saveJsonFile(userPrefs, filePath);
     }
 
