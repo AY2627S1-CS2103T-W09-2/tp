@@ -17,6 +17,7 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -530,17 +531,25 @@ public final class MvpAcceptance {
         return window.getPersonListPanel().getSelectedPerson();
     }
 
-    /** Returns the text of every label in the rendered row at {@code index}, in display order. */
+    /** Returns the text of every visible non-empty label in the rendered row at {@code index}, in scene-graph order. */
     private List<String> renderedRow(int index) {
         ListCell<?> cell = stage.getScene().lookup("#personListView").lookupAll(".list-cell").stream()
                 .map(node -> (ListCell<?>) node)
                 .filter(candidate -> candidate.getIndex() == index && !candidate.isEmpty())
                 .findFirst().orElseThrow();
-        return cell.lookupAll(".label").stream()
-                .map(Label.class::cast)
-                .filter(label -> label.isVisible() && !label.getText().isEmpty())
-                .map(Label::getText)
-                .toList();
+        List<String> labels = new ArrayList<>();
+        collectVisibleLabelText(cell.getGraphic(), labels);
+        return labels;
+    }
+
+    /** Traverses children in their defined scene-graph order and collects visible non-empty label text. */
+    private static void collectVisibleLabelText(Node node, List<String> labels) {
+        if (node instanceof Label label && label.isVisible() && !label.getText().isEmpty()) {
+            labels.add(label.getText());
+        }
+        if (node instanceof Parent parent) {
+            parent.getChildrenUnmodifiable().forEach(child -> collectVisibleLabelText(child, labels));
+        }
     }
 
     @SuppressWarnings("unchecked")
