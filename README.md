@@ -5,25 +5,27 @@
 
 # SoCdex
 
-SoCdex is a planned desktop roster manager for NUS School of Computing tutors. It is designed for tutors who manage students across multiple tutorial sections and project teams in project-based modules.
+SoCdex is a desktop roster manager for NUS School of Computing tutors who manage students across multiple tutorial sections and project teams in project-based modules.
 
-Tutors often need to compare information from Canvas, spreadsheets, technical platforms, and personal records before they can identify or contact a student. SoCdex will connect each student's identity, contact routes, module-semester enrolments, tutorial sections, and project teams in one local application.
+Tutors often need to compare information from Canvas, spreadsheets, technical platforms, and personal records before they can identify or contact a student. SoCdex connects each student's identity, contact routes, module-semester enrolments, tutorial sections, and project teams in one local application.
 
 ## Why SoCdex?
 
-SoCdex will provide a keyboard-first workflow for tutors who prefer typed commands. A tutor will be able to identify the correct student, verify the relevant module and group context, and obtain a reliable contact route without switching between several sources. The application will store only the information needed for this workflow and will operate without a remote server.
+SoCdex provides a keyboard-first workflow for tutors who prefer typed commands. A tutor can identify the correct student, check the relevant module and group context, and obtain a reliable contact route without switching between several sources. The application stores its roster data locally and does not require a remote server.
 
-## Planned core capabilities
+## Core capabilities
 
-SoCdex is planned to support the following capabilities:
+SoCdex supports the following capabilities:
 
-* Add and update student profiles with names.
-* Record NUS email addresses and optional contact details such as Telegram usernames and GitHub usernames.
-* Associate students with module-semester enrolments, tutorial sections, and project teams.
-* Find students using known identifiers and group information.
-* Show enough context to distinguish students with similar details.
+* Create student profiles with names, NUS email addresses, and optional Telegram and GitHub usernames.
+* Update optional Telegram and GitHub contact details.
+* Record module-semester enrolments with optional tutorial sections and project teams.
+* Find students by name, NUS email, Telegram username, or GitHub username.
+* View a student's complete profile and enrolments.
+* Load and remove fictional sample data for product exploration.
+* Preview a student record and confirm its deletion by NUS email.
 
-SoCdex is not intended to manage grades, attendance, submissions, schedules, disciplinary records, or teaching materials. It will not replace Canvas or other learning management systems.
+SoCdex does not manage grades, attendance, submissions, schedules, disciplinary records, or teaching materials. It does not replace Canvas or other learning management systems.
 
 ## Documentation
 

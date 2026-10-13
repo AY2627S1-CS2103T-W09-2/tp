@@ -9,7 +9,11 @@ title: Developer Guide
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* SoCdex is based on [AddressBook-Level3](https://se-education.org/addressbook-level3/) by the [SE-EDU initiative](https://se-education.org/).
+* The graphical interface uses [OpenJFX](https://openjfx.io/).
+* JSON storage uses the [Jackson](https://github.com/FasterXML/jackson) libraries.
+* Automated checks use [JUnit 5](https://junit.org/junit5/), [JaCoCo](https://www.jacoco.org/jacoco/), and [Checkstyle](https://checkstyle.org/).
+* The build uses [Gradle](https://gradle.org/) and the [Shadow plugin](https://gradleup.com/shadow/).
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -191,7 +195,7 @@ For opt-in real-window acceptance using fictional data, build with `./gradlew te
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.EnrolmentAcceptance
 ```
 
-On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` remains optional planned work and unavailable despite its mention in the specified duplicate message.
+On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` is not available in v1.3 despite its mention in the specified duplicate message.
 
 ### Application data sandbox (v1.3 release requirement)
 
@@ -303,10 +307,6 @@ On Windows use `;` instead of `:` in the classpath. The driver submits commands 
 SoCdex has no undo command, version history or recycle bin. A deletion that has been confirmed and saved is permanent. The preview and matching confirmation described in [Confirmed deletion (v1.3)](#confirmed-deletion-v13) are the safeguard against deleting the wrong student.
 
 Rollback is different from undo. If a command fails before its change is saved, for example because saving or presenting the result fails, `LogicManager` restores the roster, filter and order captured by `Model#createRestorePoint()`, and the atomic save leaves the previous file in place. Rollback only reverses an operation that did not complete; it never reverses a deletion that was saved successfully.
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
 
 ### NUS email identity (v1.2)
 
@@ -710,10 +710,10 @@ A student profile contains identity and contact details; each enrolment records 
 
 **Mandatory data sandbox:** all application-managed data and file operations stay inside the running JAR folder or its subfolders, independently of launch working directory. No external-directory fallback or OS-level configuration changes are permitted.
 
-These requirements are acceptance targets for the planned SoCdex product. They do not describe verified properties of the current application, which is still being evolved from AddressBook-Level3.
+These requirements define the quality targets for SoCdex. A target is not considered verified until its acceptance evidence is complete.
 
 1. **Local operation**: SoCdex should provide all of its features without a network connection, and should not send roster data (student profiles, contact routes, and enrolments) over a network. This requirement covers SoCdex's own handling of roster data, not how a tutor copies or shares the data file.
-2. **Single-user operation**: SoCdex is planned for one tutor managing their own roster. Its operating model excludes several people using one SoCdex installation on a shared computer and the routine sharing of the data file between users, for example through shared storage. This is an operating assumption, not an access-control feature: SoCdex does not authenticate users or prevent the data file from being copied or shared.
+2. **Single-user operation**: SoCdex is designed for one tutor managing their own roster. Its operating model excludes several people using one SoCdex installation on a shared computer and the routine sharing of the data file between users, for example through shared storage. This is an operating assumption, not an access-control feature: SoCdex does not authenticate users or prevent the data file from being copied or shared.
 3. **Local data file**: SoCdex should store the roster on the tutor's computer in a human-editable text file, without using a database management system.
 4. **Search response time**: With a roster of up to 500 student profiles, a search by name or contact route should display its result message and result list within one second of the tutor submitting the command, once SoCdex has finished loading the roster. The proposed reference configuration for checking this is a laptop with an Intel Core i5-1035G1 processor (4 cores), 8 GB of RAM, and SSD storage, running Windows 11 and Java 25, using a benchmark roster of 500 profiles with 1,000 enrolments in total (one to three per profile). These are benchmark conditions, not limits on roster size, enrolments per student, or supported hardware.
 5. **Distinguishable results**: Each student profile in a list of search results should show the student's name, NUS email, and enrolments (module-semester, with tutorial section and project team where recorded), so that a tutor can tell apart students with the same or similar names without checking another source.
@@ -771,7 +771,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Exiting
 
-   1. Test cases: `bye`, then relaunch and use ` exit ` with surrounding spaces.<br>
+   1. Test cases: `bye`, then relaunch and use `exit` with surrounding spaces.<br>
       Expected: The app closes each time. The roster file is not rewritten.
 
    1. Test cases: `bye now` and `exit 3`.<br>
@@ -903,5 +903,3 @@ Scenarios that confirm a deletion change the roster, so start each such scenario
    1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` and restart; the saved contact returns.
    1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, `delete EMAIL`, and `confirm-delete EMAIL` are rejected. Exit and verify the malformed file's bytes are unchanged.
    1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
-
-1. _{ more test cases …​ }_
