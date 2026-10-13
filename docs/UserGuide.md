@@ -23,7 +23,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 1. Copy the file to the folder where you want SoCdex to store its data.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
-   A GUI should appear in a few seconds. A new installation starts with an empty roster; it does not create sample records automatically. The image below illustrates the planned interface.<br>
+   A GUI should appear in a few seconds. A new installation starts with an empty roster; it does not create sample records automatically. The image below shows the SoCdex interface.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
@@ -163,7 +163,7 @@ Examples using an existing fictional student:
 
 Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. Complete profile/enrolment presentation remains a separate increment.
 
-A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` **`edit-enrol` is planned optional work and is currently unavailable.** Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
+A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` **`edit-enrol` is not available in v1.3.** Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
 
 A missing owner shows `No student found with NUS email: EMAIL. Create the student profile before adding an enrolment.` Invalid values show their field rule. Syntax errors include usage help and report structural errors from left to right, then check values in email/module/semester/section/team order. Rejections leave data, results and selection unchanged.
 
@@ -189,7 +189,7 @@ Success shows `Updated student: NAME.`, clears the search filter, displays the f
 
 A missing target shows `No student found with NUS email: EMAIL.`; a command without editable fields shows `Provide at least one field to update.` Invalid input preserves the previous data, results and selection. A save failure shows `The record could not be updated. No data was changed.` and restores the prior state. Presentation failure uses the same no-change display message as creation.
 
-Index-based `edit`, `/name`, `/new-email`, and affiliation editing are not supported in this increment. Name/email and affiliation editing remain planned for v1.3.
+Index-based `edit`, `/name`, `/new-email`, and affiliation editing are not supported in v1.3.
 
 ### Finding students by an identifier: `find`
 
@@ -404,10 +404,6 @@ Every record must contain `"sample": false` or `"sample": true`, written as a JS
 Edit the file only while the app is closed, and keep a separate copy before editing it. If your changes make it invalid, SoCdex preserves it and opens a read-only recovery session at the next run. Restore a valid file and restart; commands and normal exit do not replace the invalid roster.<br>
 Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </div>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
