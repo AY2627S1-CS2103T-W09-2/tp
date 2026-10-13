@@ -7,10 +7,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.css.PseudoClass;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
@@ -24,6 +26,9 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.Region;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import seedu.address.logic.Logic;
@@ -50,13 +55,15 @@ import seedu.address.storage.StorageManager;
 /**
  * Opt-in real-window profile display probe; runs separately from the headless unit suite.
  * Lays the window out at the logical sizes of 1920x1080 at 100% and 125% and 1280x720 at 150% scaling,
- * checks that maximum-length values and many enrolments stay readable, and drives keyboard focus.
+ * checks that maximum-length values and many enrolments stay readable, checks that the result area and result list
+ * are outlined while focused, and drives keyboard focus.
  * Uses only fictional data under build/reports/profile-view and refuses any save attempt.
  */
 public class ProfileViewAcceptance extends Application {
     private static final String LONG_NAME = "Alexandria Catherine Tan Wei Ling Kumaraswamy Abdullah Rahman";
     private static final String LONG_EMAIL = "profile.view.long-email.check.for.the.readability.of.nus.emails9"
             + "@u.nus.edu";
+    private static final Color FOCUS_COLOUR = Color.web("#e2e2e2");
     private static final List<Viewport> VIEWPORTS = List.of(
             new Viewport("1920x1080-100", 1920, 1080),
             new Viewport("1920x1080-125", 1536, 864),
@@ -249,6 +256,9 @@ public class ProfileViewAcceptance extends Application {
         ListView<?> list = (ListView<?>) scene.lookup(".list-view");
         input.requestFocus();
         layout();
+        TextArea result = (TextArea) scene.lookup("#resultDisplay");
+        checkFocusBorder(list, viewport.name + " result list");
+        checkFocusBorder(result, viewport.name + " result area");
         List<String> order = new ArrayList<>();
         for (int i = 0; i < 6 && scene.getFocusOwner() != list; i++) {
             press(KeyCode.TAB, false);
@@ -274,6 +284,33 @@ public class ProfileViewAcceptance extends Application {
         }
         System.out.println("FOCUS " + viewport.name + " Shift+Tab from list: " + back);
         check(scene.getFocusOwner() == input, viewport.name + " Shift+Tab returns to the command box");
+    }
+
+    /**
+     * Checks that the theme outlines {@code region} only while it is focused, without shifting its layout.
+     * This window is never shown, so JavaFX never reports it focused; the focused state is applied directly.
+     */
+    private void checkFocusBorder(Region region, String description) {
+        PseudoClass focused = PseudoClass.getPseudoClass("focused");
+        Bounds unfocusedBounds = region.getLayoutBounds();
+        check(!hasFocusBorder(region), description + " has no focus border when unfocused");
+        region.pseudoClassStateChanged(focused, true);
+        layout();
+        check(hasFocusBorder(region), description + " is outlined when focused");
+        check(region.getLayoutBounds().equals(unfocusedBounds), description + " keeps its size when focused");
+        region.pseudoClassStateChanged(focused, false);
+        layout();
+        check(!hasFocusBorder(region), description + " loses its outline when unfocused");
+    }
+
+    /** Returns whether {@code region} draws the theme's focus colour on every side at a visible width. */
+    private static boolean hasFocusBorder(Region region) {
+        Border border = region.getBorder();
+        return border != null && !border.getStrokes().isEmpty() && border.getStrokes().stream().allMatch(stroke ->
+                Stream.of(stroke.getTopStroke(), stroke.getRightStroke(), stroke.getBottomStroke(),
+                        stroke.getLeftStroke()).allMatch(FOCUS_COLOUR::equals)
+                && Stream.of(stroke.getWidths().getTop(), stroke.getWidths().getRight(),
+                        stroke.getWidths().getBottom(), stroke.getWidths().getLeft()).allMatch(width -> width >= 2));
     }
 
     private List<Label> detailLabels() {
