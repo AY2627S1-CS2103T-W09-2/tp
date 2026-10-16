@@ -246,14 +246,43 @@ Search does not change identity or field validation. Email identity allows profi
 
 Verification covers Telegram-only and GitHub-only matches, shared handles, multiple-field matches without duplicates, `@`/`@@` handling, absent contacts, literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
 
-For a repeatable JavaFX check using fictional data, build with `./gradlew testClasses shadowJar`, then run the following from the repository root with a JavaFX-enabled JDK 25 (macOS/Linux classpath syntax):
+For a repeatable functional JavaFX check using fictional data, build with `./gradlew clean testClasses shadowJar`, then run the following from the repository root with a JavaFX-enabled JDK 25 (macOS/Linux classpath syntax):
 
 ```text
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ContactSearchAcceptance
 ```
 
-On Windows, replace the classpath separator `:` with `;`. This opt-in utility drives the real command box, checks selection and rendering-failure recovery, and refuses search save attempts. It writes its fictional files and screenshot under `build/reports/contact-search`. It measures four queries over 500 profiles with 1,000 enrolments, recording the first invocation and five repeats through command handling, feedback, layout and a scene snapshot. Report the printed runtime, actual machine specifications and tested commit with results. This is programmatic UI evidence, not manual keyboard input or reference-hardware certification; reference-condition acceptance belongs to #80.
+On Windows, replace the classpath separator `:` with `;`. This opt-in utility drives the real command box, checks selection and rendering-failure recovery, and refuses search save attempts. It writes fictional files and a screenshot under `build/reports/contact-search`. Its historical timing includes forced layout and a snapshot, after functional checks have already warmed the application. Keep that evidence for comparison, but do not describe it as a fresh-process ordinary-interaction measurement.
 
+#### Measuring search responsiveness
+
+Use `SearchTimingProbe` for the v1.4 measurement handoff in #102. It is a plain launcher that uses the JavaFX classes and native libraries in the candidate JAR. Use **plain JDK 25**, without a separately bundled JavaFX runtime, to measure the shipped JavaFX version. Build the driver and candidate with `./gradlew clean testClasses shadowJar`; record the source revision and JAR SHA-256. When testing a release candidate, replace `build/libs/addressbook.jar` below with the downloaded candidate and do not rebuild or modify it. The application classes must come from that JAR, not `build/classes/java/main`.
+
+Create the parent output folder first. Each invocation requires a **new** child folder to avoid overwriting evidence. For example, on macOS/Linux:
+
+```text
+mkdir -p build/reports/search-timing
+java --enable-native-access=ALL-UNNAMED -Dprobe.environment="CPU; RAM; storage; OS; reference mismatch" -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.SearchTimingProbe ordinary SOURCE_COMMIT build/reports/search-timing/ordinary-1
+```
+
+Replace `SOURCE_COMMIT` with the candidate's full source revision and describe the actual machine in `probe.environment`. Run this command in **three separate fresh processes**, changing the last argument to `ordinary-2` and `ordinary-3`. Do not run other acceptance drivers in those processes first or run timing processes concurrently. For comparison, repeat in three fresh processes with mode `snapshot` and new folders `snapshot-1` through `snapshot-3`. Windows uses `;` in the classpath and its normal folder-creation command.
+
+The probe shows a 1280×720 window with 500 fictional profiles, each with two enrolments. After loading the roster and allowing two natural layout pulses, the **first search is `find bench`**, returning all 500 profiles. It records that search and five repeats, then six searches each for a unique Telegram match, a unique GitHub match and no match. Only the first full-roster search is cold with respect to command execution; later queries have already benefited from earlier queries. Startup, fixture creation and initial roster rendering are outside the one-second interaction target.
+
+The timing starts immediately before firing the command box's action event:
+
+| Field | Meaning |
+| --- | --- |
+| `command_ms` | Time until the real command handler returns, including filtering, prepared result cards, application-owned CSS/layout and feedback. |
+| `ready_ms` | Time until the shown scene's next natural **post-layout pulse** after submission. This includes the command and normal scene layout; ordinary mode does not force CSS, layout or a snapshot. |
+| `forced_css_ms`, `snapshot_ms` | Additional driver work in snapshot mode, reported separately. Both are zero in ordinary mode. Snapshot-mode `ready_ms` also includes this extra work and is diagnostic only. |
+| `cards_ms` | Time inside `createPersonListPanel`, a subset of `command_ms`, not an additional duration. This includes preparing all result cards. |
+
+A post-layout pulse is a **rendering-readiness proxy**, not proof that pixels have reached the physical display: JavaFX does not expose compositor completion here. The probe must not be reported as manual keyboard testing, a model-only benchmark, or exact end-to-end display latency. Keep native/manual observation in the final acceptance matrix. The printed focus, screen and scale values make programmatic-launch and display limitations explicit.
+
+Every run writes `timings.csv` with source/JAR identity, runtime, environment and every observation. Verification outside the timing checks result counts, sorted order, unique/ambiguous selection, feedback and rendered result cells; any save attempt fails. Ordinary rows over **1,000 ms** are marked `MISS` rather than hidden or used to weaken the target. Snapshot rows are marked `DIAGNOSTIC`. Report all misses and failures to #94 and keep #98 open for the required scope decision if ordinary interaction still misses the target.
+
+Run on the specified Intel Core i5-1035G1 / 8 GB / SSD / Windows 11 reference configuration, or explicitly record the mismatch. Development-machine results do not certify that configuration. Retain the v1.3 timings in #80, compare against the new method honestly, and attach the final candidate's complete logs to #102 for review.
 
 ### Profile viewing (v1.3)
 
@@ -336,7 +365,7 @@ Commands are submitted by setting the command box text and firing its action, an
 
 * `DataSandboxAcceptance` `seed` and `restart`, a real restart through the production entry point (see [Application data sandbox](#application-data-sandbox-v13-release-requirement)).
 * `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
-* `ContactSearchAcceptance` for the 500-profile, 1,000-enrolment timing.
+* `ContactSearchAcceptance` for search behaviour and `SearchTimingProbe` for separate ordinary-layout and snapshot timings over 500 profiles and 1,000 enrolments.
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
 * Manual keyboard testing on the reference platforms.
 
