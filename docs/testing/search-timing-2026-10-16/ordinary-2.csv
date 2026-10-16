@@ -1,0 +1,39 @@
+source=24f0107eef57387d22d99ec06e9610166352303a
+jar=/Users/spencer/.codex/worktrees/spencer-search-responsiveness/tp/build/libs/addressbook.jar
+sha256=519722c7255d870b59744111eda406823b87fe3cf239f7cea4d22bf86a0bed1c
+java=25.0.4.1
+javafx=17.0.7+2
+os=Mac OS X 26.6.2 aarch64
+environment=Apple M4 Pro; 24 GiB; SSD; macOS 26.6.2; not Windows reference hardware
+screen=Rectangle2D [minX = 0.0, minY=0.0, maxX=1512.0, maxY=982.0, width=1512.0, height=982.0]
+window=1280.0x720.0
+scale=2.0x2.0
+windowFocused=false
+500 fictional profiles / 1000 enrolments; first search is full-roster.
+Natural post-layout readiness is a rendering proxy, not compositor/physical display timing.
+mode,query,iteration,results,command_ms,ready_ms,forced_css_ms,snapshot_ms,cards_ms,target
+ordinary,bench,0,500,167.629,175.333,0.000,0.000,142.630,WITHIN
+ordinary,bench,1,500,129.411,136.621,0.000,0.000,113.341,WITHIN
+ordinary,bench,2,500,116.164,120.697,0.000,0.000,102.446,WITHIN
+ordinary,bench,3,500,108.557,113.626,0.000,0.000,93.839,WITHIN
+ordinary,bench,4,500,112.038,115.977,0.000,0.000,99.755,WITHIN
+ordinary,bench,5,500,110.289,113.715,0.000,0.000,98.650,WITHIN
+ordinary,@Bench_499,0,1,10.559,13.227,0.000,0.000,0.694,WITHIN
+ordinary,@Bench_499,1,1,8.971,10.395,0.000,0.000,0.854,WITHIN
+ordinary,@Bench_499,2,1,8.286,9.709,0.000,0.000,0.761,WITHIN
+ordinary,@Bench_499,3,1,8.482,9.809,0.000,0.000,0.749,WITHIN
+ordinary,@Bench_499,4,1,7.094,8.372,0.000,0.000,0.759,WITHIN
+ordinary,@Bench_499,5,1,6.726,7.851,0.000,0.000,0.625,WITHIN
+ordinary,repo-499,0,1,6.500,7.692,0.000,0.000,0.678,WITHIN
+ordinary,repo-499,1,1,7.015,8.232,0.000,0.000,0.627,WITHIN
+ordinary,repo-499,2,1,6.605,7.968,0.000,0.000,0.717,WITHIN
+ordinary,repo-499,3,1,6.920,8.151,0.000,0.000,0.774,WITHIN
+ordinary,repo-499,4,1,6.455,7.647,0.000,0.000,0.785,WITHIN
+ordinary,repo-499,5,1,6.577,8.173,0.000,0.000,0.716,WITHIN
+ordinary,unmatched,0,0,3.347,6.076,0.000,0.000,0.310,WITHIN
+ordinary,unmatched,1,0,3.848,7.505,0.000,0.000,0.356,WITHIN
+ordinary,unmatched,2,0,3.340,7.845,0.000,0.000,0.300,WITHIN
+ordinary,unmatched,3,0,3.441,7.636,0.000,0.000,0.290,WITHIN
+ordinary,unmatched,4,0,3.047,7.949,0.000,0.000,0.300,WITHIN
+ordinary,unmatched,5,0,3.026,7.750,0.000,0.000,0.261,WITHIN
+PASS: result counts, order, selection, visible cells and feedback verified; no save allowed.
