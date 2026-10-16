@@ -257,7 +257,7 @@ public class MainWindow extends UiPart<Stage> {
         PersonDetailsPanel previousDetails = personDetailsPanel;
         try {
             personListPanelPlaceholder.getChildren().setAll(replacement.getRoot());
-            personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+            displayDetails(details);
         } catch (RuntimeException | AssertionError e) {
             personListPanelPlaceholder.getChildren().setAll(previousList.getRoot());
             personDetailsPanelPlaceholder.getChildren().setAll(previousDetails.getRoot());
@@ -275,6 +275,15 @@ public class MainWindow extends UiPart<Stage> {
         root.applyCss();
         root.layout();
         preparationScene.setRoot(new StackPane());
+    }
+
+    /**
+     * Shows a prepared profile. A profile moved from its preparation scene keeps stale styles, such as a light
+     * heading background, until its CSS is applied again in this window.
+     */
+    private void displayDetails(PersonDetailsPanel details) {
+        personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+        details.getRoot().applyCss();
     }
 
     /** Follows selection changes on {@code panel} while it is the displayed list. */
@@ -303,10 +312,11 @@ public class MainWindow extends UiPart<Stage> {
         try {
             PersonDetailsPanel details = createPersonDetailsPanel(selected);
             prepare(details.getRoot(), personDetailsPanelPlaceholder);
-            personDetailsPanelPlaceholder.getChildren().setAll(details.getRoot());
+            displayDetails(details);
             personDetailsPanel = details;
         } catch (RuntimeException | AssertionError e) {
             logger.warning("Profile could not be displayed: " + e);
+            personDetailsPanelPlaceholder.getChildren().setAll(personDetailsPanel.getRoot());
             resultDisplay.setFeedbackToUser(isDeletionCancelled
                     ? Messages.MESSAGE_PENDING_DELETION_CANCELLED + "\n" + Messages.MESSAGE_PROFILE_DISPLAY_FAILURE
                     : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE);
