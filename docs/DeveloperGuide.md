@@ -376,6 +376,10 @@ Identity and equality are deliberately separate. `Person#isSamePerson` compares 
 
 `AddressBookParser` recognises the exact lowercase `sample load` and `sample clear` commands after removing surrounding spaces and tabs. Repeated spaces or tabs between the two words are accepted. Extra text after `load` or `clear` produces that subcommand's exact usage message. A missing, unsupported, or incorrectly cased subcommand produces `Usage: sample load | sample clear`. An uppercase root command such as `Sample` uses the normal unknown-command error. The shared single-line guard rejects line breaks and control characters before parsing.
 
+The following activity diagram shows the validation, persistent sample classification and shared transaction flow at commit `e6c9bc58`. Both commands change the model only through the transaction managed by `LogicManager`. A command, presentation or save failure restores the previous roster, filter and display order.
+
+![Sample loading and clearing transaction](images/SampleManagementActivityDiagram.png)
+
 `SampleDataUtil` is the single production fixture provider. It returns five classified fictional profiles and five enrolments in name-and-email display order. The fixture covers equal names with distinct canonical emails, optional contacts, multiple enrolments, missing contacts, missing affiliations, and a profile with no enrolments. The application does not call this provider during startup.
 
 `SampleCommand` first checks that the writable roster is empty. It then copies and validates the complete fixture before changing the model. Validation checks the profile count, enrolment count, and sample classification of every profile. Only a complete fixture replaces the empty roster. The command applies `PersonOrder.BY_NAME_THEN_EMAIL` to the displayed list and returns a selection update with no explicit target, so the GUI clears its selection and shows `Select a student to view their profile.`
