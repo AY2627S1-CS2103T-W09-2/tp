@@ -1,0 +1,73 @@
+@startuml
+!include style.puml
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+title Sample management transaction
+
+start
+
+partition Logic LOGIC_COLOR_T1 {
+    :LogicManager records the previous roster,
+    filter and display order;
+    :LogicManager creates a restore point;
+
+    if (Command is sample load?) then (load)
+        if (Roster is empty?) then (yes)
+            :SampleDataUtil creates the fixed fixture;
+            :SampleCommand copies the fixture;
+            if (Five profiles, five enrolments,
+            and every profile isSample?) then (valid)
+                :Replace the roster with the fixture;
+            else (invalid)
+                :Reject the fixture;
+            endif
+        else (no)
+            :Reject the non-empty roster;
+        endif
+    else (clear)
+        :ClearSamplesCommand selects profiles
+        where Person.isSample() is true;
+        if (Any samples found?) then (yes)
+            :Count their enrolments;
+            :Delete only the selected profiles;
+        else (no)
+            :Return the no-samples result;
+        endif
+    endif
+
+    if (Command failed?) then (yes)
+        :Restore the previous state;
+        :Report the command error;
+        stop
+    else (no)
+    endif
+
+    if (Roster changed?) then (yes)
+        :Prepare the complete roster in
+        name-and-email order;
+        if (Presentation succeeded?) then (yes)
+        else (no)
+            :Restore the previous state;
+            :Report the presentation error;
+            stop
+        endif
+    else (no)
+        :Return without saving;
+        stop
+    endif
+}
+
+partition Storage STORAGE_COLOR_T1 {
+    :Save the complete roster;
+    if (Save succeeded?) then (yes)
+    else (no)
+        :LogicManager restores the previous state;
+        :Report the command-specific save error;
+        stop
+    endif
+}
+
+:Return success;
+stop
+@enduml
