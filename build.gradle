@@ -26,11 +26,16 @@ checkstyle {
 
 test {
     dependsOn tasks.named('shadowJar')
+    enableAssertions = true
     useJUnitPlatform()
     testLogging {
         exceptionFormat = 'full'
     }
     finalizedBy jacocoTestReport
+}
+
+tasks.withType(JavaExec).configureEach {
+    enableAssertions = true
 }
 
 task coverage(type: JacocoReport) {
@@ -144,6 +149,7 @@ def universalMacNatives = tasks.register('universalMacNatives') {
 shadowJar {
     dependsOn universalMacNatives
     from(universalMacDirectory)
+    exclude 'logs/**'
     eachFile { detail ->
         if (detail.name.endsWith('.dylib')
                 && !detail.file.toPath().startsWith(universalMacDirectory.get().asFile.toPath())) {

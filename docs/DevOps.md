@@ -32,6 +32,33 @@ The following commands perform common Gradle tasks.
   * `./gradlew test`: Runs all tests.
   * `./gradlew clean test`: Cleans the project before running all tests
 
+Java assertions are enabled for Gradle tests and all Gradle `JavaExec` tasks, including `run` and `runShadow`.
+For an IDE developer run, add `-ea` to the VM options. In IntelliJ IDEA, use **Run > Edit Configurations >
+VM options**. In VS Code, set `"vmArgs": "-ea"` in the applicable Java launch configuration. For a direct Java
+developer run, add `-ea` before `-jar` or `-cp`. Release behaviour must not depend on assertions.
+
+### Runtime-log packaging check
+
+`shadowJar` excludes the top-level `logs/` directory from `build/classes/java/main`. This narrow rule prevents a
+non-clean rebuild from packaging files created by an earlier developer or test run without excluding application
+resources. `JarContentsTest`, which runs under `check`, rejects every `logs/` entry and confirms that the manifest,
+CSS, FXML, images, Jackson service configuration and Windows, macOS and Linux JavaFX files remain in the JAR. It
+also creates a synthetic contaminated archive to verify that the check fails on a runtime log.
+
+Use the following disposable-marker check when changing packaging behaviour:
+
+```text
+./gradlew clean check coverage shadowJar
+mkdir -p build/classes/java/main/logs
+printf 'SOCDEX_PACKAGING_MARKER\n' > build/classes/java/main/logs/packaging-marker.log
+./gradlew check coverage shadowJar
+jar tf build/libs/addressbook.jar
+```
+
+The clean and non-clean commands must pass. The final archive listing must contain the required application
+resources and platform libraries, and it must not contain `logs/` or `packaging-marker.log`. Delete the marker with
+`./gradlew clean` after the check. Run `java -jar build/libs/addressbook.jar` as a separate launch smoke test.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## Continuous integration (CI)
