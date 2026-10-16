@@ -26,6 +26,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -332,6 +333,7 @@ public class ProfileViewAcceptance extends Application {
         Node target = stage.getScene().getFocusOwner();
         target.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, shift, false, false, false));
         target.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, "", "", code, shift, false, false, false));
+        checkHeadingStyled("after " + code);
         layout();
     }
 
@@ -343,7 +345,20 @@ public class ProfileViewAcceptance extends Application {
         TextField input = (TextField) stage.getScene().lookup("#commandTextField");
         input.setText(text);
         input.fireEvent(new ActionEvent());
+        checkHeadingStyled("after " + text);
         layout();
+    }
+
+    /**
+     * Fails unless the profile heading already has its theme style: white 16px text without a background of its own.
+     * Runs before {@link #layout()} forces a CSS pass, so it checks the style the display itself applied.
+     */
+    private void checkHeadingStyled(String description) {
+        Label heading = detailLabels().getFirst();
+        Background background = heading.getBackground();
+        check(heading.getFont().getSize() == 16 && Color.WHITE.equals(heading.getTextFill())
+                && (background == null || background.isEmpty()), "profile heading styled " + description + ": "
+                + heading.getFont() + " " + heading.getTextFill() + " " + background);
     }
 
     private void layout() {
