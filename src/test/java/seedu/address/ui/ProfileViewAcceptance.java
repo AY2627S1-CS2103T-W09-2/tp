@@ -65,6 +65,8 @@ public class ProfileViewAcceptance extends Application {
     private static final String LONG_EMAIL = "profile.view.long-email.check.for.the.readability.of.nus.emails9"
             + "@u.nus.edu";
     private static final Color FOCUS_COLOUR = Color.web("#e2e2e2");
+    private static final double HEADING_FONT_SIZE = 16;
+    private static final Color HEADING_COLOUR = Color.WHITE;
     private static final List<Viewport> VIEWPORTS = List.of(
             new Viewport("1920x1080-100", 1920, 1080),
             new Viewport("1920x1080-125", 1536, 864),
@@ -333,7 +335,7 @@ public class ProfileViewAcceptance extends Application {
         Node target = stage.getScene().getFocusOwner();
         target.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, shift, false, false, false));
         target.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, "", "", code, shift, false, false, false));
-        checkHeadingStyled("after " + code);
+        checkHeadingStyled(code.toString());
         layout();
     }
 
@@ -345,7 +347,7 @@ public class ProfileViewAcceptance extends Application {
         TextField input = (TextField) stage.getScene().lookup("#commandTextField");
         input.setText(text);
         input.fireEvent(new ActionEvent());
-        checkHeadingStyled("after " + text);
+        checkHeadingStyled(text);
         layout();
     }
 
@@ -353,12 +355,14 @@ public class ProfileViewAcceptance extends Application {
      * Fails unless the profile heading already has its theme style: white 16px text without a background of its own.
      * Runs before {@link #layout()} forces a CSS pass, so it checks the style the display itself applied.
      */
-    private void checkHeadingStyled(String description) {
+    private void checkHeadingStyled(String action) {
         Label heading = detailLabels().getFirst();
         Background background = heading.getBackground();
-        check(heading.getFont().getSize() == 16 && Color.WHITE.equals(heading.getTextFill())
-                && (background == null || background.isEmpty()), "profile heading styled " + description + ": "
-                + heading.getFont() + " " + heading.getTextFill() + " " + background);
+        boolean isStyled = heading.getFont().getSize() == HEADING_FONT_SIZE
+                && HEADING_COLOUR.equals(heading.getTextFill())
+                && (background == null || background.isEmpty());
+        check(isStyled, "profile heading styled after " + action + ": " + heading.getFont() + " "
+                + heading.getTextFill() + " " + background);
     }
 
     private void layout() {
