@@ -150,6 +150,31 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+### Persistence, rollback and protected loading
+
+The following sequence summarises roster persistence at source commit
+`24f0107eef57387d22d99ec06e9610166352303a`. It includes the merged v1.4 profile-heading and sample-diagram
+changes; those changes do not alter this storage contract. `StorageManager` delegates both roster calls and is
+omitted from the lifelines to keep the diagram readable.
+
+[![Protected load, atomic save and rollback](images/PersistenceRecoverySequence.png)](images/PersistenceRecoverySequence.png)
+
+A missing roster starts an empty writable model. An invalid, unreadable or redirected roster raises
+`DataLoadingException` and starts read-only recovery while preserving the original file. `MainApp.stop()` saves
+preferences, not the roster. Production paths are checked against the physical JAR home before access.
+
+For writable commands, `LogicManager` captures the roster and display restore point, executes the command and
+prepares any selection update before attempting a save. A presentation failure restores the model and never
+writes; complete no-ops and deletion previews do not write either. Changed data is serialized to a sibling
+temporary file and committed only through `ATOMIC_MOVE` with `REPLACE_EXISTING`. A write or replacement failure
+restores the roster, filter and comparator; the UI executor then refreshes the restored results and restores
+selection. Temporary cleanup runs in `finally`; a cleanup error after a committed replacement is logged and
+must not turn a successful save into a reported failure.
+
+The diagram's command/presentation reference applies to v1.4 editing commands as well as the existing commands;
+recheck it if a later merge changes `LogicManager`, storage or recovery. This records current behaviour rather
+than claiming the Linux native-cache investigation in #100 or final release acceptance is complete.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
