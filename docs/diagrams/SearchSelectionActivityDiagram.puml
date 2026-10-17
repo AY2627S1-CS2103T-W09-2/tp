@@ -1,0 +1,89 @@
+@startuml
+!include style.puml
+skinparam ActivityFontSize 14
+skinparam ArrowFontSize 12
+
+title Search and result selection
+
+start
+partition UI UI_COLOR_T1 {
+    :CommandBox submits find QUERY to
+    MainWindow.executeCommand();
+    :DisplayedCommandExecutor checks
+    the displayed snapshot against the model;
+    if (Display is current?) then (yes)
+    else (no)
+        :Refresh the display or report refresh failure;
+        :Retain input and require resubmission;
+        stop
+    endif
+}
+
+partition Logic LOGIC_COLOR_T1 {
+    :LogicManager.execute() calls
+    AddressBookParser.parseCommand();
+    :FindCommandParser validates the literal query;
+    if (Query is valid?) then (yes)
+        :Create FindCommand;
+        :LogicManager captures the roster,
+        filter and comparator restore point;
+    else (no)
+        :Report parse error without replacing results;
+        :CommandBox retains the rejected input;
+        stop
+    endif
+}
+
+partition Model MODEL_COLOR_T1 {
+    :FindCommand.execute() calls
+    ModelManager.updateFilteredPersonList();
+    :IdentifierContainsQueryPredicate matches
+    name OR email OR Telegram OR GitHub;
+    :SortedList orders matching profiles
+    by name, then canonical email;
+}
+
+partition Logic LOGIC_COLOR_T1 {
+    :FindCommand returns CommandResult.forSearch();
+    :LogicManager invokes the
+    MainWindow.presentSearch() callback;
+}
+
+partition UI UI_COLOR_T1 {
+    :Create a detached PersonListPanel
+    with every result card prepared;
+    :PersonListPanel.selectOnlyResult();
+    if (Exactly one match?) then (yes)
+        :Select and reveal the sole result;
+    else (zero or many)
+        :Clear the selection;
+    endif
+    :MainWindow prepares the list and
+    selected PersonDetailsPanel with CSS/layout;
+    if (Preparation and replacement succeed?) then (yes)
+        :Install the complete list and profile together;
+    else (no)
+        :Keep the previous complete display;
+        :LogicManager restores the prior model
+        filter/order and reports display failure;
+        :CommandBox retains the rejected input;
+        stop
+    endif
+}
+
+partition Logic LOGIC_COLOR_T1 {
+    :Return the result without saving:
+    find is read-only and the roster is unchanged;
+}
+partition UI UI_COLOR_T1 {
+    :MainWindow shows the result count;
+    :CommandBox clears accepted input;
+}
+stop
+
+legend bottom
+Scope: find dispatch, filtering and presentation.
+Pending-deletion cancellation and unrelated commands are omitted.
+Snapshot preparation preserves the previous display on failure.
+endlegend
+@enduml
