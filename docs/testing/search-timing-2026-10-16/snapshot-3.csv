@@ -1,0 +1,39 @@
+source=24f0107eef57387d22d99ec06e9610166352303a
+jar=/Users/spencer/.codex/worktrees/spencer-search-responsiveness/tp/build/libs/addressbook.jar
+sha256=519722c7255d870b59744111eda406823b87fe3cf239f7cea4d22bf86a0bed1c
+java=25.0.4.1
+javafx=17.0.7+2
+os=Mac OS X 26.6.2 aarch64
+environment=Apple M4 Pro; 24 GiB; SSD; macOS 26.6.2; not Windows reference hardware
+screen=Rectangle2D [minX = 0.0, minY=0.0, maxX=1512.0, maxY=982.0, width=1512.0, height=982.0]
+window=1280.0x720.0
+scale=2.0x2.0
+windowFocused=false
+500 fictional profiles / 1000 enrolments; first search is full-roster.
+Natural post-layout readiness is a rendering proxy, not compositor/physical display timing.
+mode,query,iteration,results,command_ms,ready_ms,forced_css_ms,snapshot_ms,cards_ms,target
+snapshot,bench,0,500,172.996,203.809,7.810,22.644,145.801,DIAGNOSTIC
+snapshot,bench,1,500,137.254,153.251,5.470,10.443,122.000,DIAGNOSTIC
+snapshot,bench,2,500,121.101,139.399,5.413,12.505,106.519,DIAGNOSTIC
+snapshot,bench,3,500,106.078,119.751,3.790,9.776,93.381,DIAGNOSTIC
+snapshot,bench,4,500,109.060,122.073,3.993,8.934,96.334,DIAGNOSTIC
+snapshot,bench,5,500,105.909,117.408,3.250,8.149,95.064,DIAGNOSTIC
+snapshot,@Bench_499,0,1,11.799,23.915,2.137,9.889,0.756,DIAGNOSTIC
+snapshot,@Bench_499,1,1,8.618,16.727,1.823,6.205,1.021,DIAGNOSTIC
+snapshot,@Bench_499,2,1,8.082,15.630,1.549,5.920,0.744,DIAGNOSTIC
+snapshot,@Bench_499,3,1,8.389,15.546,1.519,5.558,0.724,DIAGNOSTIC
+snapshot,@Bench_499,4,1,7.304,14.116,1.312,5.379,0.719,DIAGNOSTIC
+snapshot,@Bench_499,5,1,8.130,15.741,1.707,5.811,0.730,DIAGNOSTIC
+snapshot,repo-499,0,1,7.773,17.280,1.371,7.856,0.699,DIAGNOSTIC
+snapshot,repo-499,1,1,8.773,16.451,1.473,6.107,1.129,DIAGNOSTIC
+snapshot,repo-499,2,1,7.403,14.921,1.473,5.924,0.815,DIAGNOSTIC
+snapshot,repo-499,3,1,7.181,14.039,1.270,5.489,0.714,DIAGNOSTIC
+snapshot,repo-499,4,1,7.208,14.530,1.586,5.655,0.715,DIAGNOSTIC
+snapshot,repo-499,5,1,7.574,13.724,1.375,4.677,1.013,DIAGNOSTIC
+snapshot,unmatched,0,0,4.078,8.613,0.573,3.880,0.421,DIAGNOSTIC
+snapshot,unmatched,1,0,4.009,8.319,0.596,3.638,0.357,DIAGNOSTIC
+snapshot,unmatched,2,0,3.507,7.910,0.476,3.343,0.363,DIAGNOSTIC
+snapshot,unmatched,3,0,3.343,7.895,0.584,3.172,0.305,DIAGNOSTIC
+snapshot,unmatched,4,0,3.531,7.954,0.406,2.862,0.332,DIAGNOSTIC
+snapshot,unmatched,5,0,3.573,7.895,0.430,2.682,0.322,DIAGNOSTIC
+PASS: result counts, order, selection, visible cells and feedback verified; no save allowed.
