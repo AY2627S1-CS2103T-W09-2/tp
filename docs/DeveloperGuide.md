@@ -373,7 +373,7 @@ Commands are submitted by setting the command box text and firing its action, an
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
 * Manual keyboard testing on the reference platforms.
 
-Start local builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`, and a later `shadowJar` without `clean` can package those stale files. A clean build prevents that local contamination. It does not prove that separate checkouts or platforms produce a byte-identical JAR. Build reproducibility is tracked separately in #79.
+Start release builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`. `shadowJar` excludes the top-level `logs/` directory so a later non-clean rebuild does not package those stale files. `JarContentsTest` checks the exclusion and the required resources under the normal `check` workflow. The clean start still removes unrelated stale build output. It does not prove that separate checkouts or platforms produce a byte-identical JAR. Build reproducibility is tracked separately in #79.
 
 ### NUS email identity (v1.2)
 
