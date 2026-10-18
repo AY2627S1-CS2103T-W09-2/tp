@@ -1,0 +1,52 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+skinparam classBackgroundColor MODEL_COLOR
+skinparam classAttributeFontColor #FFFFFF
+skinparam classAttributeFontSize 14
+
+Class Person {
+    isSample : boolean
+    isSamePerson(Person) : boolean
+    withContacts(...) : Person
+    withEnrolments(...) : Person
+}
+Class Name
+Class Email
+Class Telegram
+Class GitHub
+
+Class Enrolment {
+    hasSameKey(Enrolment) : boolean
+}
+Class ModuleCode
+Class Semester
+Class Section
+Class Team
+
+show Person members
+show Enrolment members
+
+Person --> "1" Name
+Person --> "1" Email
+Person --> "0..1" Telegram
+Person --> "0..1" GitHub
+Person ---> "0..*" Enrolment
+
+Enrolment --> "1" ModuleCode
+Enrolment --> "1" Semester
+Enrolment --> "0..1" Section
+Enrolment --> "0..1" Team
+
+note left of Person
+  Each with...() method returns a new Person.
+  Fields it does not replace keep the same
+  immutable value objects.
+end note
+
+note right of Enrolment
+  ModuleCode + Semester is the key,
+  unique within one Person.
+end note
+@enduml
