@@ -212,21 +212,34 @@ Shows a list of all persons in the address book.
 
 Format: `list`
 
-### Editing optional contacts: `edit`
+### Editing a student's profile: `edit`
 
-Format: `edit /email EMAIL [/telegram HANDLE|clear] [/github USERNAME|clear]`
+Format: `edit /email EMAIL [/new-email NEW_EMAIL] [/name NAME] [/telegram HANDLE|clear] [/github USERNAME|clear]`
 
-The email selects an existing student across the complete roster, even when a search hides that student. Supply at least one contact field. Omission preserves that contact, the exact lowercase token `clear` removes it, and an empty supplied value is invalid. Contact validation is the same as for `student add`.
+`/email` is the student's current email. It selects the student across the complete roster, even when a search hides that student. Supply at least one of `/new-email`, `/name`, `/telegram` or `/github`. Every field you omit keeps its stored value. `edit` never changes enrolments, sample status, tags or remark.
 
-* `edit /email e9000001@u.nus.edu /telegram @Alex_New` updates Telegram and preserves GitHub.
-* `edit /email e9000001@u.nus.edu /github clear` removes GitHub.
-* `edit /email e9000001@u.nus.edu /telegram @clear /github Clear` stores the literal handles `clear` and `Clear`. In creation, `clear` is ordinary text; clearing applies only to this edit command.
+* `/new-email` replaces the email using the `student add` email rules, and is stored in lowercase. It must not belong to another student. The student's own current email, in any letter case, is not a change. After a successful change, the old email no longer finds the student and is not kept as an alias, so use the new email in later commands. An invalid replacement is reported as `New email: ` followed by the email rule.
+* `/name` replaces the name using the `student add` name rules: surrounding spaces/tabs are removed, each internal run becomes one space, and 1 to 100 Unicode characters remain. The name cannot be removed; `clear` is ordinary name text here. Another student may have the same name.
+* `/telegram` and `/github` use the `student add` contact rules. Only the exact lowercase token `clear` removes a contact. `/telegram @clear` stores the handle `clear`, and `Clear` stores a value for either contact. An empty supplied value is an error.
 
-Success shows `Updated student: NAME.`, clears the search filter, displays the full sorted roster and selects the updated student. Name, email, enrolments, sample status, tags and remark are preserved. Identical normalised values or clearing an absent contact show `No values changed.`, still reveal/select the target, and do not rewrite the roster. Case-only contact changes are real changes and are saved.
+Examples using the fictional sample students:
 
-A missing target shows `No student found with NUS email: EMAIL.`; a command without editable fields shows `Provide at least one field to update.` Invalid input preserves the previous data, results and selection. A save failure shows `The record could not be updated. No data was changed.` and restores the prior state. Presentation failure uses the same no-change display message as creation.
+* `edit /email e9000001@u.nus.edu /telegram @Alex_New` updates Telegram and preserves everything else.
+* `edit /email e9000001@u.nus.edu /new-email e9000101@u.nus.edu /github clear` changes the email and removes GitHub in one command. Later commands for this student use `e9000101@u.nus.edu`.
+* `edit /email e9000003@u.nus.edu /name Mei Ling Lim` renames the student; `/name mei ling LIM` afterwards is a case-only change and is saved.
+* `edit /email e9000004@u.nus.edu /telegram @clear /github Clear` stores the literal values `clear` and `Clear`. In `student add`, `clear` is ordinary text; clearing applies only to `edit`.
 
-Index-based `edit`, `/name`, `/new-email`, and affiliation editing are not supported in v1.3.
+Success shows `Updated student: NAME.` with the resulting name, clears the search filter, displays the full roster sorted by name (ignoring case) then email, and selects the updated student. If every supplied value equals the stored value after normalisation, for example the same name with extra spaces, the current email in uppercase, or clearing a contact that is already absent, the command shows `No values changed.`, still reveals and selects the student, and does not rewrite the data file. A case-only change to a name, Telegram handle or GitHub username is a real change and is saved. A case-only email change is not, because emails are stored in lowercase.
+
+SoCdex checks the command structure first, then the values in the order email, new email, name, Telegram, GitHub, then whether the student exists, and then whether the new email is taken. If any part fails, nothing changes. For example, a valid new name is not saved when the new email belongs to another student.
+
+* A missing target shows `No student found with NUS email: EMAIL.` A command without an editable field shows `Provide at least one field to update.`
+* A new email that belongs to another student shows `A student with the new NUS email already exists.` Unlike `student add`, this does not reveal the other student.
+* Invalid input preserves the previous data, results and selection.
+* A save failure shows `The record could not be updated. No data was changed.` and restores the prior state, including the old email. Presentation failure uses the same no-change display message as creation and does not save.
+* Read-only recovery rejects this command, including no-ops.
+
+`edit` does not change enrolments; use `edit-enrol` for sections and teams. Index-based `edit` is not supported.
 
 ### Finding students by an identifier: `find`
 
@@ -423,7 +436,7 @@ An otherwise valid older profile without an `enrolments` property loads with no 
 
 ### Stored contacts and sample classification
 
-`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. `sample clear` removes records based only on that stored classification. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
+`student add` creates a non-sample profile with optional contacts; `edit /email` changes only the supplied name, email and contacts. `sample load` creates the fixed classified fictional fixture only in an empty roster. `sample clear` removes records based only on that stored classification. Each saved record explicitly states whether it is fictional sample data. Existing remark and enrolment-copy operations preserve that classification and the contacts.
 
 Each result card and the profile panel show a `Telegram:` line and a `GitHub:` line. `Not provided` means that no value is stored; it is display text only. A fictional sample record also shows the label `Fictional sample`.
 
@@ -474,7 +487,7 @@ Action | Format, Examples
 **Clear** | `clear`
 **Delete** | `delete EMAIL`, then `confirm-delete EMAIL` as the next command<br> e.g., `delete e9000001@u.nus.edu`, then `confirm-delete e9000001@u.nus.edu`
 **Exit** | `bye` (alias: `exit`)
-**Edit** | `edit /email EMAIL [/telegram HANDLE\|clear] [/github USERNAME\|clear]`
+**Edit** | `edit /email EMAIL [/new-email NEW_EMAIL] [/name NAME] [/telegram HANDLE\|clear] [/github USERNAME\|clear]`<br> e.g., `edit /email e9000001@u.nus.edu /new-email e9000101@u.nus.edu /github clear`
 **Find** | `find QUERY`<br> e.g., `find Alex Tan`
 **List** | `list`
 **Help** | `help`

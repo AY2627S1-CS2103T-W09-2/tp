@@ -6,6 +6,7 @@ package seedu.address.logic.parser;
 public class CliSyntax {
     public static final Prefix STUDENT_NAME = new Prefix("/name");
     public static final Prefix STUDENT_EMAIL = new Prefix("/email");
+    public static final Prefix STUDENT_NEW_EMAIL = new Prefix("/new-email");
     public static final Prefix STUDENT_TELEGRAM = new Prefix("/telegram");
     public static final Prefix STUDENT_GITHUB = new Prefix("/github");
 

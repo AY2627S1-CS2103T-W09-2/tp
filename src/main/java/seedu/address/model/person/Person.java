@@ -76,6 +76,11 @@ public class Person {
         return new Person(name, email, telegram, github, isSample, remark, tags, updatedEnrolments);
     }
 
+    /** Replaces only the name and email, preserving contacts, classification and teaching context. */
+    public Person withIdentity(Name updatedName, Email updatedEmail) {
+        return new Person(updatedName, updatedEmail, telegram, github, isSample, remark, tags, enrolments);
+    }
+
     /** Replaces only the contacts, preserving identity, classification and teaching context. */
     public Person withContacts(Optional<Telegram> updatedTelegram, Optional<GitHub> updatedGitHub) {
         return new Person(name, email, updatedTelegram, updatedGitHub, isSample, remark, tags, enrolments);
