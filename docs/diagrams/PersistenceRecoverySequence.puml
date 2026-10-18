@@ -1,0 +1,63 @@
+@startuml
+!include style.puml
+hide footbox
+skinparam maxMessageSize 110
+participant ":MainApp" as app UI_COLOR
+participant ":LogicManager" as logic LOGIC_COLOR
+participant ":ModelManager" as model MODEL_COLOR
+participant ":JsonAddressBookStorage" as json STORAGE_COLOR
+participant "JAR-home files" as file STORAGE_COLOR_T3
+
+== Protected startup load (delegated through StorageManager) ==
+app -> json : readAddressBook()
+json -> json : checkPath(filePath)
+json -> file : read roster
+json -> json : deserialize + validate complete roster
+alt invalid / unreadable / unsafe roster
+    json --> app : DataLoadingException
+    app -> model : new ModelManager(empty, prefs, true)
+    note over model, file
+      Preserve original roster. Reject data-changing commands.
+      MainApp.stop() saves preferences only.
+    end note
+else valid / missing roster
+    json --> app : loaded roster / Optional.empty()
+    app -> model : new ModelManager(loaded / empty, prefs)
+end
+
+== One writable command (read-only gate already passed) ==
+logic -> model : createRestorePoint()
+model --> logic : restore roster, filter and order
+ref over logic, model
+  command.execute(model) builds the proposed change.
+  LogicManager presents selection updates through the UI callback.
+  If presentation fails: restore, report error, never save.
+end ref
+alt complete roster unchanged
+    note right of logic : Return result without saving.
+else complete roster changed
+    logic -> json : saveAddressBook(data) (via StorageManager)
+    json -> json : checkPath(filePath)
+    json -> file : create sibling temporary file
+    group try (abort remaining steps on IOException)
+        json -> json : writeRoster(data, temporary)
+        json -> json : replaceFile(temporary, target)
+        json -> file : Files.move(ATOMIC_MOVE, REPLACE_EXISTING)
+    end
+    json -> file : deleteIfExists(temporary) [finally]
+    alt temporary write or atomic replacement failed
+        json --> logic : IOException
+        logic -> model : restore.run()
+        note over logic, file
+          Destination bytes unchanged. UI refreshes restored results
+          and restores selection; report failure, never success.
+        end note
+    else replacement committed
+        json --> logic : saved
+        note right of logic
+          Return success only after save.
+          Cleanup failure is logged, not reported as a failed save.
+        end note
+    end
+end
+@enduml

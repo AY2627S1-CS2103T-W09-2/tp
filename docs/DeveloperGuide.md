@@ -158,6 +158,31 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonAddressBookStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+### Persistence, rollback and protected loading
+
+The following sequence summarises roster persistence at source commit
+`24f0107eef57387d22d99ec06e9610166352303a`. `StorageManager` delegates both roster calls and is omitted
+from the lifelines to keep the diagram readable. See [Storage safety](#storage-safety-v12) for the transaction
+and recovery contract.
+
+[![Protected load, atomic save and rollback](images/PersistenceRecoverySequence.png)](images/PersistenceRecoverySequence.png)
+
+A missing roster starts an empty writable model. An invalid, unreadable or redirected roster raises
+`DataLoadingException` and starts read-only recovery while preserving the original file. `MainApp.stop()` saves
+preferences, not the roster. Production paths are checked against the physical JAR home before access.
+
+For writable commands, `LogicManager` captures the roster and display restore point, executes the command and
+prepares any selection update before attempting a save. A presentation failure restores the model and never
+writes; complete no-ops and deletion previews do not write either. Changed data is serialized to a sibling
+temporary file and committed only through `ATOMIC_MOVE` with `REPLACE_EXISTING`. A write or replacement failure
+restores the roster, filter and comparator; the UI executor then refreshes the restored results and restores
+selection. Temporary cleanup runs in `finally`; a cleanup error after a committed replacement is logged and
+must not turn a successful save into a reported failure. The illustrated save-failure branch covers temporary
+serialization and atomic replacement. Path-check and storage-setup failures also restore the model, but temporary
+cleanup applies only after the temporary file has been created.
+
+The command/presentation reference describes the shared transaction mechanism that editing commands reuse.
+
 ### Common classes
 
 Classes used by multiple components are in the `seedu.address.commons` package.
