@@ -15,7 +15,9 @@ import seedu.address.model.ModelManager;
 import seedu.address.model.enrolment.Enrolment;
 import seedu.address.model.enrolment.ModuleCode;
 import seedu.address.model.enrolment.Semester;
+import seedu.address.model.person.Email;
 import seedu.address.model.person.GitHub;
+import seedu.address.model.person.Name;
 import seedu.address.model.person.Person;
 import seedu.address.model.person.Telegram;
 import seedu.address.testutil.PersonBuilder;
@@ -60,6 +62,19 @@ class ProfileFieldPreservationTest {
         assertContactsAndSamplePreserved(updated);
         assertTrue(updated.getEnrolments().isEmpty());
         assertEquals(new PersonBuilder(original).withEnrolments().build(), updated);
+    }
+
+    @Test
+    void withIdentity_preservesContactsClassificationAndEnrolments() {
+        Person updated = original.withIdentity(new Name("Alex Lim"), new Email("e7654321@u.nus.edu"));
+
+        assertEquals(TELEGRAM, updated.getTelegram());
+        assertEquals(GITHUB, updated.getGitHub());
+        assertTrue(updated.isSample());
+        assertEquals(original.getTags(), updated.getTags());
+        assertEquals(original.getRemark(), updated.getRemark());
+        assertEquals(original.getEnrolments(), updated.getEnrolments());
+        assertEquals(new PersonBuilder(original).withName("Alex Lim").withEmail("e7654321@u.nus.edu").build(), updated);
     }
 
     @Test

@@ -170,7 +170,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Enrolment storage (v1.2)
 
-Each `Person` owns an immutable list of `Enrolment` values. `getEnrolments()` returns that list in stored order. `withEnrolments(Collection<Enrolment>)` returns a new profile, preserving all existing identity, contact, remark, and tag fields. The extended `Person` constructor and `PersonBuilder.withEnrolments(...)` support fixtures and dependent features. `Person` has a complete constructor taking name, email, optional Telegram, optional GitHub, sample classification, remark, tags, and enrolments. Its short creation constructor supplies `sample=false`, an empty remark, and empty tags/enrolments. Phone and address are removed. `withContacts` and `withEnrolments` replace only their named fields; `RemarkCommand` and the test copy builder preserve every other field. Sample loaders must use the full constructor with an explicit classification.
+Each `Person` owns an immutable list of `Enrolment` values. `getEnrolments()` returns that list in stored order. `withEnrolments(Collection<Enrolment>)` returns a new profile, preserving all existing identity, contact, remark, and tag fields. The extended `Person` constructor and `PersonBuilder.withEnrolments(...)` support fixtures and dependent features. `Person` has a complete constructor taking name, email, optional Telegram, optional GitHub, sample classification, remark, tags, and enrolments. Its short creation constructor supplies `sample=false`, an empty remark, and empty tags/enrolments. Phone and address are removed. `withIdentity`, `withContacts` and `withEnrolments` replace only their named fields; `RemarkCommand` and the test copy builder preserve every other field. Sample loaders must use the full constructor with an explicit classification.
 
 An enrolment contains `ModuleCode`, `Semester`, `Optional<Section>`, and `Optional<Team>`. Missing affiliations are `Optional.empty()`, never the UI label `Not assigned`. Module codes accept 2 to 4 ASCII letters, four ASCII digits, and up to 3 final ASCII letters, and are stored uppercase. Semesters accept `AYyy/yy S1` or `AYyy/yy S2` with consecutive years interpreted within 2000–2099; they are stored uppercase with a single separator space. Section and team labels allow 1 to 30 ASCII letters, digits, spaces, or hyphens, including at least one letter or digit. They preserve case. Input normalisation trims spaces/tabs and collapses their internal runs for semesters and affiliation labels; line breaks and other unsupported characters remain invalid.
 
@@ -429,7 +429,7 @@ Identity and equality are deliberately separate. `Person#isSamePerson` compares 
 
 `Person` stores an `Optional<Telegram>`, an `Optional<GitHub>`, and a `boolean` sample classification. An absent contact is `Optional.empty()`, never display text such as `Not provided`. `Telegram` and `GitHub` remove surrounding spaces and tabs from input, and `Telegram` also removes one leading `@`. Both keep the letter case of the value and compare values case-sensitively. The literal word `clear` is an ordinary value. `Person#equals` and `Person#hashCode` include all three fields, so a contact change, a case-only contact change, or a classification change is a real change. `Person#isSamePerson` still compares only canonical emails.
 
-`Person` has a complete constructor taking name, email, optional Telegram, optional GitHub, sample classification, remark, tags, and enrolments. The short creation constructor supplies `sample=false`, an empty remark, and empty tags/enrolments. `EditCommand` uses `Person#withContacts`; `RemarkCommand`, `Person#withEnrolments`, and the test copy builder preserve every other field. `AddCommandParser` accepts optional contacts when creating a non-sample profile. `SampleDataUtil` uses the complete constructor with `sample=true`; it is not used at startup. Phone and address are no longer profile fields.
+`Person` has a complete constructor taking name, email, optional Telegram, optional GitHub, sample classification, remark, tags, and enrolments. The short creation constructor supplies `sample=false`, an empty remark, and empty tags/enrolments. `EditCommand` uses `Person#withIdentity` and `Person#withContacts`; `RemarkCommand`, `Person#withEnrolments`, and the test copy builder preserve every other field. `AddCommandParser` accepts optional contacts when creating a non-sample profile. `SampleDataUtil` uses the complete constructor with `sample=true`; it is not used at startup. Phone and address are no longer profile fields.
 
 `JsonAdaptedPerson` stores the fields as follows:
 
@@ -469,7 +469,7 @@ The full workflow tests cover parsing, exact fixture contents, mixed real and fi
 
 ### Student creation and contact editing (v1.2)
 
-`AddressBookParser` dispatches `student add` to `AddCommandParser` and `edit` to `EditCommandParser`. Inherited `add` and indexed edit are retired. The edit subset accepts only `/email`, `/telegram` and `/github`; name/email changes and affiliations remain for v1.3.
+`AddressBookParser` dispatches `student add` to `AddCommandParser` and `edit` to `EditCommandParser`. Inherited `add` and indexed edit are retired. In v1.2, `edit` accepted `/email`, `/telegram` and `/github`; v1.4 adds `/new-email` and `/name` (see [Profile identity editing (v1.4)](#profile-identity-editing-v14)). Affiliations are edited with `edit-enrol`.
 
 `SlashPrefixTokenizer.tokenize(args, usage, Prefix...)` scans slash tokens at space/tab boundaries and checks preamble, malformed tokens, unknown prefixes and duplicates in encounter order. It retains an embedded slash such as `AY26/27`. `SlashArguments.getRequired` and `getOptional` report missing or blank values with usage. Parsers access and validate values in documented order, then commands check target existence/identity. Thus a later structural error precedes invalid field values, but invalid values precede model lookup. The shared single-line guard runs before any trimming.
 
@@ -484,6 +484,16 @@ The full workflow tests cover parsing, exact fixture contents, mixed real and fi
 Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display remains a separate increment.
 
 **Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
+
+### Profile identity editing (v1.4)
+
+`EditCommandParser` also accepts `/new-email` (`CliSyntax.STUDENT_NEW_EMAIL`) and `/name`. After the shared tokenizer's left-to-right structural checks, it reads values in the specified order: email, new email, name, Telegram, GitHub. `SlashArguments` still reports a missing or blank value with usage when that value is read. Only an invalid supplied replacement email is prefixed with `New email: `; the selector's email error is unprefixed. Names reuse `ParserUtil.parseName`, so normalisation and the 1 to 100 code-point limit match creation, and `clear` is ordinary name text. An absent `Optional<Email>` or `Optional<Name>` preserves the stored value.
+
+`EditCommand` resolves the target by its canonical email across the complete roster. It then rejects a replacement email held by any other profile (`!isSamePerson(target)`) with `A student with the new NUS email already exists.`, so the target's own email is never a conflict. This is a plain `CommandException`, not the creation duplicate reveal. The updated record is `target.withIdentity(..).withContacts(..)`, which keeps sample classification, remark, tags and every enrolment. An assertion records that invariant. Full-record equality detects normalised no-ops, so the target is revealed with `No values changed.` and `LogicManager` skips saving. Case-only name and handle changes remain unequal and are saved. A changed email simply replaces the record in place; no alias or history of the old email is kept, so later lookups by the old email fail.
+
+No new persistence path is added. All parser and command checks finish before the single `setPerson` call. The existing `LogicManager` transaction then presents the full sorted roster with `CommandResult.forTarget`, saves only changed data and restores the roster, filter and order on save or presentation failure. It also cancels a pending deletion and blocks read-only recovery sessions. `UniquePersonList#setPerson` remains a defensive backstop against duplicate identities.
+
+`EditCommandParserTest` covers structural/value precedence, the `New email:` prefix versus blank-value usage errors, Unicode code-point boundaries and literal `clear`. `EditCommandTest` and `ProfileFieldPreservationTest` cover field preservation, retired old emails, self versus other-profile duplicates and lookup before the duplicate check. `StudentWorkflowTest` uses real JSON storage for hidden-target reveal, same-name ordering, atomic mixed edits, no-op save counts, case-only renames, failed save and presentation, pending-deletion cancellation, read-only recovery and reload.
 
 
 --------------------------------------------------------------------------------------------------------------------
@@ -955,6 +965,29 @@ testers are expected to do more *exploratory* testing.
 
    1. Test cases: `view`, `view e9000001@u.nus.edu e9000002@u.nus.edu`, `view Alex`, and `view e9000009@u.nus.edu`.<br>
       Expected: The missing-email, extra-argument, email-rule and not-found messages respectively. The previous results, selection and profile remain, and the data file is not rewritten.
+
+### Editing a student's identity
+
+1. Changing a name and email
+
+   1. Prerequisites: Load the samples with `sample load`, then run `find Mei`.
+
+   1. Test case: `edit /email e9000001@u.nus.edu /new-email e9000101@u.nus.edu /name Alex  Tan Wei /github clear`<br>
+      Expected: `Updated student: Alex Tan Wei.` The full sorted roster is shown and the edited student is selected with `NUS email: e9000101@u.nus.edu`, `GitHub: Not provided`, both original enrolments and `Fictional sample`.
+
+   1. Test case: `view e9000001@u.nus.edu`, then `bye`, restart and `view e9000101@u.nus.edu`<br>
+      Expected: The old email is not found. After the restart, the edited student returns with every field.
+
+1. Rejected and unchanged edits
+
+   1. Test case: `edit /email e9000003@u.nus.edu /name New Name /new-email E9000002@U.NUS.EDU`<br>
+      Expected: `A student with the new NUS email already exists.` Mei Lim's name and email are unchanged and the previous results remain.
+
+   1. Test case: `edit /email e9000003@u.nus.edu /new-email E9000003@U.NUS.EDU /name Mei   Lim`<br>
+      Expected: `No values changed.` Mei Lim is revealed and the data file is not rewritten.
+
+   1. Test case: `edit /email e9000003@u.nus.edu /new-email bad /name A/B`<br>
+      Expected: `New email: ` followed by the email rule. Nothing changes.
 
 ### Deleting a student
 
