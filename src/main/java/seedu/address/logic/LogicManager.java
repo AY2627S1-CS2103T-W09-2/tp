@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javafx.collections.ObservableList;
@@ -135,6 +136,7 @@ public class LogicManager implements Logic {
                 presentSearch.accept(CommandResult.forTarget(e.getMessage(), e.getExisting()));
             } catch (RuntimeException | AssertionError displayFailure) {
                 restore.run();
+                logger.log(Level.WARNING, "Rolled back after duplicate profile presentation failed.", displayFailure);
                 throw new CommandException(Messages.MESSAGE_PROFILE_DISPLAY_FAILURE, displayFailure);
             }
             throw e;
@@ -153,6 +155,7 @@ public class LogicManager implements Logic {
                 presentSearch.accept(commandResult);
             } catch (RuntimeException | AssertionError e) {
                 restore.run();
+                logger.log(Level.WARNING, "Rolled back after command result presentation failed.", e);
                 String defaultMessage = commandResult.getSelectionTarget() == null
                         ? Messages.MESSAGE_SEARCH_DISPLAY_FAILURE : Messages.MESSAGE_PROFILE_DISPLAY_FAILURE;
                 throw new CommandException(command.getDisplayFailureMessage(defaultMessage), e);
@@ -167,10 +170,12 @@ public class LogicManager implements Logic {
             storage.saveAddressBook(model.getAddressBook());
         } catch (AccessDeniedException e) {
             restore.run();
+            logger.log(Level.WARNING, "Rolled back after storage access was denied.", e);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage())), e);
         } catch (IOException | RuntimeException ioe) {
             restore.run();
+            logger.log(Level.WARNING, "Rolled back after storage failed.", ioe);
             throw new CommandException(command.getSaveFailureMessage(
                     String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage())), ioe);
         }
