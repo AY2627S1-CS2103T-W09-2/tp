@@ -163,11 +163,48 @@ Examples using an existing fictional student:
 
 Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. Complete profile/enrolment presentation remains a separate increment.
 
-A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` **`edit-enrol` is not available in v1.3.** Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
+A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` Use `edit-enrol` to update those affiliations. Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
 
 A missing owner shows `No student found with NUS email: EMAIL. Create the student profile before adding an enrolment.` Invalid values show their field rule. Syntax errors include usage help and report structural errors from left to right, then check values in email/module/semester/section/team order. Rejections leave data, results and selection unchanged.
 
 A save failure shows `The enrollment could not be saved. No data was changed.` and restores the previous roster, results and selection. Correct the storage problem and retry. A display preparation failure shows `Student could not be displayed. No data was changed. Try again.` and does not save. Read-only recovery sessions reject enrolment changes with the existing recovery guidance.
+
+### Editing an enrolment's section or team: `edit-enrol`
+
+Changes affiliations on one existing enrolment. The owner email, module and semester are selectors: this command
+cannot change them, move an enrolment to another student, create a missing enrolment or remove an enrolment.
+
+Format: `edit-enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION|clear] [/team TEAM|clear]`
+
+* Supply all three selectors and at least one of `/section` or `/team`. Prefixes may appear in any order, once each.
+* Email is canonicalised to lowercase, module to uppercase, and semester to `AYyy/yy S1` or `AYyy/yy S2`. The
+  academic-year slash is part of the value. For example, `cs2103t` and `ay26/27 s1` select `CS2103T, AY26/27 S1`.
+* Section/team labels accept 1–30 ASCII letters, digits, spaces or hyphens after trimming and collapsing spaces/tabs;
+  each label must include a letter or digit. Case is preserved. A supplied empty value is an error.
+* Omit a field to preserve it. The exact lowercase `clear` removes only that assignment; `Clear` stores a literal
+  label. Missing affiliations display `Not assigned`.
+* Success shows `Updated enrolment for NAME: MODULE, SEMESTER.`, clears the search filter and selects the owner
+  in the full sorted roster. Other students, enrolments, contacts and fictional-sample classification are preserved.
+* An identical normalised value, or clearing an already absent field, shows `No values changed.` and reveals the
+  owner without rewriting the roster. A case-only section/team change is saved.
+
+Examples after `sample load`:
+
+* `edit-enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1 /section T14 /team SEED-2`
+* `edit-enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1 /team clear` preserves the section.
+* `edit-enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1 /team Clear` stores the label `Clear`.
+
+Errors preserve the previous roster, displayed results and selection:
+
+* No editable field: `Provide at least one field to update.`
+* Unknown owner: `No student found with NUS email: EMAIL.`
+* Unknown context: `No matching enrolment found for EMAIL, MODULE, SEMESTER. Use enrol to add it first.`
+* Prefix errors identify the missing, empty, repeated or unknown parameter and append this command's usage.
+  Structural errors are checked left to right; values are checked in email, module, semester, section, team order.
+* An invalid field rejects the whole request, even if another field is valid or unchanged.
+* Save or display failure: `The record could not be updated. No data was changed.` Correct the problem and retry.
+* Read-only recovery rejects this command, including no-ops. Restore a valid file and restart first.
+
 
 ### Listing all persons: `list`
 
@@ -431,6 +468,7 @@ Furthermore, certain edits can cause the AddressBook to behave in unexpected way
 
 Action | Format, Examples
 --------|------------------
+**Edit enrolment** | `edit-enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION\|clear] [/team TEAM\|clear]`
 **Enrol** | `enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION] [/team TEAM]`
 **Student add** | `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
 **Clear** | `clear`

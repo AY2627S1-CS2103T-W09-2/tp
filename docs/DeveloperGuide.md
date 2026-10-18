@@ -181,6 +181,38 @@ Otherwise valid older profiles with no `enrolments` property load with an empty 
 
 This increment adds model and persistence support. The user-facing `enrol` command is implemented by `EnrolCommand`; complete enrolment display was delivered by #65 (see [Profile viewing (v1.3)](#profile-viewing-v13)). The #58 storage contract protects rejected enrolment files and restores complete enrolments after failed saves. The integrated #59 identity rule allows same-name students with distinct canonical emails; storage still rejects non-canonical stored emails alongside enrolment validation. This schema's legacy compatibility does not override those features' email or sample-classification requirements.
 
+### Editing enrolment affiliations (v1.4)
+
+`EditEnrolCommandParser` reuses `SlashPrefixTokenizer` and the validated enrolment values. It checks structural
+errors left to right before email, module, semester, section and team. Nested optionals distinguish omission
+(preserve), `clear` (remove), and a replacement label. All selectors and at least one change field are required.
+
+`EditEnrolCommand` resolves the owner against the complete roster and matches the immutable module-semester key.
+It constructs one new `Enrolment`, replaces only that list entry and calls `Person.withEnrolments`, preserving all
+other fields and sample classification. The full sorted roster and updated owner are presented through
+`CommandResult.forTarget`. Normalised equality returns `No values changed.` without setting a new person;
+case-preserving label changes remain distinct. LogicManager's transaction compares complete roster values,
+presents before saving and restores roster/filter/order on failure. Both save and display failures use the
+specified record-update error. Recovery gating and pending-deletion cancellation use the existing logic flow.
+No JSON schema or shared presentation interface changes are needed.
+
+`EditEnrolCommandParserTest` verifies structural/value precedence, semester slashes, normalisation, clearing and
+literal `Clear`. `EditEnrolWorkflowTest` uses real JSON storage to verify exact ownership, field preservation,
+no writes on no-ops, case-only changes, reload, recovery, failed atomic replacement and failed presentation.
+For opt-in programmatic real-window acceptance, build `./gradlew testClasses shadowJar`, copy the JAR into a
+new disposable folder, and run the phases as distinct JVMs from another disposable working directory:
+
+```text
+java -cp /ABS/CHECKOUT/build/classes/java/test:/ABS/JAR-HOME/addressbook.jar seedu.address.ui.EditEnrolAcceptance seed
+java -cp /ABS/CHECKOUT/build/classes/java/test:/ABS/JAR-HOME/addressbook.jar seedu.address.ui.EditEnrolAcceptance restart
+```
+
+Quote classpaths containing spaces; Windows uses `;` instead of `:`. The driver invokes production `Main.main`,
+submits through the real command box and exits through the window. It checks hidden-owner reveal, exact feedback,
+invalid-input atomicity, no-op bytes, case-only updates, sample preservation, selected profile and persisted reload.
+This is programmatic UI evidence with a real JVM restart, not manual keyboard testing. Record the source and JAR
+checksum separately. Published-guide verification remains a post-merge task in #96.
+
 ### Enrolment entry (v1.3)
 
 `EnrolCommandParser` reuses `SlashPrefixTokenizer` and `SlashArguments`. Structural errors are checked first from left to right; values are constructed in email/module/semester/section/team order with the shared value types. Omitted affiliations are absent optionals. `AY26/27` stays within a value because its slash is not at a prefix boundary.
@@ -195,7 +227,7 @@ For opt-in real-window acceptance using fictional data, build with `./gradlew te
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.EnrolmentAcceptance
 ```
 
-On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` is not available in v1.3 despite its mention in the specified duplicate message.
+On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` now updates affiliations on an existing context (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
 
 ### Application data sandbox (v1.3 release requirement)
 
