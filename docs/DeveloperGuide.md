@@ -153,9 +153,9 @@ The `Storage` component,
 ### Persistence, rollback and protected loading
 
 The following sequence summarises roster persistence at source commit
-`24f0107eef57387d22d99ec06e9610166352303a`. It includes the merged v1.4 profile-heading and sample-diagram
-changes; those changes do not alter this storage contract. `StorageManager` delegates both roster calls and is
-omitted from the lifelines to keep the diagram readable.
+`24f0107eef57387d22d99ec06e9610166352303a`. `StorageManager` delegates both roster calls and is omitted
+from the lifelines to keep the diagram readable. See [Storage safety](#storage-safety-v12) for the transaction
+and recovery contract.
 
 [![Protected load, atomic save and rollback](images/PersistenceRecoverySequence.png)](images/PersistenceRecoverySequence.png)
 
@@ -169,11 +169,11 @@ writes; complete no-ops and deletion previews do not write either. Changed data 
 temporary file and committed only through `ATOMIC_MOVE` with `REPLACE_EXISTING`. A write or replacement failure
 restores the roster, filter and comparator; the UI executor then refreshes the restored results and restores
 selection. Temporary cleanup runs in `finally`; a cleanup error after a committed replacement is logged and
-must not turn a successful save into a reported failure.
+must not turn a successful save into a reported failure. The illustrated save-failure branch covers temporary
+serialization and atomic replacement. Path-check and storage-setup failures also restore the model, but temporary
+cleanup applies only after the temporary file has been created.
 
-The diagram's command/presentation reference applies to v1.4 editing commands as well as the existing commands;
-recheck it if a later merge changes `LogicManager`, storage or recovery. This records current behaviour rather
-than claiming the Linux native-cache investigation in #100 or final release acceptance is complete.
+The command/presentation reference describes the shared transaction mechanism that editing commands reuse.
 
 ### Common classes
 

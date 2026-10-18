@@ -6,7 +6,7 @@ participant ":MainApp" as app UI_COLOR
 participant ":LogicManager" as logic LOGIC_COLOR
 participant ":ModelManager" as model MODEL_COLOR
 participant ":JsonAddressBookStorage" as json STORAGE_COLOR
-participant "JAR-home files" as file
+participant "JAR-home files" as file STORAGE_COLOR_T3
 
 == Protected startup load (delegated through StorageManager) ==
 app -> json : readAddressBook()
@@ -45,7 +45,7 @@ else complete roster changed
         json -> file : Files.move(ATOMIC_MOVE, REPLACE_EXISTING)
     end
     json -> file : deleteIfExists(temporary) [finally]
-    alt write or atomic replacement failed
+    alt temporary write or atomic replacement failed
         json --> logic : IOException
         logic -> model : restore.run()
         note over logic, file
