@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import javafx.application.Application;
 import seedu.address.commons.core.LogsCenter;
 import seedu.address.commons.util.AppPaths;
+import seedu.address.commons.util.RenderingDefaults;
 
 /**
  * The main entry point to the application.
@@ -28,6 +29,9 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         AppPaths.configureRuntimeDirectories();
+        if (RenderingDefaults.configurePipeline()) {
+            logger.info("Defaulting JavaFX rendering to the software pipeline on Linux.");
+        }
 
         logger.warning("The warnings about a 'restricted method in java.lang.System' "
             + "and 'enabling native access' appearing below (if any) can be ignored.");

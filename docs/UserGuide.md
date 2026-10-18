@@ -428,6 +428,8 @@ Roster saves use temporary files inside `data/` and remove them after the atomic
 
 Use a writable application folder. SoCdex does not fall back to another folder when a managed location is unwritable or redirected through a symbolic link. An unsafe roster location uses read-only recovery; preferences or log failures leave defaults or console logging. If the native-cache or temporary directory cannot be prepared safely, startup stops. Correct the folder or move the JAR and its data together to a writable folder. Symbolic links for managed data are unsupported; use ordinary files and directories.
 
+On Linux, SoCdex uses JavaFX's software renderer by default, because the OpenGL graphics driver can keep a shader cache outside the application folder (for example under `~/.cache`). Software rendering may redraw more slowly on some computers. Windows and macOS keep JavaFX's usual rendering. If you start SoCdex with your own `-Dprism.order=...` Java option, SoCdex keeps that choice. SoCdex does not change system or desktop settings.
+
 ### Stored enrolments
 
 Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Use `enrol` to add a context to an existing student. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. Existing commands that edit a profile or its remark preserve its stored enrolments.
