@@ -1,0 +1,85 @@
+@startuml
+!include style.puml
+hide footbox
+skinparam maxMessageSize 150
+skinparam ArrowFontSize 12
+
+title Command result, selected student and complete profile
+
+actor Tutor as user USER_COLOR
+participant ":LogicManager" as logic LOGIC_COLOR
+participant ":MainWindow" as window UI_COLOR
+participant "list:PersonListPanel" as list UI_COLOR_T3
+participant "details:PersonDetailsPanel" as details UI_COLOR_T3
+
+== Command presentation (CommandResult.isUpdateSelection()) ==
+logic -> window : presentSearch(result)
+activate window
+create list
+window -> list : new PersonListPanel(filtered list)
+note over list : Detached snapshot:\nevery result card is built now.
+
+alt result.isClearSelection()\n(confirmed deletion)
+    window -> list : restoreSelection(null)
+else result.isPreserveSurvivingSelection()\n(sample clearing)
+    window -> list : restoreSelection(previously selected)
+else no selection target\n(find, sample loading)
+    window -> list : selectOnlyResult()
+    note over list : Select and reveal a sole result;\nclear the selection otherwise.
+else selection target (view, add, edit, enrol,\ndelete preview, revealed duplicate)
+    window -> list : selectTarget(target)
+end
+
+window -> list : getSelectedPerson()
+list --> window : selected student, or null
+create details
+window -> details : new PersonDetailsPanel(selected student)
+note over details
+  Null shows the selection prompt.
+  A removal that empties the roster
+  shows empty-roster guidance instead.
+end note
+
+window -> window : prepare(list root)
+window -> window : prepare(details root)
+note right of window
+  Apply the window stylesheets, CSS and
+  layout in a detached preparation scene.
+end note
+window -> window : swap both placeholders
+window -> details : getRoot().applyCss()
+note over details : Restyle in the window:\na moved panel keeps stale styles.
+
+alt preparation, swap or restyle failed
+    window -> window : keep or restore previous list and profile
+    window --> logic : exception
+    note over logic : Restore the filter, order and roster,\nreport the display failure, never save.
+else complete display installed
+    window -> window : followSelection(list)
+    window --> logic
+    deactivate window
+    note over logic : Save if the roster changed,\nthen return the feedback.
+end
+
+== Selection by the tutor (mouse or keyboard) ==
+user -> list : select another row
+list -> window : selectedPersonProperty changes
+activate window
+opt the tutor selected a student
+    window -> logic : cancelPendingDeletionUnlessTarget(student)
+    note right of window : A pending deletion of another\nstudent is cancelled, with a notice.
+end
+alt student already displayed
+    note right of window : Keep the current profile.
+else different student, or none
+    create "next:PersonDetailsPanel" as next UI_COLOR_T3
+    window -> next : new PersonDetailsPanel(student)
+    window -> window : prepare, swap and restyle the profile
+    opt preparation, swap or restyle failed
+        window -> window : keep previous profile,\nshow display failure
+        window -> list : restoreSelection(displayed student)\n(Platform.runLater)
+        note over list : An application-made selection\nnever cancels a deletion.
+    end
+end
+deactivate window
+@enduml
