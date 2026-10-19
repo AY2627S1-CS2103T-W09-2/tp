@@ -274,6 +274,19 @@ On Windows use `;` instead of `:` in the classpath. The utility drives the actua
 
 Verification must use a packaged JAR and an unrelated working directory containing sentinel preferences and roster files. Confirm the production entry point ignores those files, creates logs/preferences/roster/runtime directories inside JAR home, persists and reloads a fictional teaching context across JVM restart, and leaves the external directory tree and bytes unchanged. `DataSandboxAcceptance` is an opt-in observer of the actual `Main.main` production window and command box; run `seed` and `restart` in separate processes. Redirect acceptance logs inside the JAR folder. It is programmatic UI input, not manual keyboard testing. Also launch directly using `java -jar` from the external folder and record the Java/runtime and artifact source. Test paths with spaces, Unicode and percent signs and rejected symbolic-link redirects. Existing external data is never automatically imported.
 
+#### Linux rendering default
+
+Traced WSL2/WSLg runs attributed Mesa shader-cache access under `~/.cache/mesa_shader_cache` to the SoCdex JVM's `QuantumRenderer` thread while JavaFX initialised its OpenGL ES2 pipeline. After configuring runtime directories and before `Application.launch`, `Main` calls `RenderingDefaults.configurePipeline()`. When `os.name` starts with `Linux` (the bundled JavaFX's own check), it sets the system property `prism.order` to `sw` unless the property is already set. Windows and macOS keep JavaFX's defaults. The property is process-local: no environment variable, OS or desktop setting changes, and the JVM is not relaunched.
+
+`prism.order` is an implementation-specific JavaFX setting, not a public API. For the bundled JavaFX 17.0.7, `PrismSettings` reads it from the system properties once during static initialisation, uses an explicit comma-separated value as the pipeline order, and otherwise tries `es2,sw` on Linux. Recheck this after any JavaFX upgrade. Confirm the selected pipeline from runtime evidence (for example `libprism_sw.so` mapped and `libprism_es2.so` absent), not from the property value alone.
+
+Trade-off and open scope:
+
+* The software pipeline renders on the CPU, so drawing may be slower; native-Linux responsiveness is not measured yet.
+* An explicit `prism.order` (command line, `JAVA_TOOL_OPTIONS` or `JDK_JAVA_OPTIONS`) is preserved. An override that selects `es2` can use the Mesa cache again.
+* The mitigation covers only the Mesa shader cache. HotSpot performance data (`/tmp/hsperfdata_<user>`) and the GTK/dconf runtime file (`/run/user/<uid>/dconf/user`) were still accessed. Their status under the data-sandbox constraint awaits a teaching-team interpretation.
+* This is not a course exemption or a complete sandbox certification. Evidence so far is WSL2/WSLg only; native Linux is not verified.
+
 ### Storage safety (v1.2)
 
 `MainApp.initModelManager` loads the whole roster before creating a writable model. A missing file produces an empty writable roster without creating sample records. A failed load produces an empty `ModelManager` with `isReadOnly()` fixed to `true` for that session. The initial recovery explanation and persistent status-bar warning distinguish this view from a genuinely empty saved roster. Recovery requires a valid file and a restart; no in-session switch enables writes.
