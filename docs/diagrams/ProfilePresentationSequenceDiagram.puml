@@ -51,8 +51,8 @@ alt any step failed
 else complete display installed
     window -> window : followSelection(list)
     window --> logic
-    deactivate window
     note right of logic : Save if changed, then return.\nA revealed duplicate is\nreported as an error instead.
 end
+deactivate window
 deactivate logic
 @enduml
