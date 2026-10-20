@@ -342,6 +342,8 @@ On Windows, replace the classpath separator `:` with `;`. This opt-in utility dr
 
 Use `SearchTimingProbe` for the v1.4 measurement handoff in #102. It is a plain launcher that uses the JavaFX classes and native libraries in the candidate JAR. Use **plain JDK 25**, without a separately bundled JavaFX runtime, to measure the shipped JavaFX version. Build the driver and candidate with `./gradlew clean testClasses shadowJar`; record the source revision and JAR SHA-256. When testing a release candidate, replace `build/libs/addressbook.jar` below with the downloaded candidate and do not rebuild or modify it. The application classes must come from that JAR, not `build/classes/java/main`.
 
+The probe checks that JavaFX base, graphics, controls and FXML classes come from the same candidate JAR. If a JDK bundles JavaFX or external JavaFX libraries override the candidate, it stops before opening the window or creating the output folder. Use plain JDK 25 and remove external JavaFX entries from the classpath or module path, then retry. This check applies even when an external library has the same version number as the candidate.
+
 Create the parent output folder first. Each invocation requires a **new** child folder to avoid overwriting evidence. For example, on macOS/Linux:
 
 ```text

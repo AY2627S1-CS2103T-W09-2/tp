@@ -2,6 +2,7 @@ package seedu.address.ui;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -62,11 +64,12 @@ public final class SearchTimingProbe {
                     "Usage: SearchTimingProbe ordinary|snapshot SOURCE NEW_OUTPUT_DIRECTORY");
         }
         Path output = Path.of(args[2]);
-        Files.createDirectory(output);
         Path jar = Path.of(MainWindow.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         if (!Files.isRegularFile(jar)) {
             throw new IllegalArgumentException("Application classes must come from the candidate JAR.");
         }
+        verifyCandidateJavaFx(jar);
+        Files.createDirectory(output);
         String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(jar)));
         AppPaths.configureRuntimeDirectories();
         Platform.startup(() -> { });
@@ -115,6 +118,24 @@ public final class SearchTimingProbe {
                 }
             });
             Platform.exit();
+        }
+    }
+
+    /** Rejects external JavaFX modules or classpath overrides before starting the toolkit or writing evidence. */
+    private static void verifyCandidateJavaFx(Path jar) throws Exception {
+        // Check one class from each JavaFX component used by the application, without initialising controls.
+        for (Class<?> type : List.of(ObservableList.class, Scene.class, TextField.class, FXMLLoader.class)) {
+            CodeSource source = type.getProtectionDomain().getCodeSource();
+            if (source == null || source.getLocation() == null
+                    || !"file".equals(source.getLocation().getProtocol())
+                    || !Files.isSameFile(jar, Path.of(source.getLocation().toURI()))) {
+                String actualLocation = source == null || source.getLocation() == null
+                        ? "an unknown location" : source.getLocation().toString();
+                throw new IllegalArgumentException("JavaFX must come from the candidate JAR: " + type.getName()
+                        + " loaded from " + actualLocation + "; expected candidate JAR at " + jar
+                        + ". Use plain JDK 25 without bundled JavaFX and remove external JavaFX from the "
+                        + "classpath/module path.");
+            }
         }
     }
 
