@@ -1,0 +1,32 @@
+@startuml
+!include style.puml
+hide footbox
+skinparam maxMessageSize 130
+skinparam ArrowFontSize 12
+
+title Selection by the tutor
+
+actor Tutor as user USER_COLOR
+participant ":LogicManager" as logic LOGIC_COLOR
+participant ":MainWindow" as window UI_COLOR
+participant "list:PersonListPanel" as list UI_COLOR
+
+user -> list : select a row
+list -> window : selection changed
+activate window
+opt the tutor selected a student
+    window -> logic : cancelPendingDeletionUnlessTarget(student)
+end
+alt selection matches the displayed profile
+    note right of window : Keep it.
+else otherwise
+    create "next:PersonDetailsPanel" as next UI_COLOR
+    window -> next : new PersonDetailsPanel(selection)
+    window -> window : prepare, swap\nand restyle
+    opt any step failed
+        window -> window : keep previous profile,\nshow display failure
+        window -> list : restoreSelection(displayed)\n(deferred)
+    end
+end
+deactivate window
+@enduml

@@ -1,0 +1,58 @@
+@startuml
+!include style.puml
+hide footbox
+skinparam maxMessageSize 130
+skinparam ArrowFontSize 12
+
+title Command result, selected student and complete profile
+
+participant ":LogicManager" as logic LOGIC_COLOR
+participant ":MainWindow" as window UI_COLOR
+participant "list:PersonListPanel" as list UI_COLOR
+participant "details:PersonDetailsPanel" as details UI_COLOR
+
+activate logic
+logic -> window : presentSearch(result)
+activate window
+note left of window : Used by every command result\nthat updates the selection.
+create list
+window -> list : new PersonListPanel(filtered list)
+
+alt confirmed deletion
+    window -> list : restoreSelection(null)
+else sample clearing
+    window -> list : restoreSelection(previous)
+else find, sample loading
+    window -> list : selectOnlyResult()
+    note right of list : Select a sole result;\nclear otherwise.
+else view, add, edit, enrol, edit-enrol,\ndelete preview, revealed duplicate
+    window -> list : selectTarget(target)
+end
+
+alt removal emptied the roster
+    create details
+    window -> details : new PersonDetailsPanel(null,\nempty-roster guidance)
+else otherwise
+    window -> list : getSelectedPerson()
+    list --> window : student, or null
+    create details
+    window -> details : new PersonDetailsPanel(student)
+    note right of details : Null shows the\nselection prompt.
+end
+
+window -> window : prepare both panels\noff screen
+window -> window : swap both placeholders
+window -> details : applyCss()
+
+alt any step failed
+    window -> window : keep or restore previous\nlist and profile
+    window --> logic : exception
+    note right of logic : Restore and report;\nnever save.
+else complete display installed
+    window -> window : followSelection(list)
+    window --> logic
+    note right of logic : Save if changed, then return.\nA revealed duplicate is\nreported as an error instead.
+end
+deactivate window
+deactivate logic
+@enduml
