@@ -132,12 +132,12 @@ The `Model` component,
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
-The diagram above shows each `Person` as a single box. The class diagram below shows the values that make up a student profile at commit `8a83d017`. It omits the remark and tags, and the members of the value classes.
+The diagram above shows each `Person` as a single box. The class diagram below shows the values that make up a student profile at commit `33543cab`. It omits the remark and tags, and the members of the value classes.
 
-<a href="images/StudentProfileClassDiagram.png"><img src="images/StudentProfileClassDiagram.png" width="644" alt="Student profile class diagram" /></a>
+<a href="images/StudentProfileClassDiagram.png"><img src="images/StudentProfileClassDiagram.png" width="649" alt="Student profile class diagram" /></a>
 
 * Enrolments are stored per profile: each `Person` holds a list of `Enrolment` values. The `Person` constructor rejects two enrolments with the same module and semester (`Enrolment#hasSameKey`), so each key is unique within one profile. An `Enrolment` has no reference back to its `Person`.
-* `Person` and its values are immutable, so an edit creates a replacement `Person` and passes it to `Model#setPerson`. `withContacts` (used by `edit`) and `withEnrolments` (used by `enrol` and `edit-enrol`) pass the current objects of every other field to the full constructor. The constructor copies the tag set and the enrolment list but keeps their elements, so unchanged fields keep the same value objects. `edit-enrol` creates a new `Enrolment` only for the edited entry. `RemarkCommand` also passes every other current field to the full constructor.
+* `Person` and its values are immutable, so an edit creates a replacement `Person` and passes it to `Model#setPerson`. `withIdentity` and `withContacts` (both used by `edit`) and `withEnrolments` (used by `enrol` and `edit-enrol`) pass the current objects of every other field to the full constructor. The constructor copies the tag set and the enrolment list but keeps their elements, so unchanged fields keep the same value objects. `edit-enrol` creates a new `Enrolment` only for the edited entry. `RemarkCommand` also passes every other current field to the full constructor.
 * `EditCommand` compares the old and new `Person`, and `EditEnrolCommand` the old and new `Enrolment`, using `equals` rather than object identity. If they are equal, the command does not call `setPerson` and reports `No values changed.`
 
 <div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>

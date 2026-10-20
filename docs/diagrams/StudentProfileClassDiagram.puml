@@ -9,6 +9,7 @@ skinparam classAttributeFontSize 14
 Class Person {
     isSample : boolean
     isSamePerson(Person) : boolean
+    withIdentity(Name, Email) : Person
     withContacts(...) : Person
     withEnrolments(...) : Person
 }
