@@ -126,7 +126,8 @@ public final class SearchTimingProbe {
         // Check one class from each JavaFX component used by the application, without initialising controls.
         for (Class<?> type : List.of(ObservableList.class, Scene.class, TextField.class, FXMLLoader.class)) {
             CodeSource source = type.getProtectionDomain().getCodeSource();
-            if (source == null || !"file".equals(source.getLocation().getProtocol())
+            if (source == null || source.getLocation() == null
+                    || !"file".equals(source.getLocation().getProtocol())
                     || !Files.isSameFile(jar, Path.of(source.getLocation().toURI()))) {
                 throw new IllegalArgumentException("JavaFX must come from the candidate JAR: " + type.getName()
                         + " loaded from " + (source == null ? "an unknown location" : source.getLocation())
