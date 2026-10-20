@@ -129,8 +129,10 @@ public final class SearchTimingProbe {
             if (source == null || source.getLocation() == null
                     || !"file".equals(source.getLocation().getProtocol())
                     || !Files.isSameFile(jar, Path.of(source.getLocation().toURI()))) {
+                String actualLocation = source == null || source.getLocation() == null
+                        ? "an unknown location" : source.getLocation().toString();
                 throw new IllegalArgumentException("JavaFX must come from the candidate JAR: " + type.getName()
-                        + " loaded from " + (source == null ? "an unknown location" : source.getLocation())
+                        + " loaded from " + actualLocation + "; expected candidate JAR at " + jar
                         + ". Use plain JDK 25 without bundled JavaFX and remove external JavaFX from the "
                         + "classpath/module path.");
             }
