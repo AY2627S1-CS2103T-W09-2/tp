@@ -284,8 +284,8 @@ Trade-off and open scope:
 
 * The software pipeline renders on the CPU, so drawing may be slower; native-Linux responsiveness is not measured yet.
 * An explicit `prism.order` (command line, `JAVA_TOOL_OPTIONS` or `JDK_JAVA_OPTIONS`) is preserved. An override that selects `es2` can use the Mesa cache again.
-* The mitigation covers only the Mesa shader cache. HotSpot performance data (`/tmp/hsperfdata_<user>`) and the GTK/dconf runtime file (`/run/user/<uid>/dconf/user`) were still accessed. Their status under the data-sandbox constraint awaits a teaching-team interpretation.
-* This is not a course exemption or a complete sandbox certification. Evidence so far is WSL2/WSLg only; native Linux is not verified.
+* The mitigation covers only the Mesa shader cache. HotSpot performance data (`/tmp/hsperfdata_<user>`) and the GTK/dconf runtime file (`/run/user/<uid>/dconf/user`) were still accessed. On 21 October 2026, the [teaching team confirmed](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/684#issuecomment-6312549486) that the default JVM behaviours described in this investigation are exempt from the data-sandbox constraint. These default runtime accesses do not require redirection or suppression to satisfy that constraint.
+* This clarification does not permit application-controlled reads or writes outside JAR home or changes to OS settings. It does not establish complete sandbox certification or platform coverage. Evidence so far is WSL2/WSLg only; native Linux is not verified.
 
 ### Storage safety (v1.2)
 
