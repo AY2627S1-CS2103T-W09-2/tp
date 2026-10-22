@@ -20,6 +20,13 @@ public abstract class UiPart<T> {
     private final FXMLLoader fxmlLoader = new FXMLLoader();
 
     /**
+     * Constructs a UiPart from an already prepared scene graph, without parsing FXML.
+     */
+    protected UiPart(T root) {
+        fxmlLoader.setRoot(requireNonNull(root));
+    }
+
+    /**
      * Constructs a UiPart with the specified FXML file URL.
      * The FXML file must not specify the {@code fx:controller} attribute.
      */

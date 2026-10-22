@@ -115,7 +115,7 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
-     * Reuses prepared cards so scrolling cannot defer FXML loading or profile formatting until after success.
+     * Reuses prepared cards so scrolling cannot defer card construction or profile formatting until after success.
      */
     class PersonListViewCell extends ListCell<Person> {
         @Override
