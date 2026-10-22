@@ -18,8 +18,9 @@ SoCdex provides a keyboard-first workflow for tutors who prefer typed commands. 
 SoCdex supports the following capabilities:
 
 * Create student profiles with names, NUS email addresses, and optional Telegram and GitHub usernames.
-* Update optional Telegram and GitHub contact details.
+* Edit student names, NUS email addresses, and optional Telegram and GitHub contact details.
 * Record module-semester enrolments with optional tutorial sections and project teams.
+* Edit or clear tutorial sections and project teams for existing enrolments.
 * Find students by name, NUS email, Telegram username, or GitHub username.
 * View a student's complete profile and enrolments.
 * Load and remove fictional sample data for product exploration.
@@ -32,6 +33,7 @@ SoCdex does not manage grades, attendance, submissions, schedules, disciplinary 
 * [User Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/UserGuide.html)
 * [Developer Guide](https://ay2627s1-cs2103t-w09-2.github.io/tp/DeveloperGuide.html)
 * [About Us](https://ay2627s1-cs2103t-w09-2.github.io/tp/AboutUs.html)
+* [Releases](https://github.com/AY2627S1-CS2103T-W09-2/tp/releases)
 * [Project repository](https://github.com/AY2627S1-CS2103T-W09-2/tp)
 
 ## Acknowledgements
