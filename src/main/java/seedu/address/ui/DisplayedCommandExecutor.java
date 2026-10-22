@@ -2,7 +2,9 @@ package seedu.address.ui;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
+import seedu.address.commons.core.LogsCenter;
 import seedu.address.logic.Logic;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.CommandResult;
@@ -19,6 +21,7 @@ class DisplayedCommandExecutor {
     static final String MESSAGE_DISPLAY_FAILURE = "The student list could not be refreshed. "
             + "No further commands will run until it can be displayed. Retry to refresh the list.";
 
+    private final Logger logger = LogsCenter.getLogger(DisplayedCommandExecutor.class);
     private final Logic logic;
     private final BooleanSupplier isDisplayCurrent;
     private final Consumer<CommandResult> presentSearch;
@@ -74,6 +77,9 @@ class DisplayedCommandExecutor {
         try {
             refreshDisplay.run();
         } catch (RuntimeException | AssertionError e) {
+            // Exception messages can contain student data; record only the failure type and recovery context.
+            logger.warning("Student list refresh failed; keeping the previous display. Failure type: "
+                    + e.getClass().getSimpleName());
             throw new CommandException(MESSAGE_DISPLAY_FAILURE, e);
         }
     }
