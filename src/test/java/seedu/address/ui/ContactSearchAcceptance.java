@@ -204,7 +204,12 @@ public class ContactSearchAcceptance extends Application {
         @Override
         PersonListPanel createPersonListPanel(ObservableList<Person> persons) {
             if (failPresentation) {
-                throw new IllegalStateException("Injected rendering failure");
+                return new PersonListPanel(persons, (person, index) -> {
+                    if (index == persons.size()) {
+                        throw new IllegalStateException("Injected last-card rendering failure");
+                    }
+                    return new PersonCard(person, index).getRoot();
+                });
             }
             return super.createPersonListPanel(persons);
         }

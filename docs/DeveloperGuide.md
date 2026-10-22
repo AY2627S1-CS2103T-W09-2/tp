@@ -340,6 +340,16 @@ On Windows, replace the classpath separator `:` with `;`. This opt-in utility dr
 
 #### Measuring search responsiveness
 
+Result cards are constructed directly from JavaFX controls to avoid parsing the same FXML document for every row. All cards and their complete text are still prepared before replacing the displayed list; construction failures retain the previous display. Matching, ordering and selection rules are unchanged.
+
+The opt-in `PersonCardAcceptance` driver compares the card hierarchy, styles, dimensions and complete content against the previous FXML layout retained as a test fixture. After `./gradlew testClasses shadowJar`, run it with plain JDK 25:
+
+```text
+java --enable-native-access=ALL-UNNAMED -cp build/classes/java/test:build/resources/test:build/libs/addressbook.jar seedu.address.ui.PersonCardAcceptance
+```
+
+Windows uses `;` as the classpath separator. Also run `ContactSearchAcceptance` (including a failure while constructing the last result card), `MvpAcceptance` and `ProfileViewAcceptance` to check display rollback, selection, keyboard behaviour and profile presentation.
+
 Use `SearchTimingProbe` for the v1.4 measurement handoff in #102. It is a plain launcher that uses the JavaFX classes and native libraries in the candidate JAR. Use **plain JDK 25**, without a separately bundled JavaFX runtime, to measure the shipped JavaFX version. Build the driver and candidate with `./gradlew clean testClasses shadowJar`; record the source revision and JAR SHA-256. When testing a release candidate, replace `build/libs/addressbook.jar` below with the downloaded candidate and do not rebuild or modify it. The application classes must come from that JAR, not `build/classes/java/main`.
 
 The probe checks that JavaFX base, graphics, controls and FXML classes come from the same candidate JAR. If a JDK bundles JavaFX or external JavaFX libraries override the candidate, it stops before opening the window or creating the output folder. Use plain JDK 25 and remove external JavaFX entries from the classpath or module path, then retry. This check applies even when an external library has the same version number as the candidate.
