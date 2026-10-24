@@ -66,16 +66,17 @@ public class LogicManager implements Logic {
     @Override
     public CommandResult execute(String commandText, Consumer<CommandResult> presentSearch)
             throws CommandException, ParseException {
-        logger.info("----------------[USER COMMAND][" + commandText + "]");
-
         boolean hadPendingDeletion = model.getPendingDeletion().isPresent();
         Command command;
         try {
             command = addressBookParser.parseCommand(commandText);
         } catch (ParseException e) {
+            logger.info("Command rejected during parsing.");
             model.clearPendingDeletion();
             throw hadPendingDeletion ? new ParseException(withCancellationNotice(e.getMessage()), e) : e;
         }
+        String commandName = command.getClass().getSimpleName();
+        logger.info("Executing command: " + commandName);
 
         boolean isCancelling = hadPendingDeletion && !command.isDeletionConfirmation();
         if (isCancelling) {
@@ -87,11 +88,13 @@ public class LogicManager implements Logic {
         try {
             CommandResult commandResult = executeParsed(command, presentSearch);
             isSuccessful = true;
+            logger.info("Command completed: " + commandName);
             return isCancelling ? commandResult.withNotice(Messages.MESSAGE_PENDING_DELETION_CANCELLED) : commandResult;
         } catch (CommandException e) {
             throw isCancelling ? withCancellationNotice(e) : e;
         } finally {
             if (!isSuccessful) {
+                logger.info("Command failed: " + commandName);
                 // A fresh preview is required after any failure, including a failed replacement preview.
                 model.clearPendingDeletion();
             }

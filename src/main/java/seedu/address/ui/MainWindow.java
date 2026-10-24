@@ -335,7 +335,6 @@ public class MainWindow extends UiPart<Stage> {
         Person previousSelection = personListPanel.getSelectedPerson();
         try {
             CommandResult commandResult = commandExecutor.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
             if (commandResult.isShowHelp()) {
@@ -351,7 +350,6 @@ public class MainWindow extends UiPart<Stage> {
             if (!(e instanceof DuplicateStudentException)) {
                 personListPanel.restoreSelection(previousSelection);
             }
-            logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         } finally {
