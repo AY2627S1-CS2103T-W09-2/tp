@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.logic.parser.exceptions.ParseException;
@@ -38,7 +39,7 @@ public class StorageSafetyTest {
     public void execute_failedMutations_restoreRosterAndFilter() throws Exception {
         for (IOException failure : new IOException[] {new IOException("replacement failed"),
             new AccessDeniedException("read-only file")}) {
-            for (String command : new String[] {"clear", "edit /email alice@u.nus.edu /github Changed",
+            for (String command : new String[] {"edit /email alice@u.nus.edu /github Changed",
                 "remark 1 r/Changed",
                 "student add /name Fictional Student /email demo@u.nus.edu"}) {
                 ModelManager model = createModel();
@@ -59,7 +60,7 @@ public class StorageSafetyTest {
 
     @Test
     public void execute_failedMutation_restoresSearchOrderAndLiveFilter() throws Exception {
-        for (String command : new String[] {"clear", "edit /email alice@u.nus.edu /github Changed",
+        for (String command : new String[] {"edit /email alice@u.nus.edu /github Changed",
             "remark 1 r/Changed",
             "student add /name Fictional Student /email demo@u.nus.edu"}) {
             ModelManager model = createModel();
@@ -125,6 +126,23 @@ public class StorageSafetyTest {
     }
 
     @Test
+    public void execute_retiredClear_preservesRosterAndFilterAndDoesNotSave() {
+        ModelManager model = createModel();
+        model.updateFilteredPersonList(ALICE::equals);
+        AddressBook original = new AddressBook(model.getAddressBook());
+        Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")) {
+            @Override
+            public void saveAddressBook(ReadOnlyAddressBook addressBook) {
+                throw new AssertionError("The retired clear command must never attempt a save.");
+            }
+        });
+
+        assertThrows(CommandException.class, ClearCommand.MESSAGE_RETIRED, () -> logic.execute("clear"));
+        assertEquals(original, model.getAddressBook());
+        assertEquals(List.of(ALICE), model.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_successfulMutation_savedBeforeResultIsReturned() throws Exception {
         ModelManager model = createModel();
         JsonAddressBookStorage storage = new JsonAddressBookStorage(folder.resolve("roster.json"));
@@ -139,7 +157,8 @@ public class StorageSafetyTest {
     public void execute_recoveryRejectsAllMutationCommands() {
         ModelManager model = new ModelManager(new AddressBook(), new UserPrefs(), true);
         Logic logic = createLogic(model, new JsonAddressBookStorage(folder.resolve("roster.json")));
-        for (String command : new String[] {"clear", "delete alice@u.nus.edu", "confirm-delete alice@u.nus.edu",
+        assertThrows(CommandException.class, ClearCommand.MESSAGE_RETIRED, () -> logic.execute("clear"));
+        for (String command : new String[] {"delete alice@u.nus.edu", "confirm-delete alice@u.nus.edu",
             "edit /email alice@u.nus.edu /github Fictional", "remark 1 r/Test"}) {
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> logic.execute(command));
         }
