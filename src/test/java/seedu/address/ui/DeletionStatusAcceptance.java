@@ -15,6 +15,7 @@ import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventType;
+import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -89,6 +90,7 @@ public final class DeletionStatusAcceptance {
                 acceptance.verifyIndicatorBlankSubmissionsAndNonSubmissions();
                 acceptance.verifyStaleDisplayRejectionCancels();
                 acceptance.verifyRecoveryStatusIsPreserved();
+                acceptance.verifyPreviewRevealsOffscreenTarget();
                 acceptance.verifyUserSelectionCancelsButAppSelectionDoesNot();
                 acceptance.verifyDisplayFailureRestorationDoesNotRecreateDeletion();
                 acceptance.verifyEveryExitPathDiscardsPendingDeletion();
@@ -187,6 +189,47 @@ public final class DeletionStatusAcceptance {
         submit("delete " + TARGET);
         check(feedback().equals(LogicManager.MESSAGE_READ_ONLY), "recovery blocks the preview");
         check(deletionStatus().isEmpty(), "no indicator in recovery");
+        stage.close();
+    }
+
+    private void verifyPreviewRevealsOffscreenTarget() throws Exception {
+        Person tallFirst = new PersonBuilder().withName("Alex Tan").withEmail(TARGET)
+                .withEnrolments(
+                        new Enrolment(new ModuleCode("CS2103T"), new Semester("AY26/27 S1")),
+                        new Enrolment(new ModuleCode("CS2113T"), new Semester("AY26/27 S2")))
+                .build();
+        List<Person> additionalPeople = new ArrayList<>();
+        for (int i = 1; i <= 12; i++) {
+            additionalPeople.add(new PersonBuilder()
+                    .withName(String.format(java.util.Locale.ROOT, "Student %02d", i))
+                    .withEmail(String.format(java.util.Locale.ROOT, "e91%04d@u.nus.edu", i))
+                    .build());
+        }
+        Person last = new PersonBuilder().withName("Zed Student").withEmail("e9199999@u.nus.edu").build();
+        additionalPeople.add(last);
+        Path file = output.resolve("offscreen-target.json");
+        AddressBook roster = new AddressBook();
+        roster.addPerson(tallFirst);
+        roster.addPerson(sameName);
+        additionalPeople.forEach(roster::addPerson);
+        Files.deleteIfExists(file);
+        new JsonAddressBookStorage(file).saveAddressBook(roster);
+        show(new ModelManager(roster, new UserPrefs()), file);
+        stage.setWidth(740);
+        stage.setHeight(600);
+        layout();
+
+        check(!isRowVisible(last), "last target below the viewport before preview");
+        submit("delete " + last.getEmail());
+        runPendingFxTasks();
+        check(last.equals(selected()), "preview selects target below the viewport");
+        check(isRowVisible(last), "preview reveals target below the viewport");
+
+        check(!isRowVisible(sameName), "target above the viewport before preview");
+        submit("delete " + sameName.getEmail());
+        runPendingFxTasks();
+        check(sameName.equals(selected()), "preview selects target above the viewport");
+        check(isRowVisible(sameName), "preview reveals target above the viewport");
         stage.close();
     }
 
@@ -348,6 +391,18 @@ public final class DeletionStatusAcceptance {
 
     private ListView<?> personList() {
         return (ListView<?>) stage.getScene().lookup("#personListView");
+    }
+
+    private boolean isRowVisible(Person person) {
+        int index = personList().getItems().indexOf(person);
+        Bounds listBounds = personList().localToScene(personList().getBoundsInLocal());
+        return personList().lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(ListCell.class::cast)
+                .filter(cell -> !cell.isEmpty() && cell.getIndex() == index && cell.isVisible())
+                .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
+                .anyMatch(cellBounds -> cellBounds.getMaxY() > listBounds.getMinY()
+                        && cellBounds.getMinY() < listBounds.getMaxY());
     }
 
     private void clickRow(Person person) {
