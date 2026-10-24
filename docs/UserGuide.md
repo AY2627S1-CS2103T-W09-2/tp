@@ -305,7 +305,7 @@ Format: `delete EMAIL`, then `confirm-delete EMAIL`
 **Previewing the deletion**
 
 * `delete EMAIL` finds the student by NUS email in the complete roster, including students hidden by a search. Letter case and surrounding spaces or tabs are ignored, so `delete E9000001@U.NUS.EDU` targets `e9000001@u.nus.edu`. Names and list indexes are not accepted: `delete 1` shows the NUS email rules from `student add`. Students with the same name are told apart by their emails.
-* A successful preview selects the student, scrolls to them and shows their complete profile with every enrolment. If the student is already in the displayed results, those results are kept. Otherwise the full roster is shown, sorted by name then email. The result area shows, for example:
+* A successful preview selects the student, scrolls to them and shows their complete profile with every enrolment, including when their row is above or below the currently visible rows. If the student is already in the displayed results, those results are kept. Otherwise the full roster is shown, sorted by name then email. The result area shows, for example:
 
   ```
   Delete this student?
