@@ -29,6 +29,7 @@ public class RemarkCommandParserTest {
     public void parse_invalidArgs_throwsParseException() {
         String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, RemarkCommand.MESSAGE_USAGE);
         assertParseFailure(parser, "", expectedMessage);
+        assertParseFailure(parser, "1", expectedMessage);
         assertParseFailure(parser, "0 " + PREFIX_REMARK + "Likes baseball", expectedMessage);
         assertParseFailure(parser, "1 " + PREFIX_REMARK + "one " + PREFIX_REMARK + "two",
                 getErrorMessageForDuplicatePrefixes(PREFIX_REMARK));

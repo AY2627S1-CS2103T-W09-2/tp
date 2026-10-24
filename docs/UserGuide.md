@@ -60,9 +60,8 @@ SoCdex is based on AddressBook Level 3 (AB3).
 * For `student add` and `edit`, prefixes may appear in any order, but only once each. Separate each prefix from its value with a space or tab. Unknown prefixes, repeated prefixes, empty supplied values, malformed slash tokens and text before the first prefix are rejected with usage guidance.
 * A prefix starts at a space/tab boundary with `/` and a letter, followed by letters or hyphens. Values end at the next prefix. An embedded slash such as the one in `AY26/27` is not a prefix.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, and `clear`, are ignored.<br>
-  For example, `help 123` is interpreted as `help`.
-  `sample load`, `sample clear`, `bye`, and `exit` are exceptions. They reject all extra parameters.
+* Commands that take no parameters reject extra text. For example, `help 123`, `list all`, and `clear 1` are
+  rejected with command-specific usage guidance. Surrounding spaces and tabs remain allowed.
 
 * Pressing Enter when the command box is empty, or contains only spaces or tabs, shows `Enter a command.`
 

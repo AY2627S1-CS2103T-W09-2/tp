@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static seedu.address.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static seedu.address.testutil.Assert.assertThrows;
 import static seedu.address.testutil.TypicalPersons.AMY;
+import static seedu.address.testutil.TypicalPersons.BOB;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.CommandResult;
 import seedu.address.logic.commands.ListCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
@@ -114,6 +116,18 @@ public class LogicManagerTest {
             assertEquals(List.of(AMY), model.getFilteredPersonList());
             assertEquals(List.of(AMY), model.getAddressBook().getPersonList());
         }
+    }
+
+    @Test
+    public void execute_clearWithParameters_preservesRosterAndPreviousResults() throws Exception {
+        model.addPerson(AMY);
+        model.addPerson(BOB);
+        logic.execute("find Amy");
+
+        assertThrows(ParseException.class, ClearCommand.MESSAGE_USAGE, () -> logic.execute("clear all"));
+
+        assertEquals(List.of(AMY), model.getFilteredPersonList());
+        assertEquals(List.of(AMY, BOB), model.getAddressBook().getPersonList());
     }
 
     /**
