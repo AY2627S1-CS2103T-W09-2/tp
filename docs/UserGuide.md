@@ -207,7 +207,7 @@ Errors preserve the previous roster, displayed results and selection:
 * Read-only recovery rejects this command, including no-ops. Restore a valid file and restart first.
 
 
-### Listing all persons: `list`
+### Listing the complete roster: `list`
 
 Shows the complete roster, including students hidden by an earlier search.
 
@@ -487,7 +487,7 @@ Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for ex
 4. **At a compact window size, pending-deletion status text can be truncated and the command box has a weak visual focus cue.** Read the complete deletion preview in the result area. This is tracked in [issue #132](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/132).
 5. **The `list` command can return the roster to insertion order after another command displayed it in name order.** Email-based commands still identify the correct student. Check the NUS email before acting on a displayed row. This is tracked in [issue #144](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/144).
 
-The published v1.4 JAR was tested on macOS, Windows at 1366 x 768 with 100% scaling, and WSLg. Native Linux execution was unavailable. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are evidence limits, not confirmed defects.
+The published v1.4 JAR was tested on macOS and Windows at 1366 x 768 with 100% scaling. Supplemental WSLg checks also passed, but WSLg is not native Linux. Native Linux execution was unavailable for v1.4. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are v1.4 evidence limits, not confirmed defects. The final v1.5 evidence will replace this paragraph after acceptance testing.
 
 --------------------------------------------------------------------------------------------------------------------
 
