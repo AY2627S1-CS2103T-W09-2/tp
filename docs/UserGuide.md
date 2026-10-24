@@ -416,6 +416,7 @@ If an existing roster is unreadable or invalid, the app preserves it and opens a
 To recover:
 
 1. Close the app and keep a separate copy of the preserved file before making repairs.
+1. Open the newest file in `logs/`, usually `addressbook.log.0`, and find the stored-data validation message. It identifies the failed rule, such as an invalid section or email, but might not identify the exact record. Do not post a log publicly without checking it for roster information.
 1. Restore a known-valid roster to the displayed data-file location, or correct invalid records and file permissions while the app is closed.
 1. Restart SoCdex. Confirm that the expected records load and the status says **Storage available** before making changes.
 
