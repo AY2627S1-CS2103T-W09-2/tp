@@ -16,6 +16,9 @@ title: Developer Guide
 * The build uses [Gradle](https://gradle.org/) and the [Shadow plugin](https://gradleup.com/shadow/).
 * Spencer Chu used OpenAI Codex extensively to assist with implementation, tests, documentation, review, and
   repository workflows. Spencer reviewed and validated the accepted work and remains responsible for it.
+* Le Minh Hoang made widespread use of Claude Code (Anthropic) for code and test generation, documentation and
+  verification, and ChatGPT (OpenAI) for planning, technical review and drafting. He reviewed plans, code and
+  diffs and remains responsible for his contributions.
 * Jingchun Zhou used OpenAI Codex to assist with implementation, tests, documentation, code review, and repository
   workflows. Jingchun reviewed and validated the accepted work and remains responsible for it.
 
