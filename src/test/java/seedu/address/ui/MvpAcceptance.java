@@ -34,6 +34,7 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.ClearSamplesCommand;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.DeleteCommand;
@@ -303,6 +304,8 @@ public final class MvpAcceptance {
         checkRejected("sample load", SampleCommand.MESSAGE_NON_EMPTY, "sample load into a non-empty roster");
         checkRejected("student add /name Bad Email /email bad@example.com",
                 Email.MESSAGE_CONSTRAINTS, "invalid email");
+        Snapshot beforeClear = snapshot(roster);
+        checkPreserved("clear", ClearCommand.MESSAGE_RETIRED, beforeClear, "retired clear");
         check(Arrays.equals(saved, Files.readAllBytes(roster)), "guards and no-ops never rewrite the roster");
         stage.close();
     }

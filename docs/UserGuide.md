@@ -41,7 +41,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
    * `confirm-delete e9000001@u.nus.edu` : Deletes the previewed student, when submitted as the next command.
 
-   * `clear` : Deletes all contacts.
+   * `clear` : Explains that whole-roster clearing is unavailable and points to the safe alternatives.
 
    * `bye` : Exits the app.
 
@@ -60,7 +60,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 * For `student add` and `edit`, prefixes may appear in any order, but only once each. Separate each prefix from its value with a space or tab. Unknown prefixes, repeated prefixes, empty supplied values, malformed slash tokens and text before the first prefix are rejected with usage guidance.
 * A prefix starts at a space/tab boundary with `/` and a letter, followed by letters or hyphens. Values end at the next prefix. An embedded slash such as the one in `AY26/27` is not a prefix.
 
-* Commands that take no parameters reject extra text. For example, `help 123`, `list all`, and `clear 1` are
+* Commands that take no parameters reject extra text. For example, `help 123`, `list all`, and `bye now` are
   rejected with command-specific usage guidance. Surrounding spaces and tabs remain allowed.
 
 * Pressing Enter when the command box is empty, or contains only spaces or tabs, shows `Enter a command.`
@@ -116,7 +116,7 @@ If no students remain, SoCdex clears the selection and shows `No students in the
 
 If saving fails, SoCdex shows `Sample profiles could not be removed. No data was changed.` It restores all profiles, enrolments, results, and the selected profile. A read-only recovery session blocks the command.
 
-The command does not ask for confirmation and it is not selective. The inherited `clear` command is different because it deletes the whole roster, including real profiles.
+The command does not ask for confirmation and it is not selective. The standalone `clear` command is unavailable because deleting the whole roster would bypass the confirmation required for real profiles.
 
 
 ### Adding a student: `student add`
@@ -337,7 +337,7 @@ A confirmation attempt uses up the pending deletion, whether or not it succeeds.
 
 **What cancels a pending deletion**
 
-Each of the following cancels the pending deletion. The cancellation itself removes no roster data. A separately submitted command, such as `clear` or `sample clear`, still removes records according to its own behaviour after cancelling the pending deletion. You need a fresh `delete EMAIL` before confirming another deletion:
+Each of the following cancels the pending deletion. The cancellation itself removes no roster data. A separately submitted `sample clear` still removes fictional sample records after cancelling the pending deletion. Submitting the retired `clear` command cancels the pending deletion but removes nothing. You need a fresh `delete EMAIL` before confirming another deletion:
 
 * Submitting any other command, whether it is valid or not, such as `find`, `view`, `list`, `help`, an unknown command or a command with an error. SoCdex shows `Pending deletion cancelled.` on its own line above that command's own result or error. Another `delete EMAIL` cancels the earlier preview and creates a new pending deletion only if the student exists and the new preview succeeds.
 * Pressing Enter when the command box is empty or contains only spaces or tabs. SoCdex shows `Pending deletion cancelled.` followed by `Enter a command.`
@@ -368,13 +368,17 @@ Examples using the fictional sample profiles, after `sample load`:
 * `delete e9000003@u.nus.edu`, then `find Alex`, then `confirm-delete e9000003@u.nus.edu`: the search result starts with `Pending deletion cancelled.`, and the confirmation shows `There is no pending deletion. Use delete EMAIL first.` Mei Lim is kept.
 * `delete e9000003@u.nus.edu`, then `confirm-delete e9000004@u.nus.edu`: the mismatch message is shown, and both Mei Lim and Ravi Kumar are kept.
 
-To remove every fictional sample at once, use `sample clear`. The inherited `clear` command deletes the whole roster without a preview.
+To remove every fictional sample at once, use `sample clear`. SoCdex does not provide an operation that deletes the whole roster.
 
-### Clearing all entries: `clear`
+### Retired whole-roster command: `clear`
 
-Clears all entries from the address book.
+The inherited whole-roster clear operation is unavailable because it would bypass the confirmation required for deleting real student profiles.
 
 Format: `clear`
+
+Submitting this command shows `The clear command is unavailable because it would remove the entire roster. Use delete EMAIL to remove one student profile or sample clear to remove fictional sample profiles.` The roster, displayed results, selection and saved file remain unchanged.
+
+Use `delete EMAIL` followed by the matching `confirm-delete EMAIL` to remove one real profile safely. Use `sample clear` to remove all records classified as fictional samples.
 
 ### Exiting the program: `bye`
 
@@ -485,7 +489,7 @@ Action | Format, Examples
 **Edit enrolment** | `edit-enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION\|clear] [/team TEAM\|clear]`
 **Enrol** | `enrol /email EMAIL /module MODULE /semester SEMESTER [/section SECTION] [/team TEAM]`
 **Student add** | `student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]`
-**Clear** | `clear`
+**Retired whole-roster clear** | `clear` (always rejected; use `delete EMAIL` or `sample clear`)
 **Delete** | `delete EMAIL`, then `confirm-delete EMAIL` as the next command<br> e.g., `delete e9000001@u.nus.edu`, then `confirm-delete e9000001@u.nus.edu`
 **Exit** | `bye` (alias: `exit`)
 **Edit** | `edit /email EMAIL [/new-email NEW_EMAIL] [/name NAME] [/telegram HANDLE\|clear] [/github USERNAME\|clear]`<br> e.g., `edit /email e9000001@u.nus.edu /new-email e9000101@u.nus.edu /github clear`

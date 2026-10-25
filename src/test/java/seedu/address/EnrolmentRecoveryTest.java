@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
@@ -48,7 +49,7 @@ class EnrolmentRecoveryTest {
         assertTrue(app.model.isReadOnly());
         app.logic.execute("find Nobody");
         app.logic.execute("list");
-        assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute("clear"));
+        assertThrows(CommandException.class, ClearCommand.MESSAGE_RETIRED, () -> app.logic.execute("clear"));
         app.logic.execute("bye");
         app.logic.execute("exit");
         app.stop();
