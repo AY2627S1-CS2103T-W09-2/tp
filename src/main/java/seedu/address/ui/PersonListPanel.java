@@ -90,6 +90,14 @@ public class PersonListPanel extends UiPart<Region> {
         });
     }
 
+    /** Scrolls the currently selected row into view after this panel has been attached to the main window. */
+    void revealSelection() {
+        int index = personListView.getSelectionModel().getSelectedIndex();
+        if (index >= 0) {
+            personListView.scrollTo(index);
+        }
+    }
+
     /**
      * Selects and reveals the sole search result, or clears selection for an ambiguous or empty result.
      */

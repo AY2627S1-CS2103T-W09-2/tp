@@ -58,7 +58,7 @@ public class AddressBookParser {
         // Note to developers: Change LOG_LEVEL in LogsCenter to enable lower level (i.e., FINE, FINER and lower)
         // log messages such as the one below.
         // Lower level log messages are used sparingly to minimize noise in the code.
-        logger.fine("Command word: " + commandWord + "; Arguments: " + arguments);
+        logger.fine("Parsing command input.");
 
         return switch (commandWord) {
             case AddCommand.COMMAND_WORD -> parseStudent(arguments);
@@ -67,19 +67,30 @@ public class AddressBookParser {
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ConfirmDeleteCommand.COMMAND_WORD -> new ConfirmDeleteCommandParser().parse(arguments);
-            case ClearCommand.COMMAND_WORD -> new ClearCommand();
+            case ClearCommand.COMMAND_WORD -> parseParameterless(
+                    arguments, new ClearCommand(), ClearCommand.MESSAGE_USAGE);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
             case RemarkCommand.COMMAND_WORD -> new RemarkCommandParser().parse(arguments);
             case SampleCommand.COMMAND_WORD -> parseSample(arguments);
             case ViewCommand.COMMAND_WORD -> new ViewCommandParser().parse(arguments);
-            case ListCommand.COMMAND_WORD -> new ListCommand();
+            case ListCommand.COMMAND_WORD -> parseParameterless(
+                    arguments, new ListCommand(), ListCommand.MESSAGE_USAGE);
             case ExitCommand.COMMAND_WORD, ExitCommand.COMMAND_WORD_ALIAS -> parseExit(arguments);
-            case HelpCommand.COMMAND_WORD -> new HelpCommand();
+            case HelpCommand.COMMAND_WORD -> parseParameterless(
+                    arguments, new HelpCommand(), HelpCommand.MESSAGE_USAGE);
             default -> {
-                logger.finer("This user input caused a ParseException: " + userInput);
+                logger.finer("Command input did not match a supported command.");
                 throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
             }
         };
+    }
+
+    /** Returns a command only when the input contains no parameters besides spaces or tabs. */
+    private Command parseParameterless(String args, Command command, String usage) throws ParseException {
+        if (!args.trim().isEmpty()) {
+            throw new ParseException(usage);
+        }
+        return command;
     }
 
     private Command parseStudent(String args) throws ParseException {

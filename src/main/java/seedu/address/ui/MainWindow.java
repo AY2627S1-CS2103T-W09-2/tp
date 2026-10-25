@@ -226,7 +226,9 @@ public class MainWindow extends UiPart<Stage> {
         }
         // A removal that leaves no students shows the empty-roster guidance instead of the selection prompt.
         boolean isRemovalRefresh = result.isClearSelection() || result.isPreserveSurvivingSelection();
-        prepareAndReplaceDisplay(replacement, isRemovalRefresh && logic.getFilteredPersonList().isEmpty());
+        boolean shouldRevealSelection = result.getSelectionTarget() != null;
+        prepareAndReplaceDisplay(replacement, isRemovalRefresh && logic.getFilteredPersonList().isEmpty(),
+                shouldRevealSelection);
     }
 
     private boolean isPersonListCurrent() {
@@ -244,10 +246,11 @@ public class MainWindow extends UiPart<Stage> {
      * Any failure keeps the previous complete list and profile.
      */
     private void prepareAndReplaceDisplay(PersonListPanel replacement) {
-        prepareAndReplaceDisplay(replacement, false);
+        prepareAndReplaceDisplay(replacement, false, false);
     }
 
-    private void prepareAndReplaceDisplay(PersonListPanel replacement, boolean showEmptyRosterGuidance) {
+    private void prepareAndReplaceDisplay(PersonListPanel replacement, boolean showEmptyRosterGuidance,
+            boolean shouldRevealSelection) {
         PersonDetailsPanel details = showEmptyRosterGuidance
                 ? createEmptyRosterDetailsPanel()
                 : createPersonDetailsPanel(replacement.getSelectedPerson());
@@ -266,6 +269,9 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = replacement;
         personDetailsPanel = details;
         followSelection(replacement);
+        if (shouldRevealSelection) {
+            replacement.revealSelection();
+        }
     }
 
     private void prepare(Region root, Region placeholder) {
@@ -335,7 +341,6 @@ public class MainWindow extends UiPart<Stage> {
         Person previousSelection = personListPanel.getSelectedPerson();
         try {
             CommandResult commandResult = commandExecutor.execute(commandText);
-            logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
             if (commandResult.isShowHelp()) {
@@ -350,8 +355,8 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             if (!(e instanceof DuplicateStudentException)) {
                 personListPanel.restoreSelection(previousSelection);
+                personListPanel.revealSelection();
             }
-            logger.info("An error occurred while executing command: " + commandText);
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
         } finally {

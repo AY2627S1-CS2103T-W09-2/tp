@@ -44,8 +44,9 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_clear() throws Exception {
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
-        assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+        assertTrue(parser.parseCommand(" \t" + ClearCommand.COMMAND_WORD + "\t ") instanceof ClearCommand);
+        assertThrows(ParseException.class, ClearCommand.MESSAGE_USAGE, () ->
+                parser.parseCommand(ClearCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
@@ -118,14 +119,16 @@ public class AddressBookParserTest {
 
     @Test
     public void parseCommand_help() throws Exception {
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
-        assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+        assertTrue(parser.parseCommand(" \t" + HelpCommand.COMMAND_WORD + "\t ") instanceof HelpCommand);
+        assertThrows(ParseException.class, HelpCommand.MESSAGE_USAGE, () ->
+                parser.parseCommand(HelpCommand.COMMAND_WORD + " 3"));
     }
 
     @Test
     public void parseCommand_list() throws Exception {
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        assertTrue(parser.parseCommand(" \t" + ListCommand.COMMAND_WORD + "\t ") instanceof ListCommand);
+        assertThrows(ParseException.class, ListCommand.MESSAGE_USAGE, () ->
+                parser.parseCommand(ListCommand.COMMAND_WORD + " 3"));
     }
 
     @Test

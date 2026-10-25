@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import seedu.address.logic.LogicManager;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
@@ -62,7 +63,7 @@ public class MainAppTest {
             app.logic.execute("list");
             app.logic.execute("find Nobody");
             app.logic.execute("help");
-            assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute("clear"));
+            assertThrows(CommandException.class, ClearCommand.MESSAGE_RETIRED, () -> app.logic.execute("clear"));
             String add = "student add /name Fictional Student /email demo@u.nus.edu";
             assertThrows(CommandException.class, LogicManager.MESSAGE_READ_ONLY, () -> app.logic.execute(add));
             app.logic.execute("exit");

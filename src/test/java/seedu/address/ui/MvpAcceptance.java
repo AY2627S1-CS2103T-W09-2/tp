@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
@@ -33,6 +34,7 @@ import seedu.address.commons.exceptions.DataLoadingException;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ClearCommand;
 import seedu.address.logic.commands.ClearSamplesCommand;
 import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.DeleteCommand;
@@ -95,6 +97,7 @@ public final class MvpAcceptance {
                 acceptance.verifySelectiveSampleClear(roster);
                 acceptance.verifyGuardsAndNoOps(roster);
                 acceptance.verifyInjectedFailures();
+                acceptance.verifyFailedSaveKeepsSelectionVisible();
                 acceptance.verifyInvalidFilesStartReadOnly(roster);
                 List<String> summary = List.of("PASS MVP JavaFX assertions: " + acceptance.assertions,
                         "Runtime: " + System.getProperty("java.runtime.version") + "; JavaFX "
@@ -301,6 +304,8 @@ public final class MvpAcceptance {
         checkRejected("sample load", SampleCommand.MESSAGE_NON_EMPTY, "sample load into a non-empty roster");
         checkRejected("student add /name Bad Email /email bad@example.com",
                 Email.MESSAGE_CONSTRAINTS, "invalid email");
+        Snapshot beforeClear = snapshot(roster);
+        checkPreserved("clear", ClearCommand.MESSAGE_RETIRED, beforeClear, "retired clear");
         check(Arrays.equals(saved, Files.readAllBytes(roster)), "guards and no-ops never rewrite the roster");
         stage.close();
     }
@@ -347,6 +352,27 @@ public final class MvpAcceptance {
         isListDisplayFailing = false;
         submit("find Mei");
         checkShowsFullProfile(MEI_EMAIL, "search after the display recovers");
+        stage.close();
+    }
+
+    /** A failed full-roster update keeps the previously selected off-screen row visible after rollback. */
+    private void verifyFailedSaveKeepsSelectionVisible() throws Exception {
+        Path roster = output.resolve("failed-save-selection.json");
+        Files.deleteIfExists(roster);
+        start(roster);
+        stage.setWidth(740);
+        stage.setHeight(600);
+        runPendingFxTasks();
+        submit("sample load");
+        submit("view " + RAVI_EMAIL);
+        check(isRowVisible(person(RAVI_EMAIL)), "failed-save setup reveals the selected student near the list end");
+        Snapshot before = snapshot(roster);
+
+        isSaveFailing = true;
+        checkPreserved("student add /name Aaron Example /email e9000100@u.nus.edu",
+                "The student could not be saved. No data was changed.", before, "add save with distant selection");
+        check(isRowVisible(person(RAVI_EMAIL)), "failed save keeps the restored selected student visible");
+        isSaveFailing = false;
         stage.close();
     }
 
@@ -529,6 +555,19 @@ public final class MvpAcceptance {
 
     private Person selected() {
         return window.getPersonListPanel().getSelectedPerson();
+    }
+
+    private boolean isRowVisible(Person person) {
+        ListView<?> list = (ListView<?>) stage.getScene().lookup("#personListView");
+        int index = list.getItems().indexOf(person);
+        Bounds listBounds = list.localToScene(list.getBoundsInLocal());
+        return list.lookupAll(".list-cell").stream()
+                .filter(ListCell.class::isInstance)
+                .map(ListCell.class::cast)
+                .filter(cell -> !cell.isEmpty() && cell.getIndex() == index && cell.isVisible())
+                .map(cell -> cell.localToScene(cell.getBoundsInLocal()))
+                .anyMatch(cellBounds -> cellBounds.getMaxY() > listBounds.getMinY()
+                        && cellBounds.getMinY() < listBounds.getMaxY());
     }
 
     /** Returns the text of every visible non-empty label in the rendered row at {@code index}, in scene-graph order. */
