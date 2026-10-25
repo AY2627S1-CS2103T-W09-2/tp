@@ -30,7 +30,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
-   * `list` : Lists all contacts.
+   * `list` : Lists all students.
 
    * `student add /name Alex Tan /email e9000001@u.nus.edu` : Creates a student profile without requiring optional contacts.
 
@@ -157,9 +157,9 @@ Create the student first with `student add`. The normalised NUS email selects th
 
 Examples using an existing fictional student:
 
-* `enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1` adds an unassigned context.
-* Alternatively, `enrol /email E9000001@U.NUS.EDU /module cs2103t /semester ay26/27 s1 /section T12 /team SEED` adds the same context with affiliations. Run either example, not both: the second is a duplicate after the first succeeds.
-* `enrol /semester AY26/27 S2 /module CS2103T /email e9000001@u.nus.edu` adds a separate context for the next semester.
+* `enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1` adds an unassigned context.
+* Alternatively, `enrol /email E9000005@U.NUS.EDU /module cs2103t /semester ay26/27 s1 /section T12 /team SEED` adds the same context with affiliations. Run either example, not both: the second is a duplicate after the first succeeds.
+* `enrol /semester AY26/27 S2 /module CS2103T /email e9000005@u.nus.edu` adds a separate context for the next semester.
 
 Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. Complete profile/enrolment presentation remains a separate increment.
 
