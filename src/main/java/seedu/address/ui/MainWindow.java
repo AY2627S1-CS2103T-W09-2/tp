@@ -355,6 +355,7 @@ public class MainWindow extends UiPart<Stage> {
         } catch (CommandException | ParseException e) {
             if (!(e instanceof DuplicateStudentException)) {
                 personListPanel.restoreSelection(previousSelection);
+                personListPanel.revealSelection();
             }
             resultDisplay.setFeedbackToUser(e.getMessage());
             throw e;
