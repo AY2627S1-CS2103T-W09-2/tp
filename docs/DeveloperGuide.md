@@ -42,7 +42,7 @@ The following provides a quick overview of the main components and their interac
 
 **Main components of the architecture**
 
-**`Main`** (consisting of classes [`Main`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
+**`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
 * At shut down, it shuts down the other components and invokes cleanup methods where necessary.
 
@@ -74,13 +74,13 @@ The sections below give more details of each component.
 
 ### UI component
 
-The **API** of this component is specified in [`Ui.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/Ui.java)
+The **API** of this component is specified in [`Ui.java`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/ui/Ui.java)
 
-![Structure of the UI Component](images/UiClassDiagram.png)
+[![Structure of the UI Component](images/UiClassDiagram.png)](images/UiClassDiagram.png)
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonDetailsPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
-The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/ui/MainWindow.java).
+The `UI` component uses the JavaFX UI framework. Most UI parts define their layouts in matching `.fxml` files in `src/main/resources/view`. `PersonCard` is the exception: it builds its layout in code (see [Measuring search responsiveness](#measuring-search-responsiveness)). For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/ui/MainWindow.java).
 
 The `UI` component,
 
@@ -91,7 +91,7 @@ The `UI` component,
 
 ### Logic component
 
-**API** : [`Logic.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/logic/Logic.java)
+**API** : [`Logic.java`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/logic/Logic.java)
 
 Here's a (partial) class diagram of the `Logic` component:
 
@@ -108,20 +108,22 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to an `AddressBookParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
+1. The command can communicate with the `Model` when it is executed (e.g. to record a pending deletion).<br>
    Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
-<img src="images/ParserClasses.png" width="600"/>
+<a href="images/ParserClasses.png"><img src="images/ParserClasses.png" width="800" alt="Parser classes" /></a>
 
 How the parsing works:
 * When called upon to parse a user command, the `AddressBookParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `AddressBookParser` returns that object as a `Command` object.
+* Parsers with slash prefixes (`student add`, `edit`, `enrol` and `edit-enrol`) tokenize with `SlashPrefixTokenizer`, which returns `SlashArguments`. The inherited `remark` parser still uses `ArgumentTokenizer` and `ArgumentMultimap`. The `delete`, `confirm-delete`, `view` and `find` parsers use only `ParserUtil`.
+* `AddressBookParser` builds the parameterless commands (`list`, `help`, `bye`/`exit` and the retired `clear`) and `sample load`/`sample clear` itself, without an `XYZCommandParser`.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
 ### Model component
-**API** : [`Model.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/model/Model.java)
+**API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/model/Model.java)
 
 <img src="images/ModelClassDiagram.png" width="450" />
 
@@ -130,7 +132,7 @@ The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * identifies each `Person` by its canonical NUS email: `Person#isSamePerson(Person)` compares only the `Email` values, so `UniquePersonList` accepts persons with equal names but rejects a second person with the same email. `Person#equals(Object)` and `Person#hashCode()` still compare every stored field, so a change to any saved field remains detectable.
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list, which a sorted view orders with the comparator supplied by the latest command. It exposes this view as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -142,16 +144,9 @@ The diagram above shows each `Person` as a single box. The class diagram below s
 * `Person` and its values are immutable, so an edit creates a replacement `Person` and passes it to `Model#setPerson`. `withIdentity` and `withContacts` (both used by `edit`) and `withEnrolments` (used by `enrol` and `edit-enrol`) pass the current objects of every other field to the full constructor. The constructor copies the tag set and the enrolment list but keeps their elements, so unchanged fields keep the same value objects. `edit-enrol` creates a new `Enrolment` only for the edited entry. `RemarkCommand` also passes every other current field to the full constructor.
 * `EditCommand` compares the old and new `Person`, and `EditEnrolCommand` the old and new `Enrolment`, using `equals` rather than object identity. If they are equal, the command does not call `setPerson` and reports `No values changed.`
 
-<div markdown="span" class="alert alert-info">:information_source: **Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `AddressBook`, and each `Person` references tags from that list. This lets `AddressBook` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
-
-<img src="images/BetterModelClassDiagram.png" width="450" />
-
-</div>
-
-
 ### Storage component
 
-**API** : [`Storage.java`](https://github.com/se-edu/addressbook-level3/tree/master/src/main/java/seedu/address/storage/Storage.java)
+**API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/storage/Storage.java)
 
 <img src="images/StorageClassDiagram.png" width="550" />
 
@@ -173,15 +168,16 @@ A missing roster starts an empty writable model. An invalid, unreadable or redir
 `DataLoadingException` and starts read-only recovery while preserving the original file. `MainApp.stop()` saves
 preferences, not the roster. Production paths are checked against the physical JAR home before access.
 
-For writable commands, `LogicManager` captures the roster and display restore point, executes the command and
-prepares any selection update before attempting a save. A presentation failure restores the model and never
-writes; complete no-ops and deletion previews do not write either. Changed data is serialized to a sibling
-temporary file and committed only through `ATOMIC_MOVE` with `REPLACE_EXISTING`. A write or replacement failure
-restores the roster, filter and comparator; the UI executor then refreshes the restored results and restores
-selection. Temporary cleanup runs in `finally`; a cleanup error after a committed replacement is logged and
-must not turn a successful save into a reported failure. The illustrated save-failure branch covers temporary
-serialization and atomic replacement. Path-check and storage-setup failures also restore the model, but temporary
-cleanup applies only after the temporary file has been created.
+For every command that passes the read-only gate, `LogicManager` captures the roster and display restore point,
+executes the command and prepares any selection update before attempting a save. A presentation failure
+restores the model and never writes; complete no-ops and deletion previews do not write either. Changed data is
+serialized to a sibling temporary file and committed only through `ATOMIC_MOVE` with `REPLACE_EXISTING`. A write
+or replacement failure restores the roster, filter and comparator; the UI executor then refreshes the restored
+results, and `MainWindow` restores the previous selection and scrolls it into view. Temporary cleanup runs in
+`finally`; a cleanup error after a committed replacement is logged and must not turn a successful save into a
+reported failure. The illustrated save-failure branch covers temporary serialization and atomic replacement.
+Path-check and storage-setup failures also restore the model, but temporary cleanup applies only after the
+temporary file has been created.
 
 The command/presentation reference describes the shared transaction mechanism that editing commands reuse.
 
@@ -246,7 +242,7 @@ Quote classpaths containing spaces; Windows uses `;` instead of `:`. The driver 
 submits through the real command box and exits through the window. It checks hidden-owner reveal, exact feedback,
 invalid-input atomicity, no-op bytes, case-only updates, sample preservation, selected profile and persisted reload.
 This is programmatic UI evidence with a real JVM restart, not manual keyboard testing. Record the source and JAR
-checksum separately. Published-guide verification remains a post-merge task in #96.
+checksum separately. Published-guide verification for this feature was tracked as a post-merge task in #96.
 
 ### Enrolment entry (v1.3)
 
@@ -266,7 +262,7 @@ On Windows use `;` instead of `:` in the classpath. The utility drives the actua
 
 ### Application data sandbox (v1.3 release requirement)
 
-[Constraint-Data-Sandbox](https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html#constraint-data-sandbox) confines application file access to the folder containing the running JAR and its subfolders. This is a release gate, including packaged-runtime acceptance in #79 and #80.
+[Constraint-Data-Sandbox](https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html#constraint-data-sandbox) confines application file access to the folder containing the running JAR and its subfolders. This is a release gate. For v1.3, packaged-runtime acceptance was recorded in #79 and #80. Current candidates follow the build, acceptance and publication handoff #135 → #142 → #143 recorded in #131, with build steps in [DevOps](DevOps.md).
 
 `AppPaths` derives home from its production class's protection-domain code-source URI, decodes spaces/Unicode, and resolves the physical code location. Packaged execution uses the containing JAR directory; development execution from unpacked classes uses that classes directory as home. It never uses `user.dir` or an external working-directory fallback. A JAR launched through a symbolic link uses the physical JAR's folder. Home discovery failure stops startup.
 
@@ -295,22 +291,22 @@ Trade-off and open scope:
 
 The shared command contract is:
 
-* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The existing `find`, `list`, `help`, and `bye` (with its `exit` alias) commands do so. `sample load`, `sample clear`, and profile mutations retain the default, so the recovery gate applies before execution.
+* `Command.isReadOnly()` defaults to `false`. Commands that only read data or change the visible filter override it to return `true`. The `find`, `view`, `list`, `help`, and `bye` (with its `exit` alias) commands do so. The retired `clear` command also returns `true`, so it passes the recovery gate and is rejected with its retirement message in every session. `sample load`, `sample clear`, and profile mutations retain the default, so the recovery gate applies before execution.
 * Commands validate and change the model through `execute(Model)`; they must not save directly. `LogicManager` owns persistence and returns the successful `CommandResult` only after storage succeeds.
 * `Model.createRestorePoint()` captures the immutable roster records, current filter, and display comparator and returns a restoration action. `LogicManager` restores them after an execution or save failure. A read-only command that changes records is rejected and rolled back. Full record equality detects no-op changes so they do not rewrite the file.
-* `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
+* `MainWindow` captures the selected profile before execution and restores it after a rejected command, after model restoration, then scrolls the restored row into view. A duplicate-student rejection is the exception: it reveals the existing profile instead. Success text is not displayed before `LogicManager` returns. Normal window close saves preferences only; it does not save the roster.
 
 `createRestorePoint()` reuses the search display restore point so failed saves preserve both the result filter and comparator. The profile view from #65 preserves the same selection restoration contract for its complete detail view. Changes to profile equality must include every persisted field so no-op detection remains correct.
 
-When presentation or storage fails after a command changes the model, `LogicManager` logs the failed transaction stage and the exception after restoring the previous state. These warning messages do not include command text or student data.
+When presentation or storage fails after a command changes the model, `LogicManager` logs the failed transaction stage and the exception after restoring the previous state. Each warning uses a fixed message that names the rollback stage, without the command text, and attaches the exception.
 
 `JsonAddressBookStorage` writes the complete candidate into a temporary file in the destination directory and closes it before an atomic replacement. Unsupported or failed atomic replacement is an error; there is no non-atomic fallback and the previous destination is not truncated first. Failed first saves leave no roster destination. Temporary-file cleanup is attempted on success and failure, and a cleanup error after a committed replacement is logged rather than reported as a failed save. Save attempts reject symbolic-link destinations and existing read-only files.
 
-`JsonUtil` distinguishes a definitely missing path from a path whose existence cannot be established, and requires exactly one complete non-null JSON document. `FileUtil` reads strict UTF-8; malformed bytes are rejected instead of replaced with replacement characters. Trailing garbage or additional JSON roots are rejected rather than silently ignored. Malformed JSON, invalid records, duplicate identities, and invalid adapter values reject the complete load. No records are silently dropped. This increment retains the existing identity and schema rules; NUS email identity, sample classification, and enrolments are separate changes.
+`JsonUtil` distinguishes a definitely missing path from a path whose existence cannot be established, and requires exactly one complete non-null JSON document. `FileUtil` reads strict UTF-8; malformed bytes are rejected instead of replaced with replacement characters. Trailing garbage or additional JSON roots are rejected rather than silently ignored. Malformed JSON, invalid records, duplicate identities, and invalid adapter values reject the complete load. No records are silently dropped. This increment retained the identity and schema rules of its time. The later load rules for NUS email identity, sample classification and enrolments are described in [NUS email identity](#nus-email-identity-v12), [Optional contacts and sample classification](#optional-contacts-and-sample-classification-v12) and [Enrolment storage](#enrolment-storage-v12).
 
 Protection covers detected failures, not power loss or hardware faults. The app does not implement backups, cross-process locking, or concurrent external file-edit detection. Recovery and no-op tests use temporary files and injected failures. The UI acceptance check additionally verifies the persistent warning and selected-row restoration.
 
-The startup guidance names both `student add` and fictional sample loading. Samples are never created automatically.
+The startup guidance for an empty roster is `No students in the roster. Add a student or load fictional samples.` Samples are never created automatically.
 
 ### Identifier search (v1.3)
 
@@ -320,7 +316,7 @@ The startup guidance names both `student add` and fictional sample loading. Samp
 
 `ModelManager` exposes a `SortedList` over its `FilteredList`. The comparator overload of `updateFilteredPersonList` filters the complete roster and sorts only the display by lowercase name, then lowercase email. Stored order and records remain unchanged. Existing commands using the single-argument overload retain their previous unsorted display behavior. Index-based commands operate on the displayed list.
 
-`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel untouched. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. [Profile viewing (v1.3)](#profile-viewing-v13) extends this display with a complete profile panel.
+`MainWindow` displays a snapshot panel, so a pending search cannot change the previous results or selection. `LogicManager.execute` accepts a search-presentation callback and captures the current filter and comparator before execution. The callback constructs every result card in a detached panel, selects and scrolls to the sole result (or clears selection), and applies CSS/layout before replacing the previous panel. Virtualized cells reuse those prepared cards, including results initially off screen. Success feedback follows that replacement. A runtime or FXML-loading failure restores the previous model filter/order, retains the old panel, and reports the specified retry message through `CommandException`. Parse failures also leave the old panel in place; `MainWindow` restores its previous selection and scrolls it into view. The UI-side `DisplayedCommandExecutor` refreshes changed snapshots after both successful and failed commands, preserving any surviving selection. Before executing another command, it verifies that the snapshot still equals the model list in order and content. If a refresh previously failed, the next submission only refreshes the display and asks the tutor to check the indexes and resubmit; it never executes an index taken from stale rows. These callbacks can be regression-tested with real logic and storage without starting JavaFX. [Profile viewing (v1.3)](#profile-viewing-v13) extends this display with a complete profile panel.
 
 The following activity diagram traces the `find` path through the display guard, parser, model filter and result-selection callback. It shows why ambiguous results clear the selection and why a failed replacement leaves the previous display intact. The diagram was checked against source commit `24f0107eef57387d22d99ec06e9610166352303a`; pending-deletion cancellation and unrelated commands are omitted to keep the search flow readable.
 
@@ -352,7 +348,7 @@ java --enable-native-access=ALL-UNNAMED -cp build/classes/java/test:build/resour
 
 Windows uses `;` as the classpath separator. Also run `ContactSearchAcceptance` (including a failure while constructing the last result card), `MvpAcceptance` and `ProfileViewAcceptance` to check display rollback, selection, keyboard behaviour and profile presentation.
 
-Use `SearchTimingProbe` for the v1.4 measurement handoff in #102. It is a plain launcher that uses the JavaFX classes and native libraries in the candidate JAR. Use **plain JDK 25**, without a separately bundled JavaFX runtime, to measure the shipped JavaFX version. Build the driver and candidate with `./gradlew clean testClasses shadowJar`; record the source revision and JAR SHA-256. When testing a release candidate, replace `build/libs/addressbook.jar` below with the downloaded candidate and do not rebuild or modify it. The application classes must come from that JAR, not `build/classes/java/main`.
+`SearchTimingProbe` was used for the v1.4 measurement handoff in #102 and remains the timing method for later candidates. It is a plain launcher that uses the JavaFX classes and native libraries in the candidate JAR. Use **plain JDK 25**, without a separately bundled JavaFX runtime, to measure the shipped JavaFX version. Build the driver and candidate with `./gradlew clean testClasses shadowJar`; record the source revision and JAR SHA-256. When testing a release candidate, replace `build/libs/addressbook.jar` below with the downloaded candidate and do not rebuild or modify it. The application classes must come from that JAR, not `build/classes/java/main`.
 
 The probe checks that JavaFX base, graphics, controls and FXML classes come from the same candidate JAR. If a JDK bundles JavaFX or external JavaFX libraries override the candidate, it stops before opening the window or creating the output folder. Use plain JDK 25 and remove external JavaFX entries from the classpath or module path, then retry. This check applies even when an external library has the same version number as the candidate.
 
@@ -378,9 +374,9 @@ The timing starts immediately before firing the command box's action event:
 
 A post-layout pulse is a **rendering-readiness proxy**, not proof that pixels have reached the physical display: JavaFX does not expose compositor completion here. The probe must not be reported as manual keyboard testing, a model-only benchmark, or exact end-to-end display latency. Keep native/manual observation in the final acceptance matrix. The printed focus, screen and scale values make programmatic-launch and display limitations explicit.
 
-Every run writes `timings.csv` with source/JAR identity, runtime, environment and every observation. Verification outside the timing checks result counts, sorted order, unique/ambiguous selection, feedback and rendered result cells; any save attempt fails. Ordinary rows over **1,000 ms** are marked `MISS` rather than hidden or used to weaken the target. Snapshot rows are marked `DIAGNOSTIC`. Report all misses and failures to #94 and keep #98 open for the required scope decision if ordinary interaction still misses the target.
+Every run writes `timings.csv` with source/JAR identity, runtime, environment and every observation. Verification outside the timing checks result counts, sorted order, unique/ambiguous selection, feedback and rendered result cells; any save attempt fails. Ordinary rows over **1,000 ms** are marked `MISS` rather than hidden or used to weaken the target. Snapshot rows are marked `DIAGNOSTIC`. For v1.4, misses and failures were reported to #94 and the scope decision was tracked in #98. For a later candidate, report every miss and failure in its acceptance issue (#142 for v1.5).
 
-Run on the specified Intel Core i5-1035G1 / 8 GB / SSD / Windows 11 reference configuration, or explicitly record the mismatch. Development-machine results do not certify that configuration. Retain the v1.3 timings in #80, compare against the new method honestly, and attach the final candidate's complete logs to #102 for review.
+Run on the specified Intel Core i5-1035G1 / 8 GB / SSD / Windows 11 reference configuration, or explicitly record the mismatch. Development-machine results do not certify that configuration. The v1.3 timings are retained in #80 and the v1.4 candidate's logs in #102. Compare a later candidate honestly against them and attach its complete logs to its acceptance issue.
 
 ### Profile viewing (v1.3)
 
@@ -388,9 +384,9 @@ Run on the specified Intel Core i5-1035G1 / 8 GB / SSD / Windows 11 reference co
 
 `ViewCommand` looks up the canonical email in the complete roster, not the displayed list, so hidden students can be viewed. If the target is already displayed, the filter and comparator are kept. Otherwise the command shows all students with `PersonOrder.BY_NAME_THEN_EMAIL`. It returns `CommandResult.forTarget`, and `isReadOnly()` is true, so `LogicManager` never saves and the command remains available during read-only recovery. `Command#getDisplayFailureMessage` lets the command replace the generic profile-display failure message with its own retry guidance. The rollback path is unchanged.
 
-`MainWindow` places `PersonListPanel` and `PersonDetailsPanel` side by side in a `SplitPane`. The details panel follows the list selection. A sole `find` result, `view`, `student add`, `edit` and a revealed duplicate therefore all show the complete profile, and a cleared selection shows the selection prompt. For a command presentation, `prepareAndReplaceDisplay` builds both panels in detached scenes with the window stylesheets, applies CSS and layout, then swaps both placeholders. A panel moved out of its preparation scene keeps stale styles, so `MainWindow` applies CSS to the details panel again after the swap; the preparation pass still sizes and lays out the panel before it is shown. If either swap fails, both previous panels are restored before the error reaches `LogicManager`, so failed presentation never shows a new list with a stale profile. A selection made with the mouse or keyboard prepares a new details panel the same way. If that fails, the previous profile stays visible, the result display shows `Messages.MESSAGE_PROFILE_DISPLAY_FAILURE`, and the list selection is restored to the displayed profile.
+`MainWindow` places `PersonListPanel` and `PersonDetailsPanel` side by side in a `SplitPane`. The details panel follows the list selection. A sole `find` result, `view`, `student add`, `edit` and a revealed duplicate therefore all show the complete profile, and a cleared selection shows the selection prompt. For a command presentation, `prepareAndReplaceDisplay` builds both panels in detached scenes with the window stylesheets, applies CSS and layout, then swaps both placeholders. Inside the prepared panel, `PersonListPanel#selectOnlyResult` selects a sole search result and scrolls to it, and `PersonListPanel#selectTarget` does the same for an explicit target. For an explicit target only, `MainWindow` repeats the scroll once the panel is attached (`PersonListPanel#revealSelection`). An ambiguous or empty search clears the selection, and a `sample clear` refresh restores a surviving selection without scrolling. A panel moved out of its preparation scene keeps stale styles, so `MainWindow` applies CSS to the details panel again after the swap; the preparation pass still sizes and lays out the panel before it is shown. If either swap fails, both previous panels are restored before the error reaches `LogicManager`, so failed presentation never shows a new list with a stale profile. A selection made with the mouse or keyboard prepares a new details panel the same way. If that fails, the previous profile stays visible, the result display shows `Messages.MESSAGE_PROFILE_DISPLAY_FAILURE`, and the list selection is restored to the displayed profile.
 
-The following sequence diagrams show how the selected student is chosen and how the complete profile is shown. Both were checked against source commit `33543cab24cc40fa95e2f32c7979e01cf220b3cf`. The first diagram starts when `LogicManager` presents a command result. `DisplayedCommandExecutor`, parsing and command execution are omitted; see [Identifier search (v1.3)](#identifier-search-v13) for those steps and [Persistence, rollback and protected loading](#persistence-rollback-and-protected-loading) for the restore and save that follow.
+The following sequence diagrams show how the selected student is chosen and how the complete profile is shown. Both were checked against source commit `33543cab24cc40fa95e2f32c7979e01cf220b3cf`. The first diagram was rechecked against `0a71ba778bfd1024454f2cf952086ea033612d1f` and now includes the conditional `revealSelection` step. The first diagram starts when `LogicManager` presents a command result. `DisplayedCommandExecutor`, parsing and command execution are omitted; see [Identifier search (v1.3)](#identifier-search-v13) for those steps and [Persistence, rollback and protected loading](#persistence-rollback-and-protected-loading) for the restore and save that follow.
 
 [![Command result, selected student and complete profile](images/ProfilePresentationSequenceDiagram.png)](images/ProfilePresentationSequenceDiagram.png)
 
@@ -461,9 +457,10 @@ Each session opens the file as `MainApp#initModelManager` does: empty if absent,
 2. **A non-sample student:** `student add`, two `enrol` contexts, an optional-contact `edit`, then `find` by name, NUS email, Telegram and GitHub. After `bye` and a restart, the same records return.
 3. **Deletion:** each cancellation class saves nothing. The classes are another command, blank input, an unknown command, a malformed or mismatched confirmation, a replacement preview, a stale display and keyboard selection of another student. Then a preview and a confirmed deletion.
 4. **Selective removal:** `sample clear` with a search hiding the samples reports the actual counts removed and keeps the non-sample student selected. A repeated clear saves nothing, and a restart returns only the real record.
-5. **Guards:** duplicate email and enrolment guards, a no-op `edit`, `sample load` into a non-empty roster and an invalid email are rejected without a save.
+5. **Guards and no-ops:** duplicate email and enrolment guards, `sample load` into a non-empty roster, an invalid email and the retired `clear` command are rejected without a save. A no-op `edit` is not a rejection: it reports `No values changed.` and does not save.
 6. **Injected failures:** save failures for `edit`, `enrol`, `student add` and `confirm-delete`, and display failures for `view`, `student add` and `find`. Each must keep every record, the file bytes, the displayed results, the selection and the complete profile. Once storage recovers, the same `edit` is saved; once the display recovers, the same `find` shows its result.
-7. **Invalid files:** truncated JSON and a file with an invalid stored email each open an empty read-only session. That session shows the preservation message and the recovery status, rejects five representative data-changing commands and still searches. Closing it by `bye` or by the window close request leaves the file bytes unchanged. After a valid file is restored, the next start loads its records normally.
+7. **Failed save with a distant selection:** in a 740 × 600 window, `view` selects a student near the end of the list, then an injected save failure for `student add` keeps the records and the file bytes, and the restored selected row stays visible.
+8. **Invalid files:** truncated JSON and a file with an invalid stored email each open an empty read-only session. That session shows the preservation message and the recovery status, rejects five representative data-changing commands and still searches. Closing it by `bye` or by the window close request leaves the file bytes unchanged. After a valid file is restored, the next start loads its records normally.
 
 Commands are submitted by setting the command box text and firing its action, and the list receives key events through its own handlers. This is programmatic UI evidence, not manual keyboard operation. At the selected rejection checkpoints, the driver checks that the rejected command stays in the command box with the error style and command-box focus. It also checks command-box focus after the success and profile-display checkpoints that call the shared focus assertions. Initial window focus depends on the OS, so the driver records it in the transcript rather than asserting it. The commands, results, assertion count and runtime are written to `build/reports/mvp-acceptance/transcript.txt`.
 
@@ -473,9 +470,11 @@ Commands are submitted by setting the command box text and firing its action, an
 * `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
 * `ContactSearchAcceptance` for search behaviour and `SearchTimingProbe` for separate ordinary-layout and snapshot timings over 500 profiles and 1,000 enrolments.
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
+* `EditEnrolAcceptance` `seed` and `restart` in separate processes (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
+* `PersonCardAcceptance` for the result-card layout (see [Measuring search responsiveness](#measuring-search-responsiveness)).
 * Manual keyboard testing on the reference platforms.
 
-Start release builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`. `shadowJar` excludes the top-level `logs/` directory so a later non-clean rebuild does not package those stale files. `JarContentsTest` checks the exclusion and the required resources under the normal `check` workflow. The clean start still removes unrelated stale build output. It does not prove that separate checkouts or platforms produce a byte-identical JAR. Build reproducibility is tracked separately in #79.
+Start release builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`. `shadowJar` excludes the top-level `logs/` directory so a later non-clean rebuild does not package those stale files. `JarContentsTest` checks the exclusion and the required resources under the normal `check` workflow. The clean start still removes unrelated stale build output. It does not prove that separate checkouts or platforms produce a byte-identical JAR. For v1.3, build reproducibility was tracked separately in #79.
 
 ### NUS email identity (v1.2)
 
@@ -537,13 +536,13 @@ The full workflow tests cover parsing, exact fixture contents, mixed real and fi
 
 `EditCommand` distinguishes omission (outer `Optional.empty()`) from clearing (present empty contact) and replacement. Only exact lowercase `clear` clears a contact; `@clear` stores a Telegram handle and `Clear` stores either contact. Full-record equality preserves case-only display changes. `PersonOrder.BY_NAME_THEN_EMAIL` is shared by search, creation, editing and duplicate reveal.
 
-`CommandResult.forTarget` requests an explicit profile selection. `MainWindow` creates all cards in a detached panel, selects and scrolls to that target, and performs layout before replacing the old panel. This callback runs even when result rows are unchanged, so a no-op can select its target. A failed preparation restores the model/filter/comparator and leaves the old complete panel intact, with no save. On successful preparation, persistence still completes before success is returned. Save failure restores model state; `DisplayedCommandExecutor` refreshes the rolled-back snapshot, and `MainWindow` restores the prior selected profile. The existing stale-display guard remains mandatory before subsequent commands.
+`CommandResult.forTarget` requests an explicit profile selection. `MainWindow` creates all cards in a detached panel, selects and scrolls to that target, and performs layout before replacing the old panel. Once the new panel is attached, it repeats the scroll (`PersonListPanel#revealSelection`). This callback runs even when result rows are unchanged, so a no-op can select its target. A failed preparation restores the model/filter/comparator and leaves the old complete panel intact, with no save. On successful preparation, persistence still completes before success is returned. Save failure restores model state; `DisplayedCommandExecutor` refreshes the rolled-back snapshot, and `MainWindow` restores the prior selected profile and scrolls it into view. The existing stale-display guard remains mandatory before subsequent commands.
 
 `DuplicateStudentException` is a creation rejection carrying the existing profile. `LogicManager` first restores prior data, then reveals the existing profile in the full sorted roster and requests targeted presentation without saving. Only a successfully presented duplicate rejection bypasses the window's ordinary selection restoration. If presentation fails, it restores the prior filter/order and uses the no-change presentation error. Normal no-op edits return `No values changed.` and target selection while equality suppresses saving.
 
-`Command.getSaveFailureMessage(defaultMessage)` supplies creation/edit-specific feedback only after rollback; other commands retain the existing storage error. It is not used for display failures. UI refresh failures following a completed save from other commands retain the existing guard and never rerun the saved mutation.
+`Command.getSaveFailureMessage(defaultMessage)` supplies command-specific feedback after rollback. `student add`, `edit`, `enrol`, `edit-enrol`, `confirm-delete`, `sample load` and `sample clear` override it; other commands keep the generic storage error. It is not used for display failures. UI refresh failures following a completed save from other commands retain the existing guard and never rerun the saved mutation.
 
-Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures. Full profile display remains a separate increment.
+Verification includes full parser boundaries, schema recovery and unchanged source bytes, duplicate reveal, hidden-target editing, literal clearing, no-op saves, case-only updates, classification/enrolment preservation, failed-save retry and presentation failures.
 
 **Design consideration:** a required, explicit classification means that sample-management features never have to infer whether a record is real. The cost is compatibility: every data file saved before this change has no `sample` property and opens in read-only recovery with its bytes preserved, and the User Guide explains the manual migration. Strict stored handles follow the same reasoning as stored emails: the app never silently rewrites a value in the data file.
 
@@ -589,7 +588,7 @@ No new persistence path is added. All parser and command checks finish before th
 
 ### User stories
 
-These stories describe planned tutor outcomes, not currently implemented features. The backlog includes core requirements, supporting features, and future ideas; inclusion does not commit the team to implementing every story this semester.
+The table records backlog priority, not implementation status. The MVP stories M1–M8 are implemented in the current product. This table does not claim the other stories as implemented, although some are partly supported (for example, `help` opens a window that links to the User Guide). The backlog includes core requirements, supporting features, and future ideas; inclusion does not commit the team to implementing every story this semester.
 
 Priorities:
 
@@ -634,7 +633,7 @@ Story IDs are retained from the project notes for traceability. Priorities follo
 
 ### Use cases
 
-The following use cases describe **planned SoCdex behaviour**, not features already implemented in the inherited AB3 application.
+The following use cases describe SoCdex behaviour that is implemented in the current product, rather than behaviour inherited from AB3.
 For all use cases, the **System** is **SoCdex** and the **Actor** is a **tutor**.
 A student profile contains identity and contact details; each enrolment records one module-semester and its optional tutorial section and project team.
 
@@ -903,7 +902,7 @@ These requirements define the quality targets for SoCdex. A target is not consid
 6. **Readable values**: Long valid values, such as a name at the maximum allowed length, and long lists of enrolments should remain fully readable through the layout, wrapping, or scrolling. SoCdex should not silently truncate a value or make it inaccessible; in particular, each student's complete NUS email should remain readable. Results and error messages should be understandable from their text, without relying on colour alone.
 7. **Screen resolution**: The GUI should work well at screen resolutions of 1920x1080 and higher with screen scales of 100% and 125%, and should remain usable (all functions available, even if less convenient) at resolutions of 1280x720 and higher with a screen scale of 150%.
 8. **Keyboard-first use**: Every roster task should be possible by typing commands, without using a mouse. After each command result, keyboard focus should be in the command box, and a rejected command should remain there for correction.
-9. **Platform compatibility**: SoCdex should work on Windows, Linux, and macOS computers that have Java 25 installed (and no other Java version), without relying on operating-system-specific features.
+9. **Platform compatibility**: SoCdex should work on Windows, Linux, and macOS computers with Java 25 alone, without depending on any other installed Java runtime or on operating-system-specific features.
 10. **Portable distribution**: SoCdex is planned to be distributed as a single JAR file of at most 100 MB that includes JavaFX and its other required libraries, and should run without an installer.
 11. **Invalid input**: When a command is invalid, SoCdex should reject the whole command, leave the roster unchanged, and show a message that states the problem and how to correct it.
 12. **Saving changes**: A command that changes roster data should report success only after the change has been saved. A command that succeeds without changing roster data, such as a search or an edit that supplies the current values, should not rewrite the data file. If SoCdex detects that saving failed, it should say that the change was not saved, keep the roster as it was before the command, and leave the previously saved data file intact.
@@ -942,14 +941,14 @@ testers are expected to do more *exploratory* testing.
 
    1. Download the JAR file and copy it into an empty folder.
 
-   1. Double-click the JAR file.<br>
-      Expected: The GUI opens with an empty roster and guidance to add a student or load fictional samples. No sample records load automatically. The window size may not be optimal.
+   1. Open a terminal in that folder and run `java -version`. Confirm that it reports major version 25 (for example `25.0.4`). No other Java runtime is needed. Then run `java -jar "addressbook.jar"`.<br>
+      Expected: The GUI opens with an empty roster and `No students in the roster. Add a student or load fictional samples.` No sample records load automatically. The window size may not be optimal.
 
 1. Saving window preferences
 
    1. Resize the window to an optimal size. Move the window to a different location. Close the window.
 
-   1. Relaunch the app by double-clicking the JAR file.<br>
+   1. Relaunch the app with `java -jar "addressbook.jar"` from the same folder.<br>
        Expected: The most recent window size and location are retained.
 
 1. Exiting
@@ -1026,7 +1025,27 @@ testers are expected to do more *exploratory* testing.
 1. Rejected input
 
    1. Test cases: `view`, `view e9000001@u.nus.edu e9000002@u.nus.edu`, `view Alex`, and `view e9000009@u.nus.edu`.<br>
-      Expected: The missing-email, extra-argument, email-rule and not-found messages respectively. The previous results, selection and profile remain, and the data file is not rewritten.
+      Expected, respectively: `NUS email is required. Usage: view EMAIL`; `View accepts one NUS email only. Usage: view EMAIL`; the email rule beginning `Email must use a valid local part followed by @u.nus.edu.`; and `No student found with NUS email: e9000009@u.nus.edu.` The previous results, selection and profile remain, and the data file is not rewritten.
+
+### Finding students
+
+1. Matching and selection
+
+   1. Prerequisites: Load the samples with `sample load`.
+
+   1. Test case: `find Mei`<br>
+      Expected: `1 student found for "Mei".` Mei Lim is selected and her complete profile is shown.
+
+   1. Test case: `find Alex`<br>
+      Expected: `2 students found for "Alex".` Both Alex Tan rows are shown, no student is selected, and the profile panel shows `Select a student to view their profile.`
+
+   1. Test case: `find zzz`<br>
+      Expected: `No students found for "zzz". Check the spelling or search with another identifier.` The list is empty and no student is selected.
+
+1. Rejected input
+
+   1. Test case: `find`<br>
+      Expected: `Enter a name, NUS email, Telegram handle, or GitHub username to search.` followed by the usage. The previous results and selection remain.
 
 ### Editing a student's identity
 
@@ -1051,6 +1070,34 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `edit /email e9000003@u.nus.edu /new-email bad /name A/B`<br>
       Expected: `New email: ` followed by the email rule. Nothing changes.
 
+### Adding and editing enrolments
+
+1. Adding an enrolment
+
+   1. Prerequisites: Load the samples with `sample load`. Nur Aisyah (`e9000005@u.nus.edu`) has no enrolments.
+
+   1. Test case: `enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1 /section T12`<br>
+      Expected: `Added enrolment for Nur Aisyah: CS2103T, AY26/27 S1.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines, with `Team: Not assigned`. Nur Aisyah is selected and her profile lists the enrolment.
+
+   1. Test case: the same command with `/section T14`<br>
+      Expected: `This student already has an enrolment for CS2103T, AY26/27 S1. Use edit-enrol to change its section or team.` Nothing changes.
+
+   1. Test case: `enrol /email e9000099@u.nus.edu /module CS2103T /semester AY26/27 S1`<br>
+      Expected: `No student found with NUS email: e9000099@u.nus.edu. Create the student profile before adding an enrolment.` Nothing changes.
+
+1. Editing affiliations
+
+   1. Prerequisites: Complete the previous test so that Nur Aisyah has the CS2103T, AY26/27 S1 enrolment.
+
+   1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1 /team SEED`<br>
+      Expected: `Updated enrolment for Nur Aisyah: CS2103T, AY26/27 S1.` The profile shows `Section: T12 | Team: SEED`.
+
+   1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1 /section clear`, then the same command again<br>
+      Expected: The first command updates the enrolment and the profile shows `Section: Not assigned`. The second shows `No values changed.` and does not rewrite the data file.
+
+   1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2101 /semester AY26/27 S1 /team SEED`<br>
+      Expected: `No matching enrolment found for e9000005@u.nus.edu, CS2101, AY26/27 S1. Use enrol to add it first.` Nothing changes.
+
 ### Deleting a student
 
 Scenarios that confirm a deletion change the roster, so start each such scenario in a new disposable test folder: copy only the JAR into it, launch the JAR there, and run `sample load`. Run the commands within a scenario in order, without restarting or reloading between a preview and its confirmation. `sample load` works only on an empty roster, so it cannot restore a partially deleted sample roster; use another new folder instead.
@@ -1073,7 +1120,7 @@ Scenarios that confirm a deletion change the roster, so start each such scenario
    1. Prerequisites: A roster loaded with `sample load`. Preview a deletion with `delete e9000003@u.nus.edu` before each case. These cases delete nothing, so they can share one folder.
 
    1. Test cases: `find Alex`; `unknowncommand`; pressing Enter with an empty command box; clicking or arrow-keying to a different student.<br>
-      Expected: Each case shows `Pending deletion cancelled.`, followed by the case's own result or error, if any, and `Deletion pending` disappears. A following `confirm-delete e9000003@u.nus.edu` shows `There is no pending deletion. Use delete EMAIL first.` Mei Lim remains.
+      Expected: Each case shows `Pending deletion cancelled.`, followed by the case's own result or error, if any (for example, `Unknown command. Check the command name and use lowercase command words.` or `Enter a command.`), and `Deletion pending` disappears. A following `confirm-delete e9000003@u.nus.edu` shows `There is no pending deletion. Use delete EMAIL first.` Mei Lim remains.
 
    1. Test case: `delete e9000004@u.nus.edu`, then `confirm-delete e9000003@u.nus.edu`.<br>
       Expected: The first command shows `Pending deletion cancelled.` above a new preview of Ravi Kumar. The confirmation shows `Deletion was cancelled because the confirmation did not match the selected student.` Mei Lim and Ravi Kumar both remain.
@@ -1090,22 +1137,69 @@ Scenarios that confirm a deletion change the roster, so start each such scenario
    1. Prerequisites: A roster loaded with `sample load`, with no deletion pending. These cases delete nothing.
 
    1. Test cases: `delete`, `delete e9000001@u.nus.edu extra`, `delete 1`, `delete e9000009@u.nus.edu`, and `confirm-delete e9000001@u.nus.edu` without a preview.<br>
-      Expected: The missing-email, extra-argument, email-rule, not-found and no-pending messages respectively. No data changes and nothing is pending.
+      Expected, respectively: `NUS email is required. Usage: delete EMAIL`; `Delete accepts one NUS email only. Usage: delete EMAIL`; the email rule beginning `Email must use a valid local part followed by @u.nus.edu.`; `No student found with NUS email: e9000009@u.nus.edu.`; and `There is no pending deletion. Use delete EMAIL first.` No data changes and nothing is pending.
 
 1. Save failure
 
-   1. Prerequisites: A new test folder with `sample load` run, then `delete e9000003@u.nus.edu`. Without submitting another command, remove write permission from the `data` folder and confirm that a new file cannot be created in it, so the failure condition is known to be active.
+   1. Prerequisites: A new test folder with `sample load` run, then `delete e9000003@u.nus.edu`. Without submitting another command, make the roster file read-only as described in [Making the roster file read-only](#making-the-roster-file-read-only), so the failure condition is known to be active.
 
    1. Test case: `confirm-delete e9000003@u.nus.edu`<br>
       Expected: `The student could not be deleted. No data was changed. Use delete EMAIL to start again.` Mei Lim remains, the data file bytes are unchanged, and nothing is pending. Record the actual failure condition and result.
 
-   1. Restore write access, then run `delete e9000003@u.nus.edu` and `confirm-delete e9000003@u.nus.edu`.<br>
+   1. Restore the recorded attributes, then run `delete e9000003@u.nus.edu` and `confirm-delete e9000003@u.nus.edu`.<br>
       Expected: A fresh preview is needed, and the deletion then succeeds.
+
+### Parameterless and retired commands
+
+1. Rejecting extra text
+
+   1. Test cases: `list extra` and `help extra`<br>
+      Expected, respectively: `List does not accept parameters. Usage: list` and `Help does not accept parameters. Usage: help`. Nothing changes.
+
+1. Retired whole-roster `clear`
+
+   1. Prerequisites: Load the samples with `sample load`.
+
+   1. Test cases: `clear` and `clear all`<br>
+      Expected: Each shows `The clear command is unavailable because it would remove the entire roster. Use delete EMAIL to remove one student profile or sample clear to remove fictional sample profiles.` Every profile remains and the data file is not rewritten.
+
+### Keyboard operation
+
+1. Command entry
+
+   1. Test case: After launch, click the command box once. Then, without using the mouse, enter `sample load`, then `view e9000001@u.nus.edu`, then `view Alex`.<br>
+      Expected: After each result, typing continues in the command box without clicking. Accepted commands clear the box. The rejected `view Alex` stays in the box with error styling, so it can be corrected.
+
+1. Focus traversal and selection
+
+   1. Test case: Press `Tab` and `Shift+Tab` repeatedly from the command box.<br>
+      Expected: Focus moves between the command box, the result area and the student list. The result area and the student list show an outline while focused.
+
+   1. Test case: Move focus to the student list and press the `Up` and `Down` arrow keys.<br>
+      Expected: The selection moves and the profile panel shows the selected student.
+
+1. Help
+
+   1. Test case: Press `F1`. Leave the Help window open and click the command box in the main window to return focus to it. Then enter `help`.<br>
+      Expected: `F1` opens the Help window. `help` shows `Opened help window.` and brings the same Help window forward; no second Help window opens.
 
 ### Saving data
 
 1. Dealing with missing/corrupted data files
 
-   1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` and restart; the saved contact returns.
-   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty recovery view, the full preservation explanation, and a persistent **Storage unavailable** warning. `list`, `find`, and `help` remain usable; `clear`, `student add`, `enrol`, `edit`, `remark`, `delete EMAIL`, and `confirm-delete EMAIL` are rejected. Exit and verify the malformed file's bytes are unchanged.
-   1. Restore the valid test file and restart. Filter the list and select a profile. Make the roster destination unwritable, then attempt a data change. Expected: no success message, unchanged file bytes, the previous result list and selected profile, and a save-failure explanation. Restore write access before retrying.
+   1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` (expected: `Added student: Test Student.`) and restart; the saved contact returns.
+   1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty list; the result `Stored data could not be loaded. The existing file was preserved. This session is read-only. Restore a valid data file and restart SoCdex.`; and the status bar `Storage unavailable — read-only recovery | ` followed by the data-file path, which stays after searches. The data-file path may be truncated in a narrow window.
+      * `list`, `find Test`, `view test.student@u.nus.edu` and `help` remain usable. The empty recovery view finds no students.
+      * Each of these shows `Data changes are disabled because stored data could not be loaded. Restore a valid data file and restart SoCdex.`: `student add /name Second Student /email second.student@u.nus.edu`, `enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1`, `edit /email test.student@u.nus.edu /telegram test_student`, `edit-enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1 /team SEED`, `sample load`, `sample clear`, `delete test.student@u.nus.edu` and `confirm-delete test.student@u.nus.edu`.
+      * `clear` shows its retirement message, as in every session.
+      * Exit with `bye` and verify that the malformed file's bytes are unchanged.
+   1. Restore the valid test file and restart. Run `find Test` so that Test Student is selected. Make the roster file read-only as described below. Then run `student add /name Second Student /email second.student@u.nus.edu`. Expected: `The student could not be saved. No data was changed.`, unchanged file bytes, the previous result list, and Test Student still selected and visible. Restore the recorded attributes, then retry; the student is added.
+
+### Making the roster file read-only
+
+The save-failure tests above use a read-only roster file. SoCdex refuses to save over an existing read-only roster before writing any temporary file, so the test needs no folder-permission changes. Run it as an ordinary user, not as an administrator or root, in the disposable test folder that holds the JAR, and use a fictional roster only.
+
+1. Record the original attributes of `data/addressbook.json`. On Windows, run `attrib "data\addressbook.json"`; on macOS or Linux, run `ls -l "data/addressbook.json"`. Keep the output until the attributes are restored.
+1. Make the file read-only. On Windows, run `attrib +R "data\addressbook.json"`; on macOS or Linux, run `chmod a-w "data/addressbook.json"`. Run the record command again and confirm that the file is now read-only.
+1. After the test, restore the recorded attributes. On Windows, run `attrib -R "data\addressbook.json"` unless the recorded output already showed `R`. On macOS or Linux, run `chmod` with the recorded permissions, for example `chmod 644 "data/addressbook.json"` for `-rw-r--r--`. Run the record command again and compare it with the recorded output.
+1. If a test is interrupted, or the app closes unexpectedly, restore the recorded attributes before doing anything else in that folder.
