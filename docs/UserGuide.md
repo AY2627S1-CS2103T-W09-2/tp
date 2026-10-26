@@ -208,7 +208,7 @@ Errors preserve the previous roster, displayed results and selection:
 
 ### Listing all persons: `list`
 
-Shows all persons in the address book, sorted by name (ignoring case) then email.
+Shows all students in the roster, sorted by name (ignoring case) then email.
 
 Format: `list`
 

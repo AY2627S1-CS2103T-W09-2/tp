@@ -14,7 +14,7 @@ public class ExitCommand extends Command {
 
     public static final String MESSAGE_USAGE = "Bye does not accept parameters. Usage: bye";
 
-    public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting Address Book as requested ...";
+    public static final String MESSAGE_EXIT_ACKNOWLEDGEMENT = "Exiting SoCdex as requested ...";
 
     @Override
     public boolean isReadOnly() {
