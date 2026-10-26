@@ -572,7 +572,11 @@ public final class MvpAcceptance {
 
     /** Returns the text of every visible non-empty label in the rendered row at {@code index}, in scene-graph order. */
     private List<String> renderedRow(int index) {
-        ListCell<?> cell = stage.getScene().lookup("#personListView").lookupAll(".list-cell").stream()
+        // As a user would, scroll the row into view first; a short screen can leave it without a cell.
+        ListView<?> list = (ListView<?>) stage.getScene().lookup("#personListView");
+        list.scrollTo(index);
+        layout();
+        ListCell<?> cell = list.lookupAll(".list-cell").stream()
                 .map(node -> (ListCell<?>) node)
                 .filter(candidate -> candidate.getIndex() == index && !candidate.isEmpty())
                 .findFirst().orElseThrow();

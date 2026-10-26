@@ -40,7 +40,7 @@
         </StackPane>
 
         <StackPane VBox.vgrow="NEVER" fx:id="resultDisplayPlaceholder" styleClass="pane-with-border"
-                   minHeight="100" prefHeight="100" maxHeight="100">
+                   minHeight="160" prefHeight="160" maxHeight="160">
           <padding>
             <Insets top="5" right="10" bottom="5" left="10" />
           </padding>
@@ -61,7 +61,8 @@
           </VBox>
         </SplitPane>
 
-        <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
+        <!-- Never shrunk below its preferred height, so a wrapped data-file path stays complete. -->
+        <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" minHeight="-Infinity" />
       </VBox>
     </Scene>
   </scene>

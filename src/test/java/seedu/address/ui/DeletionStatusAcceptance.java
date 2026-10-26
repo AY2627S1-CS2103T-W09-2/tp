@@ -419,6 +419,9 @@ public final class DeletionStatusAcceptance {
         boolean isControlDown = isShortcutClick && !isMetaShortcut;
         boolean isMetaDown = isShortcutClick && isMetaShortcut;
         int index = personList().getItems().indexOf(person);
+        // As a user would, scroll the row into view first; a short screen can leave it without a cell.
+        personList().scrollTo(index);
+        layout();
         ListCell<?> cell = personList().lookupAll(".list-cell").stream()
                 .filter(ListCell.class::isInstance)
                 .map(node -> (ListCell<?>) node)
