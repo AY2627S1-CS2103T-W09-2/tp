@@ -14,7 +14,8 @@ public class AddCommand extends Command {
     public static final String MESSAGE_USAGE =
             "student add /name NAME /email EMAIL [/telegram HANDLE] [/github USERNAME]";
     public static final String MESSAGE_SUCCESS = "Added student: %s.";
-    public static final String MESSAGE_DUPLICATE_PERSON = "A student with this NUS email already exists.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "A student with this NUS email already exists. "
+            + "Use view %s to inspect the existing profile.";
     private final Person toAdd;
 
     public AddCommand(Person person) {
@@ -26,7 +27,8 @@ public class AddCommand extends Command {
         requireNonNull(model);
         for (Person existing : model.getAddressBook().getPersonList()) {
             if (existing.isSamePerson(toAdd)) {
-                throw new DuplicateStudentException(MESSAGE_DUPLICATE_PERSON, existing);
+                throw new DuplicateStudentException(
+                        String.format(MESSAGE_DUPLICATE_PERSON, existing.getEmail().value), existing);
             }
         }
         model.addPerson(toAdd);
