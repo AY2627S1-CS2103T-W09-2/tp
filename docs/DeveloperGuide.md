@@ -19,6 +19,8 @@ title: Developer Guide
 * Le Minh Hoang made widespread use of Claude Code (Anthropic) for code and test generation, documentation and
   verification, and ChatGPT (OpenAI) for planning, technical review and drafting. He reviewed plans, code and
   diffs and remains responsible for his contributions.
+* Jingchun Zhou used OpenAI Codex to assist with implementation, tests, documentation, code review, and repository
+  workflows. Jingchun reviewed and validated the accepted work and remains responsible for it.
 
 --------------------------------------------------------------------------------------------------------------------
 
