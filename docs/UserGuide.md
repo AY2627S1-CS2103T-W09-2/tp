@@ -485,7 +485,7 @@ Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for ex
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **At a compact window size, pending-deletion status text can be truncated and the command box has a weak visual focus cue.** Read the complete deletion preview in the result area. This is tracked in [issue #132](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/132).
 
-The published v1.4 JAR was tested on macOS and Windows at 1366 x 768 with 100% scaling. Supplemental WSLg checks also passed, but WSLg is not native Linux. Native Linux execution was unavailable for v1.4. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are v1.4 evidence limits, not confirmed defects. The final v1.5 evidence will replace this paragraph after acceptance testing.
+The published v1.4 JAR was tested on Windows 11 at 1366 x 768 with 100% scaling and on macOS (Apple silicon). Supplemental WSLg checks also passed, but WSLg is not native Linux. Native Linux execution was unavailable for v1.4. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are v1.4 evidence limits, not confirmed defects. The final v1.5 evidence will replace this paragraph after acceptance testing.
 
 --------------------------------------------------------------------------------------------------------------------
 
