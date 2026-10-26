@@ -14,7 +14,7 @@ import java.util.Locale;
 public class Email {
 
     public static final String MESSAGE_CONSTRAINTS = "Email must use a valid local part followed by @u.nus.edu. "
-            + "Use letters, digits, dots, underscores, plus signs, or hyphens in the local part, "
+            + "Use 1 to 64 letters, digits, dots, underscores, plus signs, or hyphens in the local part, "
             + "with no spaces or consecutive dots. Start and end the local part with a letter or digit.";
 
     // Applies to the canonical (lowercase) form: a local part of 1 to 64 permitted characters that starts and ends
