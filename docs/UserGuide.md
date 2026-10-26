@@ -15,21 +15,22 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 ## Quick start
 
-1. Ensure that Java `25` or later is installed on your computer.<br>
-   **Mac users:** Ensure you have the precise JDK version prescribed [here](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+1. Install Java `25`. In a terminal, run `java -version` and confirm that the reported major version is `25` before every launch. Other Java versions are not supported.<br>
+   **Mac users:** Use the precise JDK distribution prescribed in the [Java 25 installation guide](https://se-education.org/guides/tutorials/javaInstallationMac.html).
 
 1. Download the latest `.jar` file from the [SoCdex releases page](https://github.com/AY2627S1-CS2103T-W09-2/tp/releases).
 
-1. Copy the file to the folder where you want SoCdex to store its data.
+1. Put the JAR file in an empty folder where SoCdex is allowed to create and replace files. Do not use a write-protected folder. SoCdex creates its roster, preferences, logs, JavaFX cache and temporary files inside this application folder.
 
-1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar addressbook.jar`.<br>
+1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar "addressbook.jar"`. If the downloaded file has another name, use that exact filename instead.<br>
+   Launch SoCdex from the terminal rather than by double-clicking the JAR. This ensures that SoCdex uses the Java 25 installation that you verified. On Linux with a Wayland display server, if launch fails with a `Gdk-CRITICAL` error, retry with `GDK_BACKEND=x11 java -jar "addressbook.jar"`.<br>
    A GUI should appear in a few seconds. A new installation starts with an empty roster; it does not create sample records automatically. The image below shows the SoCdex interface.<br>
    ![Ui](images/Ui.png)
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
-   * `list` : Lists all contacts.
+   * `list` : Lists all students.
 
    * `student add /name Alex Tan /email e9000001@u.nus.edu` : Creates a student profile without requiring optional contacts.
 
@@ -157,11 +158,11 @@ Create the student first with `student add`. The normalised NUS email selects th
 
 Examples using an existing fictional student:
 
-* `enrol /email e9000001@u.nus.edu /module CS2103T /semester AY26/27 S1` adds an unassigned context.
-* Alternatively, `enrol /email E9000001@U.NUS.EDU /module cs2103t /semester ay26/27 s1 /section T12 /team SEED` adds the same context with affiliations. Run either example, not both: the second is a duplicate after the first succeeds.
-* `enrol /semester AY26/27 S2 /module CS2103T /email e9000001@u.nus.edu` adds a separate context for the next semester.
+* `enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1` adds an unassigned context.
+* Alternatively, `enrol /email E9000005@U.NUS.EDU /module cs2103t /semester ay26/27 s1 /section T12 /team SEED` adds the same context with affiliations. Run either example, not both: the second is a duplicate after the first succeeds.
+* `enrol /semester AY26/27 S2 /module CS2103T /email e9000005@u.nus.edu` adds a separate context for the next semester.
 
-Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. Complete profile/enrolment presentation remains a separate increment.
+Success shows `Added enrolment for NAME: MODULE, SEMESTER.` followed by `Module:`, `Semester:`, `Section:` and `Team:` lines for the saved context. Missing affiliations display `Not assigned`. The change is saved before success is reported; the active search is cleared and the owner is selected in the full roster sorted by name then email. All contacts, sample classification, earlier enrolments and other students are preserved. The result cards and profile panel show all saved enrolments, including their section and team.
 
 A duplicate module-semester key for the same student is rejected even if section or team differs. The specified message says `This student already has an enrolment for MODULE, SEMESTER. Use edit-enrol to change its section or team.` Use `edit-enrol` to update those affiliations. Check the context before retrying; `enrol` never overwrites existing affiliations. Different students may share the same context.
 
@@ -206,11 +207,13 @@ Errors preserve the previous roster, displayed results and selection:
 * Read-only recovery rejects this command, including no-ops. Restore a valid file and restart first.
 
 
-### Listing all persons: `list`
+### Listing the complete roster: `list`
 
-Shows all students in the roster, sorted by name (ignoring case) then email.
+Shows the complete roster, including students hidden by an earlier search, sorted by name (ignoring case) then email.
 
 Format: `list`
+
+`list` does not change or save roster data. If a profile is selected and remains in the roster, it stays selected.
 
 ### Editing a student's profile: `edit`
 
@@ -413,6 +416,7 @@ If an existing roster is unreadable or invalid, the app preserves it and opens a
 To recover:
 
 1. Close the app and keep a separate copy of the preserved file before making repairs.
+1. Open the newest file in `logs/`, usually `addressbook.log.0`, and find the stored-data validation message. It identifies the failed rule, such as an invalid section or email, but might not identify the exact record. Do not post a log publicly without checking it for roster information.
 1. Restore a known-valid roster to the displayed data-file location, or correct invalid records and file permissions while the app is closed.
 1. Restart SoCdex. Confirm that the expected records load and the status says **Storage available** before making changes.
 
@@ -458,7 +462,7 @@ Every record must contain `"sample": false` or `"sample": true`, written as a JS
 
 <div markdown="span" class="alert alert-warning">:exclamation: **Caution:**
 Edit the file only while the app is closed, and keep a separate copy before editing it. If your changes make it invalid, SoCdex preserves it and opens a read-only recovery session at the next run. Restore a valid file and restart; commands and normal exit do not replace the invalid roster.<br>
-Furthermore, certain edits can cause the AddressBook to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for example if a value is outside the acceptable range. Edit the data file only if you are confident that you can update it correctly.
 </div>
 
 --------------------------------------------------------------------------------------------------------------------
@@ -466,7 +470,7 @@ Furthermore, certain edits can cause the AddressBook to behave in unexpected way
 ## FAQ
 
 **Q**: How do I transfer my data to another computer?<br>
-**A**: Install the app on the other computer and overwrite the data file it creates with the data file from your previous AddressBook home folder.
+**A**: Close SoCdex on both computers. Copy `data/addressbook.json` from the folder containing the old JAR into the `data/` subfolder beside the JAR on the new computer. Replace the new file only after keeping a backup. You can also copy `preferences.json` beside the JAR if you want to keep the window size and position. Start SoCdex and confirm that the expected roster loads and the status bar shows **Storage available**.
 
 **Q**: Why does my data file from an earlier version no longer load?<br>
 **A**: Every email must now be a valid NUS email (see `student add`), and no two persons can share an email. In the data file, each email must also already be in its saved form: all lowercase, with no spaces or tabs before or after it. Commands such as `student add` convert uppercase letters and remove surrounding spaces and tabs, but the app does not convert emails in the data file. A data file that contains another kind of email address (such as one ending in `@example.com`), an email that is not in its saved form (such as `E1234567@u.nus.edu`), or two persons with the same email is treated as an invalid data file. SoCdex then preserves the file and opens a read-only recovery session; see [Starting empty or recovering from a load failure](#starting-empty-or-recovering-from-a-load-failure). Keep a copy of the original file, then correct each email or remove the duplicate record while the app is closed, and restart SoCdex.
@@ -480,6 +484,9 @@ Furthermore, certain edits can cause the AddressBook to behave in unexpected way
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **At a compact window size, pending-deletion status text can be truncated and the command box has a weak visual focus cue.** Read the complete deletion preview in the result area. This is tracked in [issue #132](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/132).
+
+The published v1.4 JAR was tested on Windows 11 at 1366 x 768 with 100% scaling and on macOS (Apple silicon). Supplemental WSLg checks also passed, but WSLg is not native Linux. Native Linux execution was unavailable for v1.4. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are v1.4 evidence limits, not confirmed defects. The final v1.5 evidence will replace this paragraph after acceptance testing.
 
 --------------------------------------------------------------------------------------------------------------------
 
