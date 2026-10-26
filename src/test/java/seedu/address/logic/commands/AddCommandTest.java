@@ -27,6 +27,8 @@ public class AddCommandTest {
         assertEquals(java.util.List.of(earlier, later), model.getFilteredPersonList());
         var duplicate = new PersonBuilder(later).withName("Different").withEmail("Z@U.NUS.EDU").build();
         var error = assertThrows(DuplicateStudentException.class, () -> new AddCommand(duplicate).execute(model));
+        assertEquals("A student with this NUS email already exists. "
+                + "Use view z@u.nus.edu to inspect the existing profile.", error.getMessage());
         assertEquals(later, error.getExisting());
         assertEquals(2, model.getAddressBook().getPersonList().size());
     }

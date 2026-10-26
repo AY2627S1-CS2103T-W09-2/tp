@@ -294,7 +294,7 @@ public final class MvpAcceptance {
         byte[] saved = Files.readAllBytes(roster);
         submit("find nobody");
         checkRejected("student add /name Priya Raman Again /email " + PRIYA_EMAIL.toUpperCase(),
-                AddCommand.MESSAGE_DUPLICATE_PERSON, "duplicate email");
+                String.format(AddCommand.MESSAGE_DUPLICATE_PERSON, PRIYA_EMAIL), "duplicate email");
         check(person(PRIYA_EMAIL).equals(selected()), "duplicate email reveals the existing student");
         checkRejected("enrol /email " + PRIYA_EMAIL + " /module CS2103T /semester AY26/27 S1 /section T01",
                 String.format(EnrolCommand.MESSAGE_DUPLICATE, "CS2103T", "AY26/27 S1"), "duplicate enrolment");

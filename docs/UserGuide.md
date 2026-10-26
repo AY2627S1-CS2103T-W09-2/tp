@@ -138,7 +138,8 @@ Examples using fictional students:
 * `student add /email e9000002@u.nus.edu /name 王小明 /telegram @Alex_Tan /github alex-tan` accepts mixed prefix order and stores Telegram as `Alex_Tan`.
 * `student add /name José Tan /email e9000003@u.nus.edu` creates a second student with the same name and a different email.
 
-If the canonical email already exists, the command shows `A student with this NUS email already exists.` and reveals/selects that existing student in the full sorted roster. It does not overwrite or save any data. This deliberate reveal is the exception to preserving the previous selection on rejection. Use `view EMAIL` to reopen that profile later.
+If the canonical email already exists, the command shows `A student with this NUS email already exists. Use view EMAIL to inspect the existing profile.`
+with the existing student's canonical email in place of `EMAIL` and reveals/selects that existing student in the full sorted roster. It does not overwrite or save any data. This deliberate reveal is the exception to preserving the previous selection on rejection. Use `view EMAIL` to reopen that profile later.
 
 A save failure shows `The student could not be saved. No data was changed.` and restores the previous roster, results and selection. Correct the storage problem and retry. If the new display cannot be prepared, the command shows `Student could not be displayed. No data was changed. Try again.` and does not save.
 

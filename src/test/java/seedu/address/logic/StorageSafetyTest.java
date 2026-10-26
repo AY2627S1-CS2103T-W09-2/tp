@@ -176,7 +176,8 @@ public class StorageSafetyTest {
         Logic logic = createLogic(model, storage);
 
         // duplicate creation with the existing email in another case
-        assertThrows(CommandException.class, AddCommand.MESSAGE_DUPLICATE_PERSON, () ->
+        assertThrows(CommandException.class,
+                String.format(AddCommand.MESSAGE_DUPLICATE_PERSON, ALICE.getEmail().value), () ->
                 logic.execute("student add /name Mei Lim /email ALICE@U.NUS.EDU"));
         assertNothingSaved(storage, model, original, rosterFile, originalBytes);
 
