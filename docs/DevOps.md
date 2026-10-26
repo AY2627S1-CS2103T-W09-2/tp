@@ -134,7 +134,8 @@ Build one reviewed, feature-complete master commit with Java 25:
 `MainApp.VERSION` identifies V1.5. This metadata does not mean a release has been published. `shadowJar` produces
 `build/libs/addressbook.jar`; keep this filename without spaces or special characters and do not change its bytes after testing.
 Record the full source SHA (`git rev-parse HEAD`), Java version (`java -version`), filename, byte size and SHA-256.
-The JAR must stay below 100 MB. Record preparation builds separately from final-candidate sign-off in #135.
+The JAR must stay below 100 MB. Record preparation builds separately from final build evidence and handoff review in #135.
+Acceptance sign-off for that exact artifact is recorded separately in #142 before #143 publication.
 Do not replace the published v1.4 assets with v1.5 preparation builds. Final packaging consumes the merged fixes
 and reviewed Developer Guide/DevOps instructions, including #134; an early dry run is not the final candidate.
 
