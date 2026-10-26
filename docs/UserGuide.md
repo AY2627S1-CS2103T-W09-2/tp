@@ -208,11 +208,11 @@ Errors preserve the previous roster, displayed results and selection:
 
 ### Listing the complete roster: `list`
 
-Shows the complete roster, including students hidden by an earlier search.
+Shows the complete roster, including students hidden by an earlier search, sorted by name (ignoring case) then email.
 
 Format: `list`
 
-`list` does not change or save roster data. If a profile is selected and remains in the roster, it stays selected. See the [known issue about list ordering](#known-issues) for the v1.4 behaviour.
+`list` does not change or save roster data. If a profile is selected and remains in the roster, it stays selected.
 
 ### Editing a student's profile: `edit`
 
@@ -484,7 +484,6 @@ Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for ex
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 3. **At a compact window size, pending-deletion status text can be truncated and the command box has a weak visual focus cue.** Read the complete deletion preview in the result area. This is tracked in [issue #132](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/132).
-4. **The `list` command can return the roster to insertion order after another command displayed it in name order.** Email-based commands still identify the correct student. Check the NUS email before acting on a displayed row. This is tracked in [issue #144](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/144).
 
 The published v1.4 JAR was tested on macOS and Windows at 1366 x 768 with 100% scaling. Supplemental WSLg checks also passed, but WSLg is not native Linux. Native Linux execution was unavailable for v1.4. Other physical Windows layouts and physical keyboard input on Windows and Linux were not verified. These are v1.4 evidence limits, not confirmed defects. The final v1.5 evidence will replace this paragraph after acceptance testing.
 

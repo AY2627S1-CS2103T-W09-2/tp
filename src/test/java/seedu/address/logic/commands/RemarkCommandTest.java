@@ -1,9 +1,11 @@
 package seedu.address.logic.commands;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandFailure;
 import static seedu.address.logic.commands.CommandTestUtil.assertCommandSuccess;
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static seedu.address.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static seedu.address.testutil.TypicalPersons.getTypicalAddressBook;
@@ -12,10 +14,12 @@ import org.junit.jupiter.api.Test;
 
 import seedu.address.commons.core.index.Index;
 import seedu.address.logic.Messages;
+import seedu.address.model.AddressBook;
 import seedu.address.model.Model;
 import seedu.address.model.ModelManager;
 import seedu.address.model.UserPrefs;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 import seedu.address.model.person.Remark;
 import seedu.address.testutil.PersonBuilder;
 
@@ -41,6 +45,27 @@ public class RemarkCommandTest {
         Index invalidIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
         assertCommandFailure(new RemarkCommand(invalidIndex, new Remark("Test")), model,
                 Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+    }
+
+    @Test
+    public void execute_insertionOrderDiffers_keepsNameThenEmailDisplayOrder() throws Exception {
+        Person zed = new PersonBuilder().withName("Zed Student").withEmail("zed@u.nus.edu").build();
+        Person alexSecond = new PersonBuilder().withName("Alex Tan").withEmail("alex2@u.nus.edu").build();
+        Person alexFirst = new PersonBuilder().withName("Alex Tan").withEmail("alex1@u.nus.edu").build();
+        AddressBook insertionOrderedRoster = new AddressBook();
+        insertionOrderedRoster.addPerson(zed);
+        insertionOrderedRoster.addPerson(alexSecond);
+        insertionOrderedRoster.addPerson(alexFirst);
+        Model orderedModel = new ModelManager(insertionOrderedRoster, new UserPrefs());
+        orderedModel.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
+
+        Remark remark = new Remark("Needs follow-up");
+        new RemarkCommand(INDEX_FIRST_PERSON, remark).execute(orderedModel);
+        Person updatedAlexFirst = new PersonBuilder(alexFirst).withRemark(remark.value).build();
+
+        assertEquals(java.util.List.of(updatedAlexFirst, alexSecond, zed), orderedModel.getFilteredPersonList());
+        assertEquals(java.util.List.of(zed, alexSecond, updatedAlexFirst),
+                orderedModel.getAddressBook().getPersonList());
     }
 
     @Test
