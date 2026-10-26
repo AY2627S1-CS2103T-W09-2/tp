@@ -12,6 +12,7 @@ import seedu.address.logic.Messages;
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.person.Person;
+import seedu.address.model.person.PersonOrder;
 import seedu.address.model.person.Remark;
 
 /** Changes the remark of an existing person in the address book. */
@@ -51,7 +52,7 @@ public class RemarkCommand extends Command {
                 personToEdit.getTelegram(), personToEdit.getGitHub(),
                 personToEdit.isSample(), remark, personToEdit.getTags(), personToEdit.getEnrolments());
         model.setPerson(personToEdit, editedPerson);
-        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS, PersonOrder.BY_NAME_THEN_EMAIL);
         return new CommandResult(generateSuccessMessage(editedPerson));
     }
 
