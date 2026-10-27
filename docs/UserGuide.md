@@ -72,9 +72,9 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
+Opens the Help window with editing guidance and a link to this User Guide.
 
-![help message](images/helpMessage.png)
+![SoCdex Help window](images/helpMessage.png)
 
 Format: `help`
 
