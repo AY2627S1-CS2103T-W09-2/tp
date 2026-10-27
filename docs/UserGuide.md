@@ -58,6 +58,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 * Words in `UPPER_CASE` represent your values. Square brackets mark optional parameters; do not type the brackets.
 * Use lowercase command words and prefixes. Commands must be on one line; spaces and tabs may separate their components.
+* A tab pasted into the command box becomes a space. A pasted line break shows as `↵`, and any other pasted control character as `�`. The command is then rejected with `Enter one command on a single line.` Delete each marker (and any extra command after it), then press Enter again. A `↵` or `�` that you type yourself is ordinary text.
 * For `student add` and `edit`, prefixes may appear in any order, but only once each. Separate each prefix from its value with a space or tab. Unknown prefixes, repeated prefixes, empty supplied values, malformed slash tokens and text before the first prefix are rejected with usage guidance.
 * A prefix starts at a space/tab boundary with `/` and a letter, followed by letters or hyphens. Values end at the next prefix. An embedded slash such as the one in `AY26/27` is not a prefix.
 

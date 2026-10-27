@@ -7,7 +7,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +98,7 @@ public final class MvpAcceptance {
                 acceptance.verifyDeletionAndCancellations(roster);
                 acceptance.verifySelectiveSampleClear(roster);
                 acceptance.verifyGuardsAndNoOps(roster);
+                acceptance.verifyPastedTabsAndLineBreaks(roster);
                 acceptance.verifyInjectedFailures();
                 acceptance.verifyFailedSaveKeepsSelectionVisible();
                 acceptance.verifyInvalidFilesStartReadOnly(roster);
@@ -416,6 +419,55 @@ public final class MvpAcceptance {
         stage.close();
     }
 
+    /**
+     * Pastes text copied from another application, as Ctrl+V or Command+V inserts it into the command box. A pasted
+     * tab separates words. A pasted line break, LF or CRLF, or other control character is rejected and stays visible
+     * for correction, while the same marker symbol typed as ordinary text is accepted as text.
+     */
+    private void verifyPastedTabsAndLineBreaks(Path roster) throws Exception {
+        reopen(roster);
+        byte[] saved = Files.readAllBytes(roster);
+        paste("find\tPriya");
+        check(commandField().getText().equals("find Priya"), "a pasted tab is kept as a space");
+        submitCurrentText();
+        check(feedback().equals("1 student found for \"Priya\"."), "a pasted tab separates the command words");
+        checkSucceeded("tab-separated find");
+
+        Map<String, String> pastes = new LinkedHashMap<>();
+        pastes.put("LF", "\n");
+        pastes.put("CRLF", "\r\n");
+        pastes.put("vertical tab", "\u000b");
+        for (Map.Entry<String, String> pasted : pastes.entrySet()) {
+            String description = "a pasted " + pasted.getKey();
+            String marker = pasted.getKey().contains("LF") ? ControlCharacterMarkers.LINE_BREAK_MARKER
+                    : ControlCharacterMarkers.CONTROL_MARKER;
+            submit("delete " + PRIYA_EMAIL);
+            check(deletionStatus().equals(StatusBarFooter.DELETION_PENDING), description + ": preview pending");
+            paste("find Priya" + pasted.getValue() + "view " + PRIYA_EMAIL);
+            String shown = "find Priya" + marker + "view " + PRIYA_EMAIL;
+            check(commandField().getText().equals(shown), description + " stays visible");
+            submitCurrentText();
+            check(feedback().equals(CANCELLED + "\n" + Messages.MESSAGE_SINGLE_LINE),
+                    description + " is rejected and cancels the deletion: " + feedback());
+            check(commandField().getText().equals(shown), description + " command is kept");
+            check(commandField().getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS), description + " is marked");
+            check(isCommandBoxFocused(), description + " keeps focus in the command box");
+            check(deletionStatus().isEmpty() && hasEmail(PRIYA_EMAIL), description + " deletes nothing");
+        }
+        commandField().selectAll();
+        paste("view " + PRIYA_EMAIL);
+        submitCurrentText();
+        check(feedback().equals(String.format(ViewCommand.MESSAGE_SUCCESS, "Priya Raman")),
+                "the corrected command runs after a rejected paste");
+
+        String typedMarker = "find Priya" + ControlCharacterMarkers.LINE_BREAK_MARKER;
+        submit(typedMarker);
+        check(feedback().equals(Messages.formatSearchResult(typedMarker.substring("find ".length()), 0)),
+                "a typed marker symbol is searched for as text: " + feedback());
+        check(Arrays.equals(saved, Files.readAllBytes(roster)), "pasted searches and views never save");
+        stage.close();
+    }
+
     /** Previews the deletion of Mei Lim, then checks that {@code command} cancels it and saves nothing. */
     private void checkCancels(String preview, String command, String expected, String cancellation) {
         submit(preview);
@@ -633,12 +685,25 @@ public final class MvpAcceptance {
         return stage.getScene().getFocusOwner() == commandField();
     }
 
-    private void submit(String command) {
-        transcript.add("COMMAND [" + command + "]");
-        commandField().setText(command);
+    /** Inserts {@code text} at the caret, replacing any selection, as pasting does. */
+    private void paste(String text) {
+        transcript.add("PASTE [" + text.replace("\t", "<TAB>").replace("\r", "<CR>").replace("\n", "<LF>")
+                .replace("\u000b", "<VT>") + "]");
+        commandField().replaceSelection(text);
+        layout();
+    }
+
+    /** Presses Enter on the command box's current text. */
+    private void submitCurrentText() {
         commandField().fireEvent(new ActionEvent());
         layout();
         transcript.add("RESULT " + feedback().replace("\n", " / "));
+    }
+
+    private void submit(String command) {
+        transcript.add("COMMAND [" + command + "]");
+        commandField().setText(command);
+        submitCurrentText();
     }
 
     private void layout() {
