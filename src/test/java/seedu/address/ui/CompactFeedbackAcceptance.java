@@ -18,7 +18,6 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -48,8 +47,8 @@ import seedu.address.storage.StorageManager;
  * Opt-in real-window probe for compact layouts; runs separately from the headless unit suite.
  * Lays the window out at the default 740x600, the minimum 450x600 and the 853x480 logical size of 1280x720 at 150%
  * scaling, checks that the deletion preview, long feedback and the status bar stay complete without horizontal
- * scrolling, that feedback quoting a long name and email wraps, and checks the command box's
- * focused state and keyboard focus.
+ * scrolling, that feedback quoting a long name and email wraps, that the result area and then the command box sit
+ * below the panels, and checks the command box's focused state and the Tab order.
  * Uses only fictional data under build/reports/compact-feedback.
  */
 public class CompactFeedbackAcceptance extends Application {
@@ -163,6 +162,7 @@ public class CompactFeedbackAcceptance extends Application {
         checkLabelComplete("#deletionStatus", StatusBarFooter.DELETION_PENDING, name + " status");
         checkLabelComplete("#saveLocationStatus", null, name + " data-file path");
         checkStatusBarInWindow(name);
+        checkVisualOrder(name + " after a preview");
         checkFocusBorder(input, name + " command box after a preview");
         snapshot(name + "-deletion-preview.png");
 
@@ -175,6 +175,7 @@ public class CompactFeedbackAcceptance extends Application {
         check(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS), name + " rejected command marked");
         check(!logic.hasPendingDeletion(), name + " no deletion pending after cancellation");
         checkLabelComplete("#deletionStatus", "", name + " status cleared");
+        checkVisualOrder(name + " after a rejected command");
         checkFocusBorder(input, name + " command box after a rejected command");
         snapshot(name + "-long-error.png");
 
@@ -276,21 +277,43 @@ public class CompactFeedbackAcceptance extends Application {
                         .allMatch(width -> width >= FOCUS_BORDER_WIDTH);
     }
 
+    /** Fails unless the panels, result area, command box and status bar appear in that order from top to bottom. */
+    private void checkVisualOrder(String name) {
+        List<Node> regions = Stream.of(".split-pane", "#resultDisplay", "#commandTextField", ".status-bar")
+                .map(stage.getScene()::lookup).toList();
+        for (int i = 1; i < regions.size(); i++) {
+            Bounds above = regions.get(i - 1).localToScene(regions.get(i - 1).getLayoutBounds());
+            Bounds below = regions.get(i).localToScene(regions.get(i).getLayoutBounds());
+            check(above.getMaxY() <= below.getMinY() + 1, name + " " + describe(regions.get(i - 1)) + " above "
+                    + describe(regions.get(i)));
+        }
+    }
+
+    /** Checks that Tab and Shift+Tab follow the visual order: list, result area, command box, then around again. */
     private void verifyTabOrder(String name) {
-        Scene scene = stage.getScene();
         TextField input = commandField();
-        ListView<?> list = (ListView<?>) scene.lookup("#personListView");
+        Node list = stage.getScene().lookup("#personListView");
         input.requestFocus();
         layout();
-        for (int i = 0; i < 6 && scene.getFocusOwner() != list; i++) {
-            press(KeyCode.TAB, false);
-        }
-        check(scene.getFocusOwner() == list, name + " Tab reaches the result list");
-        for (int i = 0; i < 6 && scene.getFocusOwner() != input; i++) {
-            press(KeyCode.TAB, true);
-        }
-        check(scene.getFocusOwner() == input, name + " Shift+Tab returns to the command box");
+        checkFocusSequence(name + " Tab", false, List.of(list, resultArea(), input));
+        checkFocusSequence(name + " Shift+Tab", true, List.of(resultArea(), list, input));
         check(input.getText().startsWith("student add"), name + " Tab keeps the rejected text");
+    }
+
+    /** Presses Tab, or Shift+Tab when {@code shift} is set, once per node and checks focus reaches each in turn. */
+    private void checkFocusSequence(String description, boolean shift, List<Node> expectedOwners) {
+        for (Node expected : expectedOwners) {
+            press(KeyCode.TAB, shift);
+            Node owner = stage.getScene().getFocusOwner();
+            check(owner == expected, description + " reaches " + describe(expected) + ", not " + describe(owner));
+        }
+    }
+
+    private static String describe(Node node) {
+        if (node == null) {
+            return "none";
+        }
+        return node.getId() != null ? "#" + node.getId() : node.getStyleClass().toString();
     }
 
     private void press(KeyCode code, boolean shift) {
