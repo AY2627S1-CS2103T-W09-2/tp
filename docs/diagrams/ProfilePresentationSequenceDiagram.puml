@@ -50,6 +50,10 @@ alt any step failed
     note right of logic : Restore and report;\nnever save.
 else complete display installed
     window -> window : followSelection(list)
+    opt result has an explicit selection target
+        window -> list : revealSelection()
+        note right of list : Scroll the selected\nrow into view.
+    end
     window --> logic
     note right of logic : Save if changed, then return.\nA revealed duplicate is\nreported as an error instead.
 end

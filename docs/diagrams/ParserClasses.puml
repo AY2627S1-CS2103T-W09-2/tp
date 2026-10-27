@@ -11,12 +11,24 @@ package "Parser classes"{
 Class "<<interface>>\nParser" as Parser
 Class AddressBookParser
 Class XYZCommandParser
+Class SlashPrefixTokenizer
+Class SlashArguments
+Class ArgumentTokenizer
+Class ArgumentMultimap
 Class CliSyntax
 Class ParserUtil
-Class ArgumentMultimap
-Class ArgumentTokenizer
 Class Prefix
 }
+
+note top of SlashPrefixTokenizer
+  Used by the student add, edit,
+  enrol and edit-enrol parsers.
+end note
+
+note bottom of ArgumentTokenizer
+  Used only by the
+  inherited remark parser.
+end note
 
 Class HiddenOutside #FFFFFF
 HiddenOutside ..> AddressBookParser
@@ -26,9 +38,14 @@ AddressBookParser .down.> XYZCommandParser: <<create>>
 XYZCommandParser ..> XYZCommand : <<create>>
 AddressBookParser ..> Command : <<use>>
 XYZCommandParser .up.|> Parser
+XYZCommandParser ..> SlashPrefixTokenizer
+XYZCommandParser ..> SlashArguments
+SlashPrefixTokenizer .down.> SlashArguments
+SlashPrefixTokenizer .down.> Prefix
+SlashArguments .down.> Prefix
 XYZCommandParser ..> ArgumentMultimap
 XYZCommandParser ..> ArgumentTokenizer
-ArgumentTokenizer .left.> ArgumentMultimap
+ArgumentTokenizer .down.> ArgumentMultimap
 XYZCommandParser ..> CliSyntax
 CliSyntax ..> Prefix
 XYZCommandParser ..> ParserUtil
