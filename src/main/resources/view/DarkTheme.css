@@ -170,7 +170,8 @@
     -fx-font-family: "Segoe UI Light";
     -fx-text-fill: white;
     -fx-padding: 4px;
-    -fx-pref-height: 30px;
+    /* A minimum rather than a fixed height, so a long data-file path wraps instead of being cut off. */
+    -fx-min-height: 30px;
 }
 
 .status-bar-with-border {
@@ -329,12 +330,17 @@
 #commandTextField {
     -fx-background-color: transparent #383838 transparent #383838;
     -fx-background-insets: 0;
+    /* The same border width in both states, so focusing the command box never shifts the layout. */
     -fx-border-color: #383838 #383838 #ffffff #383838;
     -fx-border-insets: 0;
-    -fx-border-width: 1;
+    -fx-border-width: 2;
     -fx-font-family: "Segoe UI Light";
     -fx-font-size: 13pt;
     -fx-text-fill: white;
+}
+
+#commandTextField:focused {
+    -fx-border-color: #e2e2e2;
 }
 
 #filterField, #personListPanel, #personWebpage {

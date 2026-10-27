@@ -409,6 +409,14 @@ java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.Pro
 
 On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. Before forcing any CSS pass, it checks after each command and key press that the profile heading has its theme style: white 16px text with no background. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. `DarkTheme.css` outlines the result area and the result list while either has keyboard focus. The utility checks that this outline appears only in the focused state and does not change their size. The window is never shown, so the focused state is applied directly. Confirm manually that the outline follows Tab in the packaged application. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
 
+The result area wraps its text and is tall enough for the six-line deletion preview, so the preview, its confirmation instruction and its cancellation note need no scrolling. The status bar is an `HBox`: `Deletion pending` keeps its full width, and the data-file path wraps onto more lines instead of being cut off. The status bar is never shrunk below the height it needs. To check these at compact sizes, run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.CompactFeedbackAcceptance
+```
+
+The utility lays out the real window content at the default 740 × 600, the minimum 450 × 600 and 853 × 480 logical pixels, using a data-file path long enough to wrap. It runs `sample load`, a deletion preview and a rejected `student add` whose email is too long. After each, it checks that the result needs no horizontal scrolling. It also checks that the whole preview is in view, that `Deletion pending` and the path are not truncated, and that the status bar stays inside the window. After the preview and after the rejection, it checks that the command box has the 2px `#e2e2e2` outline only in the focused state, with no change in size. It also checks that a rejected command keeps its text and error style, and that Tab and Shift+Tab still move between the command box and the result list. Screenshots are written under `build/reports/compact-feedback`. As with `ProfileViewAcceptance`, the window is never shown and the scaling is simulated, so confirm the packaged window manually.
+
 ### Confirmed deletion (v1.3)
 
 `DeleteCommandParser` and `ConfirmDeleteCommandParser` share `ParserUtil.parseSoleEmail`, which applies the single-line check, trims spaces and tabs, and reports a missing email, then extra tokens, before validating the one remaining token with the NUS email rule. An index such as `1` therefore fails the email rule. Blank input reaches `AddressBookParser`, which reports `Messages.MESSAGE_ENTER_COMMAND`; `CommandBox` submits empty input too.
@@ -473,6 +481,7 @@ Commands are submitted by setting the command box text and firing its action, an
 
 * `DataSandboxAcceptance` `seed` and `restart`, a real restart through the production entry point (see [Application data sandbox](#application-data-sandbox-v13-release-requirement)).
 * `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
+* `CompactFeedbackAcceptance` for feedback, the status bar and the command-box outline at compact sizes.
 * `ContactSearchAcceptance` for search behaviour and `SearchTimingProbe` for separate ordinary-layout and snapshot timings over 500 profiles and 1,000 enrolments.
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
 * `EditEnrolAcceptance` `seed` and `restart` in separate processes (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).

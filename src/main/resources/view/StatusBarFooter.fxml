@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
 
-<GridPane styleClass="status-bar" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-  <columnConstraints>
-    <ColumnConstraints hgrow="SOMETIMES" minWidth="10" />
-    <ColumnConstraints hgrow="NEVER" />
-  </columnConstraints>
-  <Label fx:id="saveLocationStatus" wrapText="true" />
-  <Label fx:id="deletionStatus" GridPane.columnIndex="1" />
-</GridPane>
+<!-- An HBox passes the remaining width to the path label, so a long data-file path wraps instead of being cut off. -->
+<HBox styleClass="status-bar" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <Label fx:id="saveLocationStatus" wrapText="true" minWidth="10" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+  <Label fx:id="deletionStatus" minWidth="-Infinity" />
+</HBox>
