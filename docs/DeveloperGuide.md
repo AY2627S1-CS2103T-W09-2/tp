@@ -14,6 +14,8 @@ title: Developer Guide
 * JSON storage uses the [Jackson](https://github.com/FasterXML/jackson) libraries.
 * Automated checks use [JUnit 5](https://junit.org/junit5/), [JaCoCo](https://www.jacoco.org/jacoco/), and [Checkstyle](https://checkstyle.org/).
 * The build uses [Gradle](https://gradle.org/) and the [Shadow plugin](https://gradleup.com/shadow/).
+* Xie Kaiwen used OpenAI Codex to assist with implementation, tests, documentation, code review, and repository
+  workflows. This assistance does not establish personal/manual testing or platform evidence beyond the recorded checks.
 * Spencer Chu used OpenAI Codex extensively to assist with implementation, tests, documentation, review, and
   repository workflows. Spencer reviewed and validated the accepted work and remains responsible for it.
 * Le Minh Hoang made widespread use of Claude Code (Anthropic) for code and test generation, documentation and
