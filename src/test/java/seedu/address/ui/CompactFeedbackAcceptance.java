@@ -32,6 +32,7 @@ import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
+import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.SampleCommand;
 import seedu.address.model.AddressBook;
@@ -46,9 +47,10 @@ import seedu.address.storage.StorageManager;
 /**
  * Opt-in real-window probe for compact layouts; runs separately from the headless unit suite.
  * Lays the window out at the default 740x600, the minimum 450x600 and the 853x480 logical size of 1280x720 at 150%
- * scaling, checks that the deletion preview, long feedback and the status bar stay complete without horizontal
- * scrolling, that feedback quoting a long name and email wraps, that the result area and then the command box sit
- * below the panels, and checks the command box's focused state and the Tab order.
+ * scaling, checks that long feedback and the status bar stay complete without horizontal scrolling, that the
+ * deletion preview's confirmation instruction is in view, that feedback quoting a long name and email wraps, that
+ * the result area and then the command box sit below the panels, and checks the command box's focused state and
+ * the Tab order.
  * Uses only fictional data under build/reports/compact-feedback.
  */
 public class CompactFeedbackAcceptance extends Application {
@@ -157,7 +159,8 @@ public class CompactFeedbackAcceptance extends Application {
         String preview = String.format(DeleteCommand.MESSAGE_PREVIEW, "Mei Lim", TARGET, 1, TARGET);
         check(feedback().equals(preview), name + " deletion preview shown");
         checkWrapped(name + " deletion preview");
-        checkFullyVisible(name + " deletion preview");
+        checkLineVisible("Type: " + ConfirmDeleteCommand.COMMAND_WORD + " " + TARGET,
+                name + " confirmation instruction");
         check(logic.hasPendingDeletion(), name + " deletion pending after preview");
         checkLabelComplete("#deletionStatus", StatusBarFooter.DELETION_PENDING, name + " status");
         checkLabelComplete("#saveLocationStatus", null, name + " data-file path");
@@ -214,16 +217,23 @@ public class CompactFeedbackAcceptance extends Application {
     }
 
     /**
-     * Fails unless every line of the result is in view without scrolling. The text node is measured because the
-     * scroll content always stretches to fill the viewport.
+     * Fails unless {@code line} of the result is in view without scrolling. Font metrics differ by platform: on
+     * Windows the six-line deletion preview is taller than the result area, so its final cancellation note is
+     * reached by scrolling, but the action line must stay in view. The text node is measured because the scroll
+     * content always stretches to fill the viewport.
      */
-    private void checkFullyVisible(String description) {
+    private void checkLineVisible(String line, String description) {
         ScrollPane scroll = (ScrollPane) resultArea().lookup(".scroll-pane");
         Text text = (Text) resultArea().lookup(".content .text");
+        int start = text.getText().indexOf(line);
+        check(start >= 0, description + " is in the result");
+        Bounds lineBounds = scroll.sceneToLocal(text.localToScene(
+                new javafx.scene.shape.Path(text.rangeShape(start, start + line.length())).getBoundsInLocal()));
         Bounds textBounds = scroll.sceneToLocal(text.localToScene(text.getBoundsInLocal()));
-        System.out.printf("TEXT %s text=%.0f-%.0f viewport=%.0f%n", description, textBounds.getMinY(),
-                textBounds.getMaxY(), scroll.getViewportBounds().getHeight());
-        check(textBounds.getMaxY() <= scroll.getViewportBounds().getHeight() + 1,
+        System.out.printf("TEXT %s line=%.0f-%.0f text=%.0f-%.0f viewport=%.0f%n", description,
+                lineBounds.getMinY(), lineBounds.getMaxY(), textBounds.getMinY(), textBounds.getMaxY(),
+                scroll.getViewportBounds().getHeight());
+        check(lineBounds.getMaxY() <= scroll.getViewportBounds().getHeight() + 1,
                 description + " needs no vertical scrolling");
     }
 
