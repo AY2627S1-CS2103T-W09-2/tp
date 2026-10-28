@@ -21,6 +21,9 @@ title: Developer Guide
   diffs and remains responsible for his contributions.
 * Jingchun Zhou used OpenAI Codex to assist with implementation, tests, documentation, code review, and repository
   workflows. Jingchun reviewed and validated the accepted work and remains responsible for it.
+* Yujie Wang used Claude Code (Anthropic) extensively to assist with implementation, tests, documentation, code
+  review, test evidence and repository workflows. Yujie reviewed and validated the accepted work and remains
+  responsible for it.
 
 --------------------------------------------------------------------------------------------------------------------
 
