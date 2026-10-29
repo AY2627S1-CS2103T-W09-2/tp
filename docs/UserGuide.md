@@ -485,6 +485,9 @@ Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for ex
 
 1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
 2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+3. **Names starting with an accented letter appear after unaccented names.** Rosters and search results are ordered by name ignoring letter case, not by the alphabetical order of any language, so `Émile` appears after `Zoe`.
+   The order is the same on every computer. To find such a student quickly, use `find` or `view EMAIL` instead of scrolling.
+   [Issue #167](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/167) tracks a language-aware order for a later version.
 
 The published v1.5 JAR passed physical-keyboard acceptance on macOS 26.7.1 with Apple silicon at 2560 x 1440 and 100% scaling, and on Windows 11 at 1366 x 768 and 100% scaling. Native Linux desktop execution was not verified; WSLg checks and Ubuntu CI are supplemental only. Physical Windows testing at 1920 x 1080 and at 125% or 150% scaling was unavailable. On the tested Windows display, the last line of the six-line deletion preview requires vertical scrolling, while the confirmation command remains visible; [issue #188](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/188) tracks the low-severity improvement for v1.6. Search response time was not measured manually during the final macOS acceptance pass. These are evidence limits, not failures of the accepted core workflows.
 
