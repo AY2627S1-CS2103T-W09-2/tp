@@ -216,6 +216,23 @@ Format: `list`
 
 `list` does not change or save roster data. If a profile is selected and remains in the roster, it stays selected.
 
+### Adding, replacing or removing a remark: `remark`
+
+Format: `remark INDEX r/[TEXT]`
+
+Adds or replaces the selected student's free-text remark. `INDEX` is the positive number shown in the **current result list**, starting at 1; after `find`, it refers to that filtered list, not the full roster. Check the displayed name and email before submitting. An index beyond the displayed results is rejected.
+
+* `remark INDEX r/TEXT` replaces the entire existing remark with `TEXT`; it does not append to it.
+* `remark INDEX r/` deliberately removes the existing remark. The `r/` prefix is required even when removing a remark; `remark INDEX` alone is rejected.
+* Names, emails, contacts, enrolments and sample classification are preserved. A successful update is saved and shows the full roster in name-and-email order, so displayed indices can change after updating a filtered result.
+* Remarks appear on result cards. In the current app, `view EMAIL` does not include the remark in the profile panel, and a long remark can be truncated at narrower window widths. Widen the window to read more; [issue #191](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/191) tracks this visibility limitation.
+
+Example using the fictional samples:
+
+1. After loading samples, run `find e9000001@u.nus.edu` and check that Alex Tan is result 1.
+2. `remark 1 r/Arrange a consultation on Friday.` adds the note (or replaces the old one).
+3. Run `find e9000001@u.nus.edu` again to confirm the current index before using `remark 1 r/` to remove the note.
+
 ### Editing a student's profile: `edit`
 
 Format: `edit /email EMAIL [/new-email NEW_EMAIL] [/name NAME] [/telegram HANDLE|clear] [/github USERNAME|clear]`
@@ -506,6 +523,7 @@ Action | Format, Examples
 **Edit** | `edit /email EMAIL [/new-email NEW_EMAIL] [/name NAME] [/telegram HANDLE\|clear] [/github USERNAME\|clear]`<br> e.g., `edit /email e9000001@u.nus.edu /new-email e9000101@u.nus.edu /github clear`
 **Find** | `find QUERY`<br> e.g., `find Alex Tan`
 **List** | `list`
+**Remark** | `remark INDEX r/[TEXT]` (omit TEXT to remove the remark)
 **Help** | `help`
 **Sample load** | `sample load`
 **Sample clear** | `sample clear`
