@@ -114,8 +114,9 @@ Quote the entire classpath when paths contain spaces; on Windows use `;` instead
 
 ## Making a release
 
-Prepare the candidate separately from publication. For v1.5, Kaiwen owns packaging (#135), Yujie reviews
-its handoff and owns acceptance (#142), and Jingchun publishes through #143 after acceptance.
+Prepare the candidate separately from publication. For v1.6, Kaiwen owns packaging (#202), Minh Hoang independently reviews
+the handoff and owns acceptance (#203), and Jingchun publishes through #204 after acceptance.
+Final Canvas submission and receipt verification are tracked separately in #205; publication alone is not submission.
 
 1. Open a focused PR updating `MainApp.VERSION` in `src/main/java/seedu/address/MainApp.java` and any release instructions.
 1. Obtain independent review and successful required CI, then use the reviewed master commit for the final build.
@@ -123,7 +124,7 @@ its handoff and owns acceptance (#142), and Jingchun publishes through #143 afte
 1. Hand off the exact JAR and checksum for independent acceptance. Keep a draft unpublished while acceptance is pending.
 1. After acceptance, tag the accepted source and publish the same tested JAR. Download the uploaded artifact and verify its checksum.
 
-### v1.5 candidate packaging and smoke evidence
+### v1.6 candidate packaging and smoke evidence
 
 Build one reviewed, feature-complete master commit with Java 25:
 
@@ -131,13 +132,15 @@ Build one reviewed, feature-complete master commit with Java 25:
 ./gradlew clean check coverage shadowJar
 ```
 
-`MainApp.VERSION` identifies V1.5. This metadata does not mean a release has been published. `shadowJar` produces
+`MainApp.VERSION` identifies V1.6. This metadata does not mean a release has been published. `shadowJar` produces
 `build/libs/addressbook.jar`; keep this filename without spaces or special characters and do not change its bytes after testing.
 Record the full source SHA (`git rev-parse HEAD`), Java version (`java -version`), filename, byte size and SHA-256.
-The JAR must stay below 100 MB. Record preparation builds separately from final build evidence and handoff review in #135.
-Acceptance sign-off for that exact artifact is recorded separately in #142 before #143 publication.
-Do not replace the published v1.4 assets with v1.5 preparation builds. Final packaging consumes the merged fixes
-and reviewed Developer Guide/DevOps instructions, including #134; an early dry run is not the final candidate.
+The JAR must stay below 100 MB. Record preparation builds separately from final build evidence and handoff review in #202.
+Acceptance sign-off for that exact artifact is recorded separately in #203 before #204 publication.
+Do not replace the published v1.5 tag or assets with v1.6 preparation builds. Final packaging consumes the merged accepted fixes,
+reviewed instructions (#200/#201) and freeze ledger (#199); an early dry run is not the final candidate.
+Prepare the expected Canvas copy `CS2103T-W09-2SoCdex.jar` from the accepted JAR, then verify identical bytes
+and checksum. Confirm the exact private assignment naming instructions before uploading under #205.
 
 The JAR retains Windows and Linux JavaFX libraries and packages macOS libraries as universal Mach-O binaries containing both Intel and Apple Silicon slices. `universalMacNatives` combines the existing JavaFX 17.0.7 vendor binaries without changing their slices or upgrading dependencies. It runs on all build hosts and needs no Apple tools. Native resource names collide between the two macOS classifiers, so the task replaces the Intel-only root resources with the combined files. On macOS, `file build/generated/universal-mac-natives/*.dylib` provides an independent architecture check. Native inspection and unit-test CI are not GUI launch evidence.
 
@@ -145,9 +148,9 @@ Copy the same JAR into a new disposable folder on Windows, macOS and Linux. Use 
 
 1. Run `java -jar addressbook.jar`. Confirm the production window opens and the roster starts empty. Do not seed the test with an existing preferences or roster file.
 1. Enter `student add /name Alex Demo /email E9000001@U.NUS.EDU /telegram @Alex_Demo /github alex-demo`. Expect `Added student: Alex Demo.` and the selected canonical email `e9000001@u.nus.edu`.
-1. Enter `find e9000001`. Expect one selected result. In the final feature-complete candidate, also run #142's integrated acceptance scenarios against this same artifact.
+1. Enter `find e9000001`. Expect one selected result. In the final feature-complete candidate, also run #203's integrated acceptance scenarios against this same artifact.
 1. Enter `exit`, confirm normal process termination, then run the identical launch command again. Verify the complete saved profile and contacts return. Search again and exit; keep logs and a screenshot. Record any failure rather than marking the platform as passed.
-1. Hand the artifact and checksum to Yujie for #135 review and #142 acceptance, then to Jingchun for #143 publication. Rebuild and rerun affected checks if the candidate source changes. Publication is separate: download the uploaded JAR and compare its checksum.
+1. Hand the artifact and checksum to Minh Hoang for #202 handoff review and #203 acceptance, then to Jingchun for #204 publication. Rebuild and rerun affected checks if the candidate source changes. Publication is separate: download the uploaded JAR and compare its checksum.
 
 An optional reproducible programmatic smoke utility exercises production `MainApp` startup and stop and the actual command box. Build test classes using `./gradlew testClasses shadowJar`. From a new disposable working directory, copy the tested JAR and run these as **two separate JVM invocations**, using the absolute path to this checkout's test classes:
 
