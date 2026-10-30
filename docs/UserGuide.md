@@ -72,7 +72,7 @@ SoCdex is based on AddressBook Level 3 (AB3).
 
 ### Viewing help: `help`
 
-Opens the Help window with editing guidance and a link to this User Guide.
+Opens the Help window with editing guidance and a link to this User Guide. The Help window is a guide pointer. It does not list every supported command. Use the command summary in this guide for the complete command list.
 
 ![SoCdex Help window](images/helpMessage.png)
 
@@ -155,7 +155,7 @@ Create the student first with `student add`. The normalised NUS email selects th
 
 * Module codes have 2 to 4 ASCII letters, four digits and up to 3 final letters; input is trimmed and stored uppercase.
 * Semesters use `AYyy/yy S1` or `AYyy/yy S2`, ignoring case and normalising spaces/tabs. Years must be consecutive within 2000–2099. Special terms are unsupported.
-* Optional section and team labels have 1 to 30 ASCII letters, digits, spaces or hyphens after spaces/tabs are normalised, and need at least one letter or digit. Case is preserved. Omit a prefix for an unknown affiliation; do not supply a blank value or store `Not assigned` as a placeholder.
+* Optional section and team labels have 1 to 30 ASCII letters, digits, spaces or hyphens after spaces/tabs are normalised, and need at least one letter or digit. Case is preserved. Omit a prefix for an unknown affiliation and do not supply a blank value. The current app accepts `Not assigned` as literal label text, but displays it in the same way as an absent value. Avoid that label. Omit the prefix instead. [Issue #169](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/169) tracks a future reserved-label and compatibility change.
 
 Examples using an existing fictional student:
 
@@ -184,7 +184,9 @@ Format: `edit-enrol /email EMAIL /module MODULE /semester SEMESTER [/section SEC
 * Section/team labels accept 1–30 ASCII letters, digits, spaces or hyphens after trimming and collapsing spaces/tabs;
   each label must include a letter or digit. Case is preserved. A supplied empty value is an error.
 * Omit a field to preserve it. The exact lowercase `clear` removes only that assignment; `Clear` stores a literal
-  label. Missing affiliations display `Not assigned`.
+  label. Missing affiliations display `Not assigned`. The current app also accepts `Not assigned` as literal text,
+  but the display cannot distinguish that text from an absent assignment. Avoid that label and use `clear` when you
+  need to remove an assignment.
 * Success shows `Updated enrolment for NAME: MODULE, SEMESTER.`, clears the search filter and selects the owner
   in the full sorted roster. Other students, enrolments, contacts and fictional-sample classification are preserved.
 * An identical normalised value, or clearing an already absent field, shows `No values changed.` and reveals the
@@ -270,6 +272,7 @@ Format: `find QUERY`
 
 * Enter one literal query of 1 to 100 Unicode characters. `find Alex Tan` searches for the phrase `Alex Tan`; it does not match `Alex Lim` or `Mei Tan`.
 * Matching ignores letter case and checks the whole query as a contiguous substring in any of the four fields. Accents remain significant, and punctuation such as `*` is literal; wildcards and regular expressions are not supported.
+* Name text is not Unicode-normalised. Two names that look the same can use different Unicode characters and may not match the same query. For example, a non-breaking space is not treated as an ordinary space, and precomposed and decomposed accented letters remain distinct. If a name search misses a student, search by NUS email or another exact identifier. [Issue #168](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/168) tracks a future validation and search policy.
 * Surrounding spaces and tabs are ignored. Internal tabs become spaces, and repeated internal spaces remain significant. For example, `find Alex  Tan` (two spaces) does not match `Alex Tan` (one space).
 * For Telegram only, one leading `@` is removed from the query. `find @` has no Telegram match but still matches email addresses. Names, emails and GitHub usernames use the original query, so `find @socdex-demo-ravi` does not match GitHub username `socdex-demo-ravi`.
 * Absent contacts do not match the display label `Not provided`. Enrolment fields and the `Fictional sample` label are not searched.
@@ -460,7 +463,7 @@ On Linux, SoCdex uses JavaFX's software renderer by default, because the OpenGL 
 
 Student records can store several module-semester enrolments, with optional tutorial sections and project teams. Use `enrol` to add a context to an existing student. Each result card and the profile panel show every stored enrolment; use `view EMAIL` to open a complete profile. Existing commands that edit a profile or its remark preserve its stored enrolments.
 
-An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team; use null or omit that optional property.
+An otherwise valid older profile without an `enrolments` property loads with no enrolments. When editing JSON while the app is closed, use the canonical enrolment format documented in the Developer Guide. Invalid values or duplicate module-semester keys reject the entire load. Keep a separate copy of the file before editing it. Do not store `Not assigned` as a substitute for an absent section or team. The current app accepts that literal value but displays it exactly like an absent assignment. Use null or omit that optional property.
 
 ### Stored contacts and sample classification
 
@@ -505,6 +508,8 @@ Furthermore, certain edits can cause SoCdex to behave in unexpected ways, for ex
 3. **Names starting with an accented letter appear after unaccented names.** Rosters and search results are ordered by name ignoring letter case, not by the alphabetical order of any language, so `Émile` appears after `Zoe`.
    The order is the same on every computer. To find such a student quickly, use `find` or `view EMAIL` instead of scrolling.
    [Issue #167](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/167) tracks a language-aware order for a later version.
+4. **Visually identical names can behave differently in search.** SoCdex preserves Unicode name text without canonical normalisation. Non-breaking spaces, invisible formatting characters, and different encodings of the same accented letter can produce names that look alike but do not match the same `find` query. Use the student's NUS email when this happens. [Issue #168](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/168) tracks this limitation.
+5. **The text `Not assigned` can be stored as an affiliation but looks absent.** The current app accepts this text as a section or team label and displays it in the same way as a missing value. Avoid this literal label. Omit the optional field when adding an enrolment, or use lowercase `clear` when editing one. [Issue #169](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/169) tracks a future reserved-label and compatibility change.
 
 The published v1.5 JAR passed physical-keyboard acceptance on macOS 26.7.1 with Apple silicon at 2560 x 1440 and 100% scaling, and on Windows 11 at 1366 x 768 and 100% scaling. Native Linux desktop execution was not verified; WSLg checks and Ubuntu CI are supplemental only. Physical Windows testing at 1920 x 1080 and at 125% or 150% scaling was unavailable. On the tested Windows display, the last line of the six-line deletion preview requires vertical scrolling, while the confirmation command remains visible; [issue #188](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/188) tracks the low-severity improvement for v1.6. Search response time was not measured manually during the final macOS acceptance pass. These are evidence limits, not failures of the accepted core workflows.
 

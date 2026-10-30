@@ -19,6 +19,7 @@ SoCdex supports the following capabilities:
 
 * Create student profiles with names, NUS email addresses, and optional Telegram and GitHub usernames.
 * Edit student names, NUS email addresses, and optional Telegram and GitHub contact details.
+* Add, replace, and remove a free-text remark for a student.
 * Record module-semester enrolments with optional tutorial sections and project teams.
 * Edit or clear tutorial sections and project teams for existing enrolments.
 * Find students by name, NUS email, Telegram username, or GitHub username.
