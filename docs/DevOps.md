@@ -139,8 +139,11 @@ The JAR must stay below 100 MB. Record preparation builds separately from final 
 Acceptance sign-off for that exact artifact is recorded separately in #203 before #204 publication.
 Do not replace the published v1.5 tag or assets with v1.6 preparation builds. Final packaging consumes the merged accepted fixes,
 reviewed instructions (#200/#201) and freeze ledger (#199); an early dry run is not the final candidate.
-Prepare the expected Canvas copy `CS2103T-W09-2SoCdex.jar` from the accepted JAR, then verify identical bytes
-and checksum. Confirm the exact private assignment naming instructions before uploading under #205.
+Prepare the expected Canvas copy `[CS2103T-W09-2][SoCdex].jar` from the accepted JAR, then verify identical bytes
+and checksum. The square brackets are literal filename characters, not placeholders;
+[the course clarification](https://github.com/NUS-CS2103-AY2627-S1/forum/issues/733#issuecomment-6517256752) confirms this.
+Quote the complete filename in shell commands, for example `cp addressbook.jar "[CS2103T-W09-2][SoCdex].jar"`.
+Confirm the remaining private assignment instructions before uploading under #205.
 
 The JAR retains Windows and Linux JavaFX libraries and packages macOS libraries as universal Mach-O binaries containing both Intel and Apple Silicon slices. `universalMacNatives` combines the existing JavaFX 17.0.7 vendor binaries without changing their slices or upgrading dependencies. It runs on all build hosts and needs no Apple tools. Native resource names collide between the two macOS classifiers, so the task replaces the Intel-only root resources with the combined files. On macOS, `file build/generated/universal-mac-natives/*.dylib` provides an independent architecture check. Native inspection and unit-test CI are not GUI launch evidence.
 
