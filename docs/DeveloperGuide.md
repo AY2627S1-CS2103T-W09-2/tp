@@ -406,7 +406,7 @@ The second diagram shows a selection made by the tutor with the mouse or keyboar
 
 [![Selection by the tutor](images/ProfileSelectionSequenceDiagram.png)](images/ProfileSelectionSequenceDiagram.png)
 
-`PersonCard.enrolmentLine` and `PersonCard.enrolmentText` format enrolments in `Enrolment.DISPLAY_ORDER`, and `PersonDetailsPanel.profileLines` lists the profile fields in a fixed order. Both are static and can be tested without starting JavaFX. `Not provided`, `Not assigned` and `Enrolments: none` are display text only and are never stored.
+`PersonCard.enrolmentLine` and `PersonCard.enrolmentText` format enrolments in `Enrolment.DISPLAY_ORDER`, and `PersonDetailsPanel.profileLines` lists the profile fields in a fixed order, ending with `Remark: ` and the complete remark when there is one. Both are static and can be tested without starting JavaFX. The remark label on a result card and every profile line wrap, so a long remark is not cut off at narrow window widths. The stored remark text is shown unchanged. `Not provided`, `Not assigned` and `Enrolments: none` are display text only and are never stored.
 
 For an opt-in layout check using fictional data, build with `./gradlew testClasses shadowJar`, then run:
 
@@ -415,6 +415,14 @@ java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.Pro
 ```
 
 On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. Before forcing any CSS pass, it checks after each command and key press that the profile heading has its theme style: white 16px text with no background. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. `DarkTheme.css` outlines the result area and the result list while either has keyboard focus. The utility checks that this outline appears only in the focused state and does not change their size. The window is never shown, so the focused state is applied directly. Confirm manually that the outline follows Tab in the packaged application. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
+
+To check a long remark ([issue #191](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/191)), run:
+
+```text
+java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.RemarkReadabilityAcceptance
+```
+
+At the default 740 × 600 and minimum 450 × 600 logical sizes, this utility adds two fictional students and saves a long remark ending in `END-OF-NOTE` with `remark 1 r/...`. It then runs `view EMAIL` and checks that the result card and the profile panel both draw and expose the complete remark, that the card's remark wraps, that the remark line needs no horizontal scrolling, and that scrolling the profile panel reaches it. It reads the saved file and checks that the remark is stored exactly as typed. It then loads that file in a new window and repeats the checks. Finally, `remark 2 r/...` must change only the second student, leaving the first student's other fields and the selection unchanged, so the displayed index still refers to the right student. Screenshots are written under `build/reports/remark-readability`. As with `ProfileViewAcceptance`, the window is never shown, so confirm the packaged window manually and record the tested commit and actual runtime separately. Loading the file again in a new window stands in for a restart of the same process; confirm a real restart of the packaged JAR manually.
 
 Below the student list and profile panels come the result area, then the command box, then the status bar, so the latest result sits just above the next command. Tab follows the same order: from the command box it moves to the student list, then the result area, then back to the command box, and Shift+Tab reverses this. The result area wraps its text and is 160px tall, so the deletion preview's confirmation instruction is always in view without scrolling. Line height depends on the platform font. On macOS the whole six-line preview fits. On Windows it is taller than the area, so the final line, `Any other command will cancel this deletion.`, is reached by scrolling; a vertical scrollbar shows this. The status bar is an `HBox`: `Deletion pending` keeps its full width, and the data-file path wraps onto more lines instead of being cut off. The status bar is never shrunk below the height it needs. To check these at compact sizes, run:
 
@@ -494,6 +502,7 @@ Commands are submitted by setting the command box text and firing its action, an
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
 * `EditEnrolAcceptance` `seed` and `restart` in separate processes (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
 * `PersonCardAcceptance` for the result-card layout (see [Measuring search responsiveness](#measuring-search-responsiveness)).
+* `RemarkReadabilityAcceptance` for a long remark on the result card and in the profile panel.
 * Manual keyboard testing on the reference platforms.
 
 Start release builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`. `shadowJar` excludes the top-level `logs/` directory so a later non-clean rebuild does not package those stale files. `JarContentsTest` checks the exclusion and the required resources under the normal `check` workflow. The clean start still removes unrelated stale build output. It does not prove that separate checkouts or platforms produce a byte-identical JAR. For v1.3, build reproducibility was tracked separately in #79.
@@ -940,6 +949,7 @@ Requirements 11 to 13 cover failures that SoCdex can detect. They do not guarant
 * **Module-semester**: One offering of an NUS module, identified by its module code, academic year, and semester.
 * **NUS email**: The official NUS email address recorded for a student. It is both an institutional identifier and a contact route.
 * **Project team**: A group of students who work together on a project within a module-semester.
+* **Remark**: A tutor's free-text note stored on a student profile. It is shown as written and is replaced, not appended to, when changed.
 * **Roster**: A collection of student profiles and their enrolments that a tutor manages in SoCdex.
 * **Student profile**: A local record that connects one student's name, identifiers, and contact routes. Enrolments link the profile to its teaching context.
 * **Technical platform**: An external service used for module work or communication, such as GitHub or Telegram.

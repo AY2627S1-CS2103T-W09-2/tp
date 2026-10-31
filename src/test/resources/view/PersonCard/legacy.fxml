@@ -33,7 +33,7 @@
       <Label fx:id="github" wrapText="true" styleClass="cell_small_label" text="\$github" />
       <Label fx:id="sample" wrapText="true" styleClass="cell_small_label" text="\$sample" />
       <Label fx:id="enrolments" styleClass="cell_small_label" wrapText="true" />
-      <Label fx:id="remark" styleClass="cell_small_label" text="\$remark" />
+      <Label fx:id="remark" styleClass="cell_small_label" text="\$remark" wrapText="true" />
     </VBox>
   </GridPane>
 </HBox>
