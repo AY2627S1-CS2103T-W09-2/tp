@@ -15,6 +15,7 @@ import seedu.address.model.person.Person;
  */
 public class PersonDetailsPanel extends UiPart<Region> {
     static final String SELECTION_PROMPT = "Select a student to view their profile.";
+    static final String REMARK_PREFIX = "Remark: ";
 
     private static final String FXML = "PersonDetailsPanel.fxml";
 
@@ -53,8 +54,8 @@ public class PersonDetailsPanel extends UiPart<Region> {
     }
 
     /**
-     * Returns every line below the name: classification, contacts, then all enrolments in display order.
-     * Absent values use display labels that are never stored.
+     * Returns every line below the name: classification, contacts, all enrolments in display order, then the
+     * complete remark if there is one. Absent values use display labels that are never stored.
      */
     static List<String> profileLines(Person person) {
         List<String> lines = new ArrayList<>();
@@ -65,6 +66,10 @@ public class PersonDetailsPanel extends UiPart<Region> {
         lines.add(PersonCard.contactText(PersonCard.TELEGRAM_LABEL, person.getTelegram()));
         lines.add(PersonCard.contactText(PersonCard.GITHUB_LABEL, person.getGitHub()));
         lines.addAll(PersonCard.enrolmentLines(person.getEnrolments()));
+        String remark = person.getRemark().value;
+        if (!remark.isEmpty()) {
+            lines.add(REMARK_PREFIX + remark);
+        }
         return lines;
     }
 }
