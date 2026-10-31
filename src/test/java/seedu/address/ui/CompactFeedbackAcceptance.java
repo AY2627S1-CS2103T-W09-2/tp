@@ -18,6 +18,8 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -32,7 +34,6 @@ import javafx.stage.Stage;
 import seedu.address.logic.LogicManager;
 import seedu.address.logic.Messages;
 import seedu.address.logic.commands.AddCommand;
-import seedu.address.logic.commands.ConfirmDeleteCommand;
 import seedu.address.logic.commands.DeleteCommand;
 import seedu.address.logic.commands.SampleCommand;
 import seedu.address.model.AddressBook;
@@ -47,10 +48,10 @@ import seedu.address.storage.StorageManager;
 /**
  * Opt-in real-window probe for compact layouts; runs separately from the headless unit suite.
  * Lays the window out at the default 740x600, the minimum 450x600 and the 853x480 logical size of 1280x720 at 150%
- * scaling, checks that long feedback and the status bar stay complete without horizontal scrolling, that the
- * deletion preview's confirmation instruction is in view, that feedback quoting a long name and email wraps, that
- * the result area and then the command box sit below the panels, and checks the command box's focused state and
- * the Tab order.
+ * scaling, checks that long feedback and the status bar stay complete without horizontal scrolling, that the whole
+ * deletion preview is in view, also with a taller font, that the student list still shows a whole result card at
+ * the minimum height and above, that feedback quoting a long name and email wraps, that the result area and then
+ * the command box sit below the panels, and checks the command box's focused state and the Tab order.
  * Uses only fictional data under build/reports/compact-feedback.
  */
 public class CompactFeedbackAcceptance extends Application {
@@ -59,6 +60,10 @@ public class CompactFeedbackAcceptance extends Application {
     private static final Color FOCUS_COLOUR = Color.web("#e2e2e2");
     // The command box's border width in DarkTheme.css, in both the focused and unfocused states.
     private static final double FOCUS_BORDER_WIDTH = 2;
+    // The window's minimum height in MainWindow.fxml. Shorter windows only arise from OS display scaling.
+    private static final int MIN_WINDOW_HEIGHT = 600;
+    // Larger than the theme's 13pt, so each line is taller than the theme font draws on macOS.
+    private static final String TALLER_FONT_SIZE = "16pt";
     private static final List<Viewport> VIEWPORTS = List.of(
             new Viewport("default-740x600", 740, 600),
             new Viewport("minimum-450x600", 450, 600),
@@ -159,14 +164,15 @@ public class CompactFeedbackAcceptance extends Application {
         String preview = String.format(DeleteCommand.MESSAGE_PREVIEW, "Mei Lim", TARGET, 1, TARGET);
         check(feedback().equals(preview), name + " deletion preview shown");
         checkWrapped(name + " deletion preview");
-        checkLineVisible("Type: " + ConfirmDeleteCommand.COMMAND_WORD + " " + TARGET,
-                name + " confirmation instruction");
+        checkFullyVisible(name + " deletion preview");
+        checkFitsTallerFont(name);
         check(logic.hasPendingDeletion(), name + " deletion pending after preview");
         checkLabelComplete("#deletionStatus", StatusBarFooter.DELETION_PENDING, name + " status");
         checkLabelComplete("#saveLocationStatus", null, name + " data-file path");
         checkStatusBarInWindow(name);
         checkVisualOrder(name + " after a preview");
         checkFocusBorder(input, name + " command box after a preview");
+        checkPanelsUsable(name, viewport.height >= MIN_WINDOW_HEIGHT);
         snapshot(name + "-deletion-preview.png");
 
         String rejected = "student add /name Long Email /email " + LONG_LOCAL_PART + "@u.nus.edu";
@@ -217,24 +223,57 @@ public class CompactFeedbackAcceptance extends Application {
     }
 
     /**
-     * Fails unless {@code line} of the result is in view without scrolling. Font metrics differ by platform: on
-     * Windows the six-line deletion preview is taller than the result area, so its final cancellation note is
-     * reached by scrolling, but the action line must stay in view. The text node is measured because the scroll
+     * Fails unless every line of the result is in view without scrolling. The result area is sized in lines of its
+     * font, so this holds whatever the platform's line height. The text node is measured because the scroll
      * content always stretches to fill the viewport.
      */
-    private void checkLineVisible(String line, String description) {
+    private void checkFullyVisible(String description) {
         ScrollPane scroll = (ScrollPane) resultArea().lookup(".scroll-pane");
         Text text = (Text) resultArea().lookup(".content .text");
-        int start = text.getText().indexOf(line);
-        check(start >= 0, description + " is in the result");
-        Bounds lineBounds = scroll.sceneToLocal(text.localToScene(
-                new javafx.scene.shape.Path(text.rangeShape(start, start + line.length())).getBoundsInLocal()));
         Bounds textBounds = scroll.sceneToLocal(text.localToScene(text.getBoundsInLocal()));
-        System.out.printf("TEXT %s line=%.0f-%.0f text=%.0f-%.0f viewport=%.0f%n", description,
-                lineBounds.getMinY(), lineBounds.getMaxY(), textBounds.getMinY(), textBounds.getMaxY(),
-                scroll.getViewportBounds().getHeight());
-        check(lineBounds.getMaxY() <= scroll.getViewportBounds().getHeight() + 1,
+        System.out.printf("TEXT %s text=%.0f-%.0f viewport=%.0f%n", description, textBounds.getMinY(),
+                textBounds.getMaxY(), scroll.getViewportBounds().getHeight());
+        check(textBounds.getMaxY() <= scroll.getViewportBounds().getHeight() + 1,
                 description + " needs no vertical scrolling");
+    }
+
+    /**
+     * Stands in for a platform whose font has taller lines, as on Windows, by enlarging the result area's font, and
+     * checks that the area grows so the whole deletion preview still fits.
+     */
+    private void checkFitsTallerFont(String name) {
+        TextArea result = resultArea();
+        double height = result.getHeight();
+        result.setStyle("-fx-font-size: " + TALLER_FONT_SIZE + ";");
+        layout();
+        check(result.getHeight() > height, name + " result area grows with a taller font");
+        checkFullyVisible(name + " deletion preview with a taller font");
+        result.setStyle("");
+        layout();
+        check(result.getHeight() == height, name + " result area returns to its height with the theme font");
+    }
+
+    /**
+     * At the minimum window height and above, fails unless the student list can show the tallest card in the
+     * fictional sample roster whole.
+     * In a shorter, scaled window, where a card may already need scrolling, fails unless the top card's name is in
+     * full view.
+     */
+    private void checkPanelsUsable(String name, boolean wholeCard) {
+        ListView<?> list = (ListView<?>) stage.getScene().lookup("#personListView");
+        List<ListCell<?>> cards = list.lookupAll(".list-cell").stream().<ListCell<?>>map(cell -> (ListCell<?>) cell)
+                .filter(cell -> cell.getItem() != null).toList();
+        double tallest = cards.stream().mapToDouble(cell -> cell.getLayoutBounds().getHeight()).max().orElseThrow();
+        double nameBottom = cards.stream().map(cell -> cell.lookup("#name"))
+                .map(label -> list.sceneToLocal(label.localToScene(label.getLayoutBounds())))
+                .filter(bounds -> bounds.getMinY() >= -1).mapToDouble(Bounds::getMaxY).min().orElseThrow();
+        System.out.printf("PANELS %s list=%.0f tallest card=%.0f top name bottom=%.0f%n", name, list.getHeight(),
+                tallest, nameBottom);
+        if (wholeCard) {
+            check(list.getHeight() >= tallest, name + " student list shows the tallest result card whole");
+        } else {
+            check(nameBottom <= list.getHeight(), name + " student list shows the top student's name");
+        }
     }
 
     /** Fails if the label's rendered text is elided, or differs from {@code expected} when one is given. */
