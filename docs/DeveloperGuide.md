@@ -54,7 +54,7 @@ The following provides a quick overview of the main components and their interac
 
 **`Main`** (consisting of classes [`Main`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/Main.java) and [`MainApp`](https://github.com/AY2627S1-CS2103T-W09-2/tp/blob/master/src/main/java/seedu/address/MainApp.java)) is in charge of the app launch and shut down.
 * At app launch, it initializes the other components in the correct sequence, and connects them up with each other.
-* At shut down, it shuts down the other components and invokes cleanup methods where necessary.
+* At shut down, `MainApp.stop()` saves the user preferences. It does not save the roster, because each data-changing command has already saved it.
 
 The bulk of the app's work is done by the following four components:
 
@@ -95,7 +95,7 @@ The `UI` component uses the JavaFX UI framework. Most UI parts define their layo
 The `UI` component,
 
 * executes user commands using the `Logic` component.
-* listens for changes to `Model` data so that the UI can be updated with the modified data.
+* shows a prepared snapshot of the displayed student list. `DisplayedCommandExecutor` compares that snapshot with the model's list around each command and replaces it when they differ, so the UI does not listen for `Model` changes.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
@@ -144,7 +144,7 @@ The `Model` component,
 
 * stores the address book data i.e., all `Person` objects (which are contained in a `UniquePersonList` object).
 * identifies each `Person` by its canonical NUS email: `Person#isSamePerson(Person)` compares only the `Email` values, so `UniquePersonList` accepts persons with equal names but rejects a second person with the same email. `Person#equals(Object)` and `Person#hashCode()` still compare every stored field, so a change to any saved field remains detectable.
-* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list, which a sorted view orders with the comparator supplied by the latest command. It exposes this view as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list, which a sorted view orders with the comparator supplied by the latest command. It exposes this view as an unmodifiable `ObservableList<Person>`. The UI copies it into a prepared snapshot instead of binding to it (see [Identifier search (v1.3)](#identifier-search-v13)).
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
@@ -270,11 +270,11 @@ For opt-in real-window acceptance using fictional data, build with `./gradlew te
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.EnrolmentAcceptance
 ```
 
-On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` now updates affiliations on an existing context (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
+On plain JDK 25, see [Starting a window driver on plain JDK 25](#starting-a-window-driver-on-plain-jdk-25). On Windows use `;` instead of `:` in the classpath. The utility drives the actual command box and records results, selection, rollback, saved bytes and a fresh model/window reload. It writes files and a screenshot under `build/reports/enrolment`. This is programmatic UI evidence, not manual keyboard entry or a process restart. Record the tested commit and actual runtime separately. `edit-enrol` now updates affiliations on an existing context (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
 
 ### Application data sandbox (v1.3 release requirement)
 
-[Constraint-Data-Sandbox](https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html#constraint-data-sandbox) confines application file access to the folder containing the running JAR and its subfolders. This is a release gate. For v1.3, packaged-runtime acceptance was recorded in #79 and #80. Current candidates follow the build, acceptance and publication handoff #135 → #142 → #143 recorded in #131, with build steps in [DevOps](DevOps.md).
+[Constraint-Data-Sandbox](https://nus-cs2103-ay2627-s1.github.io/website/admin/tp-constraints.html#constraint-data-sandbox) confines application file access to the folder containing the running JAR and its subfolders. This is a release gate. For v1.3, packaged-runtime acceptance was recorded in #79 and #80. The v1.5 candidate followed the handoff #135 → #142 → #143 recorded in #131. The v1.6 candidate follows #202 (build) → #203 (acceptance) → #204 (publication), with Canvas submission tracked separately in #205. Build steps are in [DevOps](DevOps.md).
 
 `AppPaths` derives home from its production class's protection-domain code-source URI, decodes spaces/Unicode, and resolves the physical code location. Packaged execution uses the containing JAR directory; development execution from unpacked classes uses that classes directory as home. It never uses `user.dir` or an external working-directory fallback. A JAR launched through a symbolic link uses the physical JAR's folder. Home discovery failure stops startup.
 
@@ -340,7 +340,7 @@ Search does not change identity or field validation. Email identity allows profi
 
 Verification covers Telegram-only and GitHub-only matches, shared handles, multiple-field matches without duplicates, `@`/`@@` handling, absent contacts, literal phrases, partial emails, case and locale independence, whitespace, accents, punctuation, Unicode length boundaries, repeated searches, ordering, unchanged roster data, and the absence of save attempts. Manual acceptance additionally checks visible selection, error preservation, and a 500-profile timing measurement. The measurement is initial evidence and does not certify the reference-hardware NFR.
 
-For a repeatable functional JavaFX check using fictional data, build with `./gradlew clean testClasses shadowJar`, then run the following from the repository root with a JavaFX-enabled JDK 25 (macOS/Linux classpath syntax):
+For a repeatable functional JavaFX check using fictional data, build with `./gradlew clean testClasses shadowJar`, then run the following from the repository root with a JavaFX-enabled JDK 25 (macOS/Linux classpath syntax; on plain JDK 25, see [Starting a window driver on plain JDK 25](#starting-a-window-driver-on-plain-jdk-25)):
 
 ```text
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ContactSearchAcceptance
@@ -386,7 +386,7 @@ The timing starts immediately before firing the command box's action event:
 
 A post-layout pulse is a **rendering-readiness proxy**, not proof that pixels have reached the physical display: JavaFX does not expose compositor completion here. The probe must not be reported as manual keyboard testing, a model-only benchmark, or exact end-to-end display latency. Keep native/manual observation in the final acceptance matrix. The printed focus, screen and scale values make programmatic-launch and display limitations explicit.
 
-Every run writes `timings.csv` with source/JAR identity, runtime, environment and every observation. Verification outside the timing checks result counts, sorted order, unique/ambiguous selection, feedback and rendered result cells; any save attempt fails. Ordinary rows over **1,000 ms** are marked `MISS` rather than hidden or used to weaken the target. Snapshot rows are marked `DIAGNOSTIC`. For v1.4, misses and failures were reported to #94 and the scope decision was tracked in #98. For a later candidate, report every miss and failure in its acceptance issue (#142 for v1.5).
+Every run writes `timings.csv` with source/JAR identity, runtime, environment and every observation. Verification outside the timing checks result counts, sorted order, unique/ambiguous selection, feedback and rendered result cells; any save attempt fails. Ordinary rows over **1,000 ms** are marked `MISS` rather than hidden or used to weaken the target. Snapshot rows are marked `DIAGNOSTIC`. For v1.4, misses and failures were reported to #94 and the scope decision was tracked in #98. For a later candidate, report every miss and failure in its acceptance issue (#142 for v1.5, #203 for v1.6).
 
 Run on the specified Intel Core i5-1035G1 / 8 GB / SSD / Windows 11 reference configuration, or explicitly record the mismatch. Development-machine results do not certify that configuration. The v1.3 timings are retained in #80 and the v1.4 candidate's logs in #102. Compare a later candidate honestly against them and attach its complete logs to its acceptance issue.
 
@@ -414,13 +414,15 @@ For an opt-in layout check using fictional data, build with `./gradlew testClass
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.ProfileViewAcceptance
 ```
 
-On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. Before forcing any CSS pass, it checks after each command and key press that the profile heading has its theme style: white 16px text with no background. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. `DarkTheme.css` outlines the result area and the result list while either has keyboard focus. The utility checks that this outline appears only in the focused state and does not change their size. The window is never shown, so the focused state is applied directly. Confirm manually that the outline follows Tab in the packaged application. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
+On plain JDK 25, see [Starting a window driver on plain JDK 25](#starting-a-window-driver-on-plain-jdk-25). On Windows use `;` instead of `:` in the classpath. The utility lays out the real window content at 1920 × 1080, 1536 × 864 and 853 × 480 logical pixels, which are the usable sizes of 1920 × 1080 at 100% and 125% scaling and 1280 × 720 at 150% scaling. It views a student with a long name and email, both contacts and 12 enrolments. It checks that every profile and result-row label shows and exposes its complete text, that profile lines wrap within the panel, and that scrolling reaches the last enrolment. Before forcing any CSS pass, it checks after each command and key press that the profile heading has its theme style: white 16px text with no background. It also checks that Tab and Shift+Tab move between the command box and the result list, that the arrow keys change the selected profile, and that viewing never saves. `DarkTheme.css` outlines the result area and the result list while either has keyboard focus. The utility checks that this outline appears only in the focused state and does not change their size. The window is never shown, so the focused state is applied directly. Confirm manually that the outline follows Tab in the packaged application. Screenshots are written under `build/reports/profile-view`. The scaling is simulated by the logical size. Confirm OS display scaling and screen-reader output manually, and record the tested commit and actual runtime separately.
 
 To check a long remark ([issue #191](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/191)), run:
 
 ```text
 java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.RemarkReadabilityAcceptance
 ```
+
+On plain JDK 25, see [Starting a window driver on plain JDK 25](#starting-a-window-driver-on-plain-jdk-25). On Windows use `;` instead of `:` in the classpath.
 
 At the default 740 × 600 and minimum 450 × 600 logical sizes, this utility adds two fictional students and saves a long remark ending in `END-OF-NOTE` with `remark 1 r/...`. It then runs `view EMAIL` and checks that the result card and the profile panel both draw and expose the complete remark, that the card's remark wraps, that the remark line needs no horizontal scrolling, and that scrolling the profile panel reaches it. It reads the saved file and checks that the remark is stored exactly as typed. It then loads that file in a new window and repeats the checks. Finally, `remark 2 r/...` must change only the second student, leaving the first student's other fields and the selection unchanged, so the displayed index still refers to the right student. Screenshots are written under `build/reports/remark-readability`. As with `ProfileViewAcceptance`, the window is never shown, so confirm the packaged window manually and record the tested commit and actual runtime separately. Loading the file again in a new window stands in for a restart of the same process; confirm a real restart of the packaged JAR manually.
 
@@ -431,6 +433,8 @@ java -cp build/classes/java/test:build/libs/addressbook.jar seedu.address.ui.Com
 ```
 
 The utility lays out the real window content at the default 740 × 600, the minimum 450 × 600 and 853 × 480 logical pixels, using a data-file path long enough to wrap. It runs `sample load`, a deletion preview and a rejected `student add` whose email is too long. After each, it checks that the result needs no horizontal scrolling. It also checks that the preview's `Type: confirm-delete EMAIL` line is in view without scrolling, that `Deletion pending` and the path are not truncated, and that the status bar stays inside the window. After the preview and after the rejection, it checks that the command box has the 2px `#e2e2e2` outline only in the focused state, with no change in size. It also checks that the panels, result area, command box and status bar appear in that order from top to bottom, that a rejected command keeps its text and error style, and that each Tab and Shift+Tab press reaches the next region in that order. Screenshots are written under `build/reports/compact-feedback`. As with `ProfileViewAcceptance`, the window is never shown and the scaling is simulated, so confirm the packaged window manually.
+
+On plain JDK 25, see [Starting a window driver on plain JDK 25](#starting-a-window-driver-on-plain-jdk-25).
 
 ### Confirmed deletion (v1.3)
 
@@ -496,16 +500,60 @@ Commands are submitted by setting the command box text and firing its action, an
 `MvpAcceptance` covers the in-window workflow only. Release acceptance also needs these, run against the same candidate JAR:
 
 * `DataSandboxAcceptance` `seed` and `restart`, a real restart through the production entry point (see [Application data sandbox](#application-data-sandbox-v13-release-requirement)).
-* `ProfileViewAcceptance` for the DG resolutions and scales, and the Tab and Shift+Tab focus order.
-* `CompactFeedbackAcceptance` for feedback, the status bar, the command-box outline, the window layout order and the Tab order at compact sizes.
+* `ProfileViewAcceptance` for its simulated logical window sizes and the Tab and Shift+Tab focus order. Its window is never shown, so it does not test OS display scaling.
+* `CompactFeedbackAcceptance` for feedback, the status bar, the command-box outline, the window layout order and the Tab order at simulated compact sizes.
 * `ContactSearchAcceptance` for search behaviour and `SearchTimingProbe` for separate ordinary-layout and snapshot timings over 500 profiles and 1,000 enrolments.
 * `DeletionStatusAcceptance`, `SampleClearAcceptance` and `EnrolmentAcceptance` for the feature-level window checks.
 * `EditEnrolAcceptance` `seed` and `restart` in separate processes (see [Editing enrolment affiliations](#editing-enrolment-affiliations-v14)).
 * `PersonCardAcceptance` for the result-card layout (see [Measuring search responsiveness](#measuring-search-responsiveness)).
 * `RemarkReadabilityAcceptance` for a long remark on the result card and in the profile panel.
-* Manual keyboard testing on the reference platforms.
+* Physical keyboard testing on each available platform. Record any configuration that was not tested as not verified. WSLg and Ubuntu CI results are supplemental and are not native Linux desktop evidence.
 
 Start release builds from `clean`. Running tests or the application from the build directory can write logs under `build/classes/java/main`. `shadowJar` excludes the top-level `logs/` directory so a later non-clean rebuild does not package those stale files. `JarContentsTest` checks the exclusion and the required resources under the normal `check` workflow. The clean start still removes unrelated stale build output. It does not prove that separate checkouts or platforms produce a byte-identical JAR. For v1.3, build reproducibility was tracked separately in #79.
+
+#### Starting a window driver on plain JDK 25
+
+`CompactFeedbackAcceptance`, `ContactSearchAcceptance`, `EnrolmentAcceptance`, `ProfileViewAcceptance` and `RemarkReadabilityAcceptance` extend JavaFX `Application` and save screenshots with `javafx.embed.swing`, which the JAR does not contain. On plain JDK 25, a direct `java -cp … <driver>` command stops with `JavaFX runtime components are missing`. A JDK that bundles JavaFX may behave differently, so check the class-load log rather than assuming which JavaFX ran.
+
+This Windows route was verified with `CompactFeedbackAcceptance`. In Command Prompt, from the repository root, create the folders:
+
+```text
+mkdir ..\harness\src ..\harness\classes
+```
+
+Save this as `..\harness\src\HarnessLaunch.java`:
+
+```java
+import java.util.Arrays;
+
+public final class HarnessLaunch {
+    public static void main(String[] args) throws Exception {
+        Class.forName(args[0]).getMethod("main", String[].class)
+                .invoke(null, (Object) Arrays.copyOfRange(args, 1, args.length));
+    }
+}
+```
+
+In Command Prompt, compile it and build the test classes and JAR:
+
+```text
+javac -proc:none -d ..\harness\classes ..\harness\src\HarnessLaunch.java
+gradlew.bat --no-daemon shadowJar compileTestJava
+```
+
+Find `javafx-swing-17.0.7-win.jar` in the Gradle cache. Its version must equal `javaFxVersion` in `build.gradle`. In PowerShell:
+
+```text
+Get-ChildItem "$env:USERPROFILE\.gradle\caches\modules-2\files-2.1\org.openjfx\javafx-swing\17.0.7" -Recurse -Filter javafx-swing-17.0.7-win.jar | ForEach-Object FullName
+```
+
+In Command Prompt, run the driver once, replacing `SWING_JAR` with that full path. Keep this classpath order: the launcher, test classes, test resources, the built JAR, then `javafx-swing`:
+
+```text
+java -Xlog:class+load=info:file=..\harness\classload.log:none -Djavafx.cachedir=..\harness\javafx-cache -cp "..\harness\classes;build/classes/java/test;build/resources/test;build/libs/addressbook.jar;SWING_JAR" HarnessLaunch seedu.address.ui.CompactFeedbackAcceptance
+```
+
+In `classload.log`, confirm that `javafx.application.Application` and `seedu.address.ui.MainWindow` come from `addressbook.jar`, and record the launch route with the result. macOS and Linux would use `:` and the `mac` or `linux` classifier; that route is not verified.
 
 ### NUS email identity (v1.2)
 
@@ -614,12 +662,12 @@ No new persistence path is added. All parser and command checks finish before th
 
 **Value proposition**: SoCdex gives NUS School of Computing tutors fast access to student contact details, identities, and tutorial or project-team affiliations, organised by module and semester. It helps tutors identify and reach the correct student without repeatedly cross-referencing Canvas, spreadsheets, technical platforms, and personal notes.
 
-**Scope boundary**: SoCdex stores only the information needed for this focused workflow: student name, NUS email, optional Telegram or GitHub identifiers, and module-semester enrolments with optional tutorial-section and project-team affiliations. It does not manage grades, attendance, submissions, timetables, LMS content, project collaboration, bulk institutional imports, free-form tutor notes, or disciplinary and assessment records.
+**Scope boundary**: SoCdex stores only the information needed for this focused workflow: student name, NUS email, optional Telegram or GitHub identifiers, and module-semester enrolments with optional tutorial-section and project-team affiliations, plus one optional free-text remark per student. It does not manage grades, attendance, submissions, timetables, LMS content, project collaboration, bulk institutional imports, or disciplinary and assessment records.
 
 
 ### User stories
 
-The table records backlog priority, not implementation status. The MVP stories M1–M8 are implemented in the current product. This table does not claim the other stories as implemented, although some are partly supported (for example, `help` opens a window that links to the User Guide). The backlog includes core requirements, supporting features, and future ideas; inclusion does not commit the team to implementing every story this semester.
+The table records backlog priority, not implementation status. The MVP stories M1–M8 are implemented in the current product. This table does not claim the other stories as implemented, although some are partly supported (for example, `help` opens a window that links to the User Guide). The backlog includes core requirements, supporting features, and future ideas; inclusion does not commit the team to implementing every story this semester. The current product also keeps `remark`, inherited from AB3, which has no separate backlog story.
 
 Priorities:
 
@@ -934,7 +982,7 @@ These requirements define the quality targets for SoCdex. A target is not consid
 7. **Screen resolution**: The GUI should work well at screen resolutions of 1920x1080 and higher with screen scales of 100% and 125%, and should remain usable (all functions available, even if less convenient) at resolutions of 1280x720 and higher with a screen scale of 150%.
 8. **Keyboard-first use**: Every roster task should be possible by typing commands, without using a mouse. After each command result, keyboard focus should be in the command box, and a rejected command should remain there for correction.
 9. **Platform compatibility**: SoCdex should work on Windows, Linux, and macOS computers with Java 25 alone, without depending on any other installed Java runtime or on operating-system-specific features.
-10. **Portable distribution**: SoCdex is planned to be distributed as a single JAR file of at most 100 MB that includes JavaFX and its other required libraries, and should run without an installer.
+10. **Portable distribution**: SoCdex is distributed as a single JAR file of at most 100 MB that includes JavaFX and its other required libraries, and should run without an installer.
 11. **Invalid input**: When a command is invalid, SoCdex should reject the whole command, leave the roster unchanged, and show a message that states the problem and how to correct it.
 12. **Saving changes**: A command that changes roster data should report success only after the change has been saved. A command that succeeds without changing roster data, such as a search or an edit that supplies the current values, should not rewrite the data file. If SoCdex detects that saving failed, it should say that the change was not saved, keep the roster as it was before the command, and leave the previously saved data file intact.
 13. **Unreadable data file**: If the existing data file cannot be read or contains invalid data, for example after a manual edit, SoCdex should tell the tutor that the stored data could not be loaded, and should preserve that file rather than overwrite or delete it.
@@ -966,6 +1014,20 @@ Given below are instructions to test the app manually.
 testers are expected to do more *exploratory* testing.
 
 </div>
+
+### Types of test evidence
+
+Steps in this appendix are physical tests: a person uses the real keyboard and mouse on the packaged JAR. Report each result with the type that actually applies.
+
+| Type | What it is | Examples | Does not establish |
+| --- | --- | --- | --- |
+| Physical | A person operates the shown window | This appendix | Other platforms or displays |
+| OS-automated | Software sends OS-level input to the shown window | None in this appendix | Physical keyboard use |
+| Programmatic, window shown | A driver in the same JVM fires events at a shown window | `ContactSearchAcceptance`, `EnrolmentAcceptance`, `DeletionStatusAcceptance`, `SampleClearAcceptance`, `MvpAcceptance`, `SearchTimingProbe` | Physical input |
+| Simulated layout | A driver lays out content at a logical size in a window that is never shown | `CompactFeedbackAcceptance`, `ProfileViewAcceptance` | Real window size, OS scaling, focus |
+| Separate-process restart | A new JVM reads the saved file | `EditEnrolAcceptance` and `DataSandboxAcceptance` through production `Main`; `PackagedJarSmoke` through a subclass of production `MainApp` | Physical input |
+
+A fresh model and window in the same JVM, as in `MvpAcceptance` and `EnrolmentAcceptance`, is not a process restart. The injected-failure checks documented in this guide are programmatic.
 
 ### Launch and shutdown
 
@@ -1022,10 +1084,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Removing samples from a mixed roster
 
-   1. Prerequisites: Use `sample load`, then add a non-sample student. Edit one sample and add another enrolment to it through the applicable feature commands. Select the non-sample student, then run a search that hides at least one sample.
+   1. Prerequisites: In a new test folder, run `sample load`, `student add /name Test Student /email test.student@u.nus.edu`, `edit /email e9000003@u.nus.edu /telegram mei_edited`, `enrol /email e9000003@u.nus.edu /module CS2113T /semester AY26/27 S2` and `find Test`.
 
    1. Test case: `sample clear`<br>
-      Expected: Every classified sample and all its enrolments are removed. The real student remains selected in the full roster. The roster is sorted by name and email. The message reports the actual profile and enrolment counts.
+      Expected: Every classified sample and all its enrolments are removed. The real student remains selected in the full roster. The roster is sorted by name and email. The message is `Removed 5 fictional sample profiles and 6 enrolments. Your non-sample records were not changed.`
 
    1. Restart the JAR.<br>
       Expected: Only the non-sample records return.
@@ -1102,6 +1164,58 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `edit /email e9000003@u.nus.edu /new-email bad /name A/B`<br>
       Expected: `New email: ` followed by the email rule. Nothing changes.
 
+### Editing a student's contacts
+
+1. Replacing, clearing and rejecting contacts
+
+   1. Prerequisites: A new test folder with `sample load` run.
+
+   1. Test case: `edit /email e9000003@u.nus.edu /telegram @socdex_demo_mei`<br>
+      Expected: `No values changed.` The data file is not rewritten.
+
+   1. Test case: `edit /email e9000003@u.nus.edu /telegram SOCDEX_DEMO_MEI /github mei-lim-demo`<br>
+      Expected: `Updated student: Mei Lim.` The profile shows `Telegram: SOCDEX_DEMO_MEI` and `GitHub: mei-lim-demo`.
+
+   1. Test case: `edit /email e9000003@u.nus.edu /telegram clear`, then `edit /email e9000003@u.nus.edu /github Clear`<br>
+      Expected: The profile shows `Telegram: Not provided`, then `GitHub: Clear`.
+
+   1. Test cases: `edit /email e9000003@u.nus.edu /telegram ab`; `edit /email e9000003@u.nus.edu /github -bad`; `edit /email e9000003@u.nus.edu`<br>
+      Expected, respectively: the rule beginning `Telegram handle must contain 5 to 32`; the rule beginning `GitHub username must contain 1 to 39`; and `Provide at least one field to update.` Nothing changes.
+
+### Adding, replacing and removing a remark
+
+`INDEX` refers to the displayed list. Remarks appear on result cards.
+
+1. Changing a remark
+
+   1. Prerequisites: A new test folder with `sample load` run, then `find Mei`.
+
+   1. Test case: `remark 1 r/Arrange a consultation on Friday.`<br>
+      Expected: A result beginning `Added remark to Person: Mei Lim; Email: e9000003@u.nus.edu`. The full sorted roster returns.<br>
+      Then run `find Mei`. Expected: Mei Lim's card shows the remark.
+
+   1. Test case: `find Mei`, then `remark 1 r/Confirm the room.`, then `find Mei`<br>
+      Expected: After the second `find Mei`, the card shows only `Confirm the room.`; the text was replaced, not appended.
+
+   1. Test case: `bye`, restart the JAR, then `find Mei`<br>
+      Expected: Mei Lim's card still shows `Confirm the room.`
+
+   1. Test case: `find Mei`, then `remark 1 r/`, then `find Mei`<br>
+      Expected: `remark` shows a result beginning `Removed remark from Person: Mei Lim`. After the second `find Mei`, the card no longer shows a remark.
+
+1. Rejected input
+
+   1. Prerequisites: A roster loaded with `sample load`.
+
+   1. Test cases: `remark 1`; `remark r/Test`; `remark 0 r/Test`<br>
+      Expected: `Invalid command format!` followed by the usage. Nothing changes.
+
+   1. Test case: `remark 99 r/Test`<br>
+      Expected: `The person index provided is invalid.` Nothing changes.
+
+   1. Test case: `remark 1 r/One r/Two`<br>
+      Expected: `Multiple values specified for the following single-valued field(s): r/`. Nothing changes.
+
 ### Adding and editing enrolments
 
 1. Adding an enrolment
@@ -1129,6 +1243,12 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2101 /semester AY26/27 S1 /team SEED`<br>
       Expected: `No matching enrolment found for e9000005@u.nus.edu, CS2101, AY26/27 S1. Use enrol to add it first.` Nothing changes.
+
+   1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1 /team Clear`<br>
+      Expected: `Updated enrolment for Nur Aisyah: CS2103T, AY26/27 S1.` The profile shows `Team: Clear` as a literal label.
+
+   1. Test case: `edit-enrol /email e9000005@u.nus.edu /module CS2103T /semester AY26/27 S1`<br>
+      Expected: `Provide at least one field to update.` Nothing changes.
 
 ### Deleting a student
 
@@ -1222,10 +1342,21 @@ Scenarios that confirm a deletion change the roster, so start each such scenario
    1. In a separate test directory, start with no `data/addressbook.json`. Expected: an empty writable roster and no automatically created roster file. Add a fictional contact using `student add /name Test Student /email test.student@u.nus.edu` (expected: `Added student: Test Student.`) and restart; the saved contact returns.
    1. Close the app, keep a copy of the test roster, and replace it with malformed JSON. Restart. Expected: an empty list; the result `Stored data could not be loaded. The existing file was preserved. This session is read-only. Restore a valid data file and restart SoCdex.`; and the status bar `Storage unavailable — read-only recovery | ` followed by the data-file path, which stays after searches. In a narrow window, a long path wraps onto further status-bar lines instead of being cut off.
       * `list`, `find Test`, `view test.student@u.nus.edu` and `help` remain usable. The empty recovery view finds no students.
-      * Each of these shows `Data changes are disabled because stored data could not be loaded. Restore a valid data file and restart SoCdex.`: `student add /name Second Student /email second.student@u.nus.edu`, `enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1`, `edit /email test.student@u.nus.edu /telegram test_student`, `edit-enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1 /team SEED`, `sample load`, `sample clear`, `delete test.student@u.nus.edu` and `confirm-delete test.student@u.nus.edu`.
+      * Each of these shows `Data changes are disabled because stored data could not be loaded. Restore a valid data file and restart SoCdex.`: `student add /name Second Student /email second.student@u.nus.edu`, `enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1`, `edit /email test.student@u.nus.edu /telegram test_student`, `edit-enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1 /team SEED`, `remark 1 r/Test`, `sample load`, `sample clear`, `delete test.student@u.nus.edu` and `confirm-delete test.student@u.nus.edu`.
       * `clear` shows its retirement message, as in every session.
       * Exit with `bye` and verify that the malformed file's bytes are unchanged.
+   1. Invalid stored value, which starts a **read-only recovery session**. With the app closed, restore the valid test file. Keep a copy of it: in Command Prompt, `copy data\addressbook.json roster-copy.json`; in Git Bash or a macOS or Linux terminal, `cp data/addressbook.json roster-copy.json`. In `data/addressbook.json`, change Test Student's `email` value to `TEST.STUDENT@U.NUS.EDU`. Copy that edited file without changing `roster-copy.json`: in Command Prompt, `copy data\addressbook.json invalid-copy.json`; in Git Bash or a macOS or Linux terminal, `cp data/addressbook.json invalid-copy.json`. Restart.<br>
+      Expected: the same recovery message and status bar as for malformed JSON. `remark 1 r/Test` shows `Data changes are disabled because stored data could not be loaded. Restore a valid data file and restart SoCdex.`<br>
+      Exit with `bye`, then compare the files: in Command Prompt, `fc /b data\addressbook.json invalid-copy.json`; in Git Bash or a macOS or Linux terminal, `cmp data/addressbook.json invalid-copy.json`. Expected: the files are identical.<br>
+      Restore the valid file: in Command Prompt, `copy /y roster-copy.json data\addressbook.json`; in Git Bash or a macOS or Linux terminal, `cp roster-copy.json data/addressbook.json`.
    1. Restore the valid test file and restart. Run `find Test` so that Test Student is selected. Make the roster file read-only as described below. Then run `student add /name Second Student /email second.student@u.nus.edu`. Expected: `The student could not be saved. No data was changed.`, unchanged file bytes, the previous result list, and Test Student still selected and visible. Restore the recorded attributes, then retry; the student is added.
+   1. Failed saves in a **writable session**. Prerequisites: Start with the valid roster, so the status bar shows `Storage available`. Run `enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1` and `find Test`. Then make the roster file read-only as described below.
+      * `edit /email test.student@u.nus.edu /telegram test_student` shows `The record could not be updated. No data was changed.`
+      * `enrol /email test.student@u.nus.edu /module CS2113T /semester AY26/27 S2` shows `The enrollment could not be saved. No data was changed.`
+      * `edit-enrol /email test.student@u.nus.edu /module CS2103T /semester AY26/27 S1 /team SEED` shows `The record could not be updated. No data was changed.`
+      * `find Test`, then `remark 1 r/Test` shows an error ending `No data was changed.`
+      * Expected after each: unchanged file bytes, and the previous results and selection remain.
+      * Restore the recorded attributes and compare them with the recorded output. Run `find Test` and `remark 1 r/Test`. Expected: a result beginning `Added remark to Person: Test Student`. Restart. Expected: the remark returns.
 
 ### Making the roster file read-only
 
@@ -1235,3 +1366,11 @@ The save-failure tests above use a read-only roster file. SoCdex refuses to save
 1. Make the file read-only. On Windows, run `attrib +R "data\addressbook.json"`; on macOS or Linux, run `chmod a-w "data/addressbook.json"`. Run the record command again and confirm that the file is now read-only.
 1. After the test, restore the recorded attributes. On Windows, run `attrib -R "data\addressbook.json"` unless the recorded output already showed `R`. On macOS or Linux, run `chmod` with the recorded permissions, for example `chmod 644 "data/addressbook.json"` for `-rw-r--r--`. Run the record command again and compare it with the recorded output.
 1. If a test is interrupted, or the app closes unexpectedly, restore the recorded attributes before doing anything else in that folder.
+
+### Verification status
+
+**Runtime.** SoCdex is one JAR for Windows, Linux and macOS on Java 25. On macOS, use the JDK distribution prescribed in the [Java 25 installation guide](https://se-education.org/guides/tutorials/javaInstallationMac.html).
+
+**v1.5 (historical).** See the [v1.5 release](https://github.com/AY2627S1-CS2103T-W09-2/tp/releases/tag/v1.5), [acceptance record #142](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/142) and [closeout #131](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/131). These records do not establish native Linux desktop use, real 125% or 150% scaling, or physical `edit` and `edit-enrol` on Windows. They apply only to the v1.5 JAR.
+
+**v1.6.** Acceptance is tracked in [#203](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/203). No v1.6 result is recorded here yet.
