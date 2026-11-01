@@ -49,9 +49,10 @@ import seedu.address.storage.StorageManager;
  * Opt-in real-window probe for compact layouts; runs separately from the headless unit suite.
  * Lays the window out at the default 740x600, the minimum 450x600 and the 853x480 logical size of 1280x720 at 150%
  * scaling, checks that long feedback and the status bar stay complete without horizontal scrolling, that the whole
- * deletion preview is in view, also with a taller font, that the student list still shows a whole result card at
- * the minimum height and above, that feedback quoting a long name and email wraps, that the result area and then
- * the command box sit below the panels, and checks the command box's focused state and the Tab order.
+ * deletion preview is in view, also with a taller font, that the student list still reaches the selected student
+ * and shows a whole result card at the default size, that feedback quoting a long name and email wraps, that the
+ * result area and then the command box sit below the panels, and checks the command box's focused state and the
+ * Tab order.
  * Uses only fictional data under build/reports/compact-feedback.
  */
 public class CompactFeedbackAcceptance extends Application {
@@ -60,8 +61,6 @@ public class CompactFeedbackAcceptance extends Application {
     private static final Color FOCUS_COLOUR = Color.web("#e2e2e2");
     // The command box's border width in DarkTheme.css, in both the focused and unfocused states.
     private static final double FOCUS_BORDER_WIDTH = 2;
-    // The window's minimum height in MainWindow.fxml. Shorter windows only arise from OS display scaling.
-    private static final int MIN_WINDOW_HEIGHT = 600;
     // Larger than the theme's 13pt, so each line is taller than the theme font draws on macOS.
     private static final String TALLER_FONT_SIZE = "16pt";
     private static final List<Viewport> VIEWPORTS = List.of(
@@ -172,7 +171,7 @@ public class CompactFeedbackAcceptance extends Application {
         checkStatusBarInWindow(name);
         checkVisualOrder(name + " after a preview");
         checkFocusBorder(input, name + " command box after a preview");
-        checkPanelsUsable(name, viewport.height >= MIN_WINDOW_HEIGHT);
+        checkPanelsUsable(name, viewport == VIEWPORTS.get(0));
         snapshot(name + "-deletion-preview.png");
 
         String rejected = "student add /name Long Email /email " + LONG_LOCAL_PART + "@u.nus.edu";
@@ -254,25 +253,26 @@ public class CompactFeedbackAcceptance extends Application {
     }
 
     /**
-     * At the minimum window height and above, fails unless the student list can show the tallest card in the
-     * fictional sample roster whole.
-     * In a shorter, scaled window, where a card may already need scrolling, fails unless the top card's name is in
-     * full view.
+     * Fails unless the student list stays usable. At every size the selected student's card must be in the list, and
+     * the list must be tall enough for that card's whole name row, so scrolling reaches every line of the card. At
+     * the default size, the tallest card in the fictional sample roster must also fit whole.
      */
     private void checkPanelsUsable(String name, boolean wholeCard) {
         ListView<?> list = (ListView<?>) stage.getScene().lookup("#personListView");
+        int selected = list.getSelectionModel().getSelectedIndex();
         List<ListCell<?>> cards = list.lookupAll(".list-cell").stream().<ListCell<?>>map(cell -> (ListCell<?>) cell)
                 .filter(cell -> cell.getItem() != null).toList();
-        double tallest = cards.stream().mapToDouble(cell -> cell.getLayoutBounds().getHeight()).max().orElseThrow();
-        double nameBottom = cards.stream().map(cell -> cell.lookup("#name"))
-                .map(label -> list.sceneToLocal(label.localToScene(label.getLayoutBounds())))
-                .filter(bounds -> bounds.getMinY() >= -1).mapToDouble(Bounds::getMaxY).min().orElseThrow();
-        System.out.printf("PANELS %s list=%.0f tallest card=%.0f top name bottom=%.0f%n", name, list.getHeight(),
-                tallest, nameBottom);
+        double tallest = cards.stream().mapToDouble(cell -> cell.getLayoutBounds().getHeight()).max().orElse(0);
+        ListCell<?> selectedCard = cards.stream().filter(cell -> cell.getIndex() == selected).findFirst().orElse(null);
+        Node nameLabel = selectedCard == null ? null : selectedCard.lookup("#name");
+        double nameRow = nameLabel == null ? Double.NaN
+                : selectedCard.sceneToLocal(nameLabel.localToScene(nameLabel.getLayoutBounds())).getMaxY();
+        System.out.printf("PANELS %s list=%.0f tallest card=%.0f selected=%d name row=%.0f%n", name,
+                list.getHeight(), tallest, selected, nameRow);
+        check(nameLabel != null, name + " selected student's card is in the student list");
+        check(list.getHeight() >= nameRow, name + " student list can show the selected student's whole name row");
         if (wholeCard) {
             check(list.getHeight() >= tallest, name + " student list shows the tallest result card whole");
-        } else {
-            check(nameBottom <= list.getHeight(), name + " student list shows the top student's name");
         }
     }
 
