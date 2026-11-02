@@ -49,7 +49,7 @@
         </SplitPane>
 
         <StackPane VBox.vgrow="NEVER" fx:id="resultDisplayPlaceholder" styleClass="pane-with-border"
-                   minHeight="160" prefHeight="160" maxHeight="160">
+                   minHeight="-Infinity" maxHeight="-Infinity">
           <padding>
             <Insets top="5" right="10" bottom="5" left="10" />
           </padding>
