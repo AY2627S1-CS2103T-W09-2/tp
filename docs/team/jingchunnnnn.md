@@ -1,4 +1,7 @@
-# Jingchun Zhou's Project Portfolio Page
+---
+layout: page
+title: Jingchun Zhou's Project Portfolio Page
+---
 
 ### Project: SoCdex
 
@@ -13,7 +16,7 @@ Given below are my contributions to the project.
   * Implemented `sample clear`, which removes only fictional sample profiles and their enrolments while preserving real roster data ([#82](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/82)). The command reports the actual numbers removed, avoids saving when there is nothing to remove, restores state after failures and keeps any surviving selected profile visible.
   * Prevented runtime logs from entering packaged JAR files and added archive-content checks for required and forbidden resources ([#109](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/109)). This reduced the risk of distributing local runtime data and made clean and non-clean package verification repeatable.
   * Added warning-level logging for presentation and storage rollback failures without logging command text or student data ([#120](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/120)).
-  * Integrated the MVP acceptance driver onto the current codebase and addressed review findings on deterministic row traversal, candidate checksums and evidence boundaries ([#93](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/93)). Johnny's original driver commit remains credited to him.
+  * Integrated the MVP acceptance driver onto the current codebase and addressed review findings on deterministic row traversal, candidate checksums and evidence boundaries ([#93](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/93)). `@YujieJWang` wrote the original driver commit, which remains credited to him.
 
 * **Documentation:**
   * Established the SoCdex product description and terminology in the README, glossary, published homepage and User Guide ([#41](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/41), [#42](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/42), [#57](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/57), [#73](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/73)).
@@ -28,5 +31,5 @@ Given below are my contributions to the project.
   * Prepared the final v1.6 User Guide, website and publication workflow ([#200](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/200), [#204](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/204)).
 
 * **Review and quality assurance:**
-  * Reviewed changes across the model, UI, storage, testing and documentation components. Examples include student-profile editing ([#70](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/70)), enrolment creation ([#85](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/85)), data-folder isolation ([#89](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/89)), focus visibility ([#91](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/91)), profile-presentation diagrams ([#122](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/122)), search presentation and performance ([#126](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/126), [#127](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/127)), and final documentation fixes ([#179](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/179), [#180](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/180), [#181](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/181), [#197](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/197)).
+  * Reviewed changes across the model, UI, storage, testing and documentation components. Examples include student-profile editing ([#70](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/70)), enrolment creation ([#85](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/85)), data-folder isolation ([#89](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/89)), focus visibility ([#91](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/91)), profile-presentation diagrams ([#122](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/122)), search presentation and performance ([#126](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/126), [#127](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/127)), and final source and documentation fixes ([#179](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/179), [#180](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/180), [#181](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/181), [#197](https://github.com/AY2627S1-CS2103T-W09-2/tp/pull/197)).
   * Used focused acceptance drivers, unit tests, Checkstyle, repository checks and three-platform CI as merge gates. I also recorded when a local JavaFX environment could not provide complete evidence instead of treating an incomplete run as a pass.
