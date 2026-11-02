@@ -39,4 +39,22 @@ public class PersonDetailsPanelTest {
                 "CS2103T | AY26/27 S1 | Section: Not assigned | Team: Not assigned"),
                 PersonDetailsPanel.profileLines(ravi));
     }
+
+    @Test
+    public void profileLines_withRemark_endsWithCompleteRemark() {
+        String remark = "Please arrange a consultation about project progress before Friday afternoon and confirm "
+                + "the room with the teaching team. END-OF-NOTE";
+        Person person = new PersonBuilder().withName("Alpha Check").withEmail("e9370002@u.nus.edu")
+                .withoutContacts().withEnrolments().withRemark(remark).build();
+        assertEquals(List.of("NUS email: e9370002@u.nus.edu", "Telegram: Not provided", "GitHub: Not provided",
+                "Enrolments: none", "Remark: " + remark), PersonDetailsPanel.profileLines(person));
+    }
+
+    @Test
+    public void profileLines_emptyRemark_omitsRemarkLine() {
+        Person person = new PersonBuilder().withName("Alpha Check").withEmail("e9370002@u.nus.edu")
+                .withoutContacts().withEnrolments().withRemark("").build();
+        assertEquals(List.of("NUS email: e9370002@u.nus.edu", "Telegram: Not provided", "GitHub: Not provided",
+                "Enrolments: none"), PersonDetailsPanel.profileLines(person));
+    }
 }

@@ -225,13 +225,13 @@ Adds or replaces the selected student's free-text remark. `INDEX` is the positiv
 * `remark INDEX r/TEXT` replaces the entire existing remark with `TEXT`; it does not append to it.
 * `remark INDEX r/` deliberately removes the existing remark. The `r/` prefix is required even when removing a remark; `remark INDEX` alone is rejected.
 * Names, emails, contacts, enrolments and sample classification are preserved. A successful update is saved and shows the full roster in name-and-email order, so displayed indices can change after updating a filtered result.
-* Remarks appear on result cards. In the current app, `view EMAIL` does not include the remark in the profile panel, and a long remark can be truncated at narrower window widths. Widen the window to read more; [issue #191](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/191) tracks this visibility limitation.
+* The remark appears on the student's result card and as the last line of the profile panel opened by `view EMAIL`, after `Remark: `. A long remark wraps onto more lines instead of being cut off, so the whole remark can be read without widening the window. If it is below the visible part of the profile panel, scroll the panel.
 
 Example using the fictional samples:
 
 1. After loading samples, run `find e9000001@u.nus.edu` and check that Alex Tan is result 1.
-2. `remark 1 r/Arrange a consultation on Friday.` adds the note (or replaces the old one).
-3. Run `find e9000001@u.nus.edu` again to confirm the current index before using `remark 1 r/` to remove the note.
+2. `remark 1 r/Arrange a consultation on Friday.` adds the remark (or replaces the old one).
+3. Run `find e9000001@u.nus.edu` again to confirm the current index before using `remark 1 r/` to remove the remark.
 
 ### Editing a student's profile: `edit`
 
@@ -300,7 +300,7 @@ Format: `view EMAIL`
 
 * The email is matched against the complete roster, including students hidden by a previous search. Letter case and surrounding spaces or tabs are ignored, so `view E9000001@U.NUS.EDU` opens `e9000001@u.nus.edu`.
 * Success shows `Viewing student: NAME.`, selects that student, scrolls to them, and shows their complete profile in the profile panel. If the student is already in the displayed results, those results are kept. Otherwise the full roster is shown, sorted by name then email.
-* The profile shows the name, `Fictional sample` for sample records, NUS email, Telegram, GitHub, and every enrolment ordered by academic year, then semester, then module code. Each enrolment is shown as `CS2103T | AY26/27 S1 | Section: T12 | Team: SEED`. An absent section or team shows `Not assigned`, an absent contact shows `Not provided`, and a student without enrolments shows `Enrolments: none`. These labels are display text only and are never stored.
+* The profile shows the name, `Fictional sample` for sample records, NUS email, Telegram, GitHub, and every enrolment ordered by academic year, then semester, then module code. Each enrolment is shown as `CS2103T | AY26/27 S1 | Section: T12 | Team: SEED`. An absent section or team shows `Not assigned`, an absent contact shows `Not provided`, and a student without enrolments shows `Enrolments: none`. A student with a remark has a final `Remark:` line with the complete remark; a student without one has no remark line. These labels are display text only and are never stored.
 * Selecting a row in the student list also shows that student's profile. With no selection, the profile panel shows `Select a student to view their profile.`
 * `view` does not change or save roster data, and it is available in a read-only recovery session.
 
