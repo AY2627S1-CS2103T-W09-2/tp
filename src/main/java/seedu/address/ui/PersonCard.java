@@ -63,7 +63,7 @@ public class PersonCard extends UiPart<Region> {
                 label("github", contactText(GITHUB_LABEL, person.getGitHub()), "cell_small_label", true),
                 sample,
                 label("enrolments", enrolmentText(person.getEnrolments()), "cell_small_label", true),
-                label("remark", person.getRemark().value, "cell_small_label", false));
+                label("remark", person.getRemark().value, "cell_small_label", true));
         content.setAlignment(Pos.CENTER_LEFT);
         content.setMinHeight(105);
         content.setPadding(new Insets(5, 5, 5, 15));
