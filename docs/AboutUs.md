@@ -11,7 +11,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/jingchunnnnn.png" width="200px">
 
-[[github](https://github.com/jingchunnnnn)]
+[[github](https://github.com/jingchunnnnn)] [[project portfolio](team/jingchunnnnn.html)]
 
 * Role: Documentation
 * Responsibilities: Deliverables and deadlines
