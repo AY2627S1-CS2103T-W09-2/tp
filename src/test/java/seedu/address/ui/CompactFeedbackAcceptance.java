@@ -49,10 +49,10 @@ import seedu.address.storage.StorageManager;
  * Opt-in real-window probe for compact layouts; runs separately from the headless unit suite.
  * Lays the window out at the default 740x600, the minimum 450x600 and the 853x480 logical size of 1280x720 at 150%
  * scaling, checks that long feedback and the status bar stay complete without horizontal scrolling, that the whole
- * deletion preview is in view, also with a taller font, that the student list still reaches the selected student
- * and shows a whole result card at the default size, that feedback quoting a long name and email wraps, that the
- * result area and then the command box sit below the panels, and checks the command box's focused state and the
- * Tab order.
+ * deletion preview is in view, also with a taller font, that the student list is still tall enough for the selected
+ * student's name row and shows a whole result card at the default size, that feedback quoting a long name and email
+ * wraps, that the result area and then the command box sit below the panels, and checks the command box's focused
+ * state and the Tab order.
  * Uses only fictional data under build/reports/compact-feedback.
  */
 public class CompactFeedbackAcceptance extends Application {
@@ -253,9 +253,10 @@ public class CompactFeedbackAcceptance extends Application {
     }
 
     /**
-     * Fails unless the student list stays usable. At every size the selected student's card must be in the list, and
-     * the list must be tall enough for that card's whole name row, so scrolling reaches every line of the card. At
-     * the default size, the tallest card in the fictional sample roster must also fit whole.
+     * Fails unless the student list has room to use. At every size the selected student's card must be in the list, and
+     * the list must be tall enough to show that card's whole name row once scrolled to it. The row's current position
+     * is not checked: selecting a student can leave its card's top partly above the list. At the default size, the
+     * tallest card in the fictional sample roster must also fit whole.
      */
     private void checkPanelsUsable(String name, boolean wholeCard) {
         ListView<?> list = (ListView<?>) stage.getScene().lookup("#personListView");
@@ -270,7 +271,7 @@ public class CompactFeedbackAcceptance extends Application {
         System.out.printf("PANELS %s list=%.0f tallest card=%.0f selected=%d name row=%.0f%n", name,
                 list.getHeight(), tallest, selected, nameRow);
         check(nameLabel != null, name + " selected student's card is in the student list");
-        check(list.getHeight() >= nameRow, name + " student list can show the selected student's whole name row");
+        check(list.getHeight() >= nameRow, name + " student list is tall enough for the selected student's name row");
         if (wholeCard) {
             check(list.getHeight() >= tallest, name + " student list shows the tallest result card whole");
         }
