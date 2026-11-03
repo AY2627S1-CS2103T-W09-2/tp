@@ -62,8 +62,8 @@ Given below are my contributions to the project.
     [#94](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/94),
     [#131](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/131), and
     [#198](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/198).
-  * Coordinated the final v1.6 freeze and independently verified that the Canvas submission matched the
-    accepted JAR by file name, size, and SHA-256 checksum
+  * Coordinated the final v1.6 freeze and submitted the accepted JAR to Canvas. Jingchun independently
+    verified that the downloaded submission matched the accepted filename, size, and SHA-256 checksum
     ([#205](https://github.com/AY2627S1-CS2103T-W09-2/tp/issues/205)).
   * Performed assigned alpha testing, recorded reproducible findings, and converted the highest-impact
     findings into focused fixes with tests
