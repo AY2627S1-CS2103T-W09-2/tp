@@ -20,7 +20,7 @@ We are a team based in the [School of Computing, National University of Singapor
 
 <img src="images/spencercdz.png" width="200px">
 
-[[github](https://github.com/spencercdz)]
+[[github](https://github.com/spencercdz)] [[project portfolio](team/spencercdz.html)]
 
 * Role: Team Lead, Scheduling and Tracking
 * Responsibilities: Coordinate the SoCdex project, maintain and track tasks and milestones, and ensure planned work supports the tutor workflow and iteration goals.
